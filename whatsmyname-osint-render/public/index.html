@@ -3,426 +3,186 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WHATSMYNAME // MATRIX:RELOADED OSINT</title>
+<title>THIS YOU // OSINT PLATFORM</title>
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-:root{
-  --mx:#00ff41;--mx2:#008f11;--mx3:#003b00;--mxdim:#00ff4118;
-  --red:#ff1744;--gold:#ffd740;--amber:#ffab40;--bg:#050805;--panel:#0a110a;
-}
+:root{--mx:#00ff41;--mx2:#008f11;--mx3:#003b00;--mxdim:#00ff4118;--red:#ff1744;--gold:#ffd740;--amber:#ffab40;--cyan:#00e5ff;--bg:#050805}
 html,body{height:100%;overflow-x:hidden;background:var(--bg);color:var(--mx);font-family:'Share Tech Mono',monospace}
 ::selection{background:var(--mx);color:#000}
-::-webkit-scrollbar{width:5px}
-::-webkit-scrollbar-track{background:#000}
-::-webkit-scrollbar-thumb{background:var(--mx3)}
-
-/* RAIN */
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:#000}::-webkit-scrollbar-thumb{background:var(--mx3)}
 #rain{position:fixed;inset:0;z-index:0;opacity:.1;pointer-events:none}
-
-/* SCANLINES */
-body::after{content:'';position:fixed;inset:0;
-  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,255,65,.02) 2px,rgba(0,255,65,.02) 4px);
-  pointer-events:none;z-index:9998}
-
-/* GLOW OVERLAY */
-#glowPulse{position:fixed;inset:0;pointer-events:none;z-index:9997;
-  background:radial-gradient(ellipse at 50% 0%,rgba(0,255,65,.04),transparent 70%);
-  animation:glowAnim 6s ease-in-out infinite alternate}
+body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,255,65,.02) 2px,rgba(0,255,65,.02) 4px);pointer-events:none;z-index:9998}
+#glowPulse{position:fixed;inset:0;pointer-events:none;z-index:9997;background:radial-gradient(ellipse at 50% 0%,rgba(0,255,65,.04),transparent 70%);animation:glowAnim 6s ease-in-out infinite alternate}
 @keyframes glowAnim{0%{opacity:.5}100%{opacity:1}}
-
-@keyframes flicker{0%,93%{opacity:1}94%{opacity:.6}95%{opacity:.9}96%{opacity:.7}100%{opacity:1}}
+@keyframes flicker{0%,93%{opacity:1}94%{opacity:.6}96%{opacity:.7}100%{opacity:1}}
 @keyframes slideIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-@keyframes typeOn{from{width:0}to{width:100%}}
-
+@keyframes glitchTitle{0%,100%{text-shadow:0 0 20px var(--mx),0 0 60px var(--mx2)}92%{text-shadow:0 0 20px var(--mx),0 0 60px var(--mx2)}93%{text-shadow:-3px 0 var(--red),3px 0 var(--cyan),0 0 60px var(--mx2)}94%{text-shadow:0 0 20px var(--mx),0 0 60px var(--mx2)}97%{text-shadow:2px 0 var(--cyan),-2px 0 var(--red)}98%{text-shadow:0 0 20px var(--mx),0 0 60px var(--mx2)}}
 .z{position:relative;z-index:10}
-
-/* HEADER */
 .hdr{text-align:center;padding:35px 20px 18px;border-bottom:1px solid var(--mx3)}
-.hdr h1{font-family:'Orbitron',sans-serif;font-size:clamp(1.4rem,4.5vw,3rem);
-  font-weight:900;letter-spacing:.25em;
-  text-shadow:0 0 20px var(--mx),0 0 60px var(--mx2);animation:flicker 5s infinite}
+.hdr h1{font-family:'Orbitron',sans-serif;font-size:clamp(2rem,6vw,4.5rem);font-weight:900;letter-spacing:.2em;animation:glitchTitle 5s infinite}
+.hdr h1 .q{color:var(--red);text-shadow:0 0 20px var(--red),0 0 40px rgba(255,23,68,.4)}
 .hdr .sub{font-size:.65rem;color:var(--mx2);letter-spacing:.5em;margin-top:6px;opacity:.7}
 .hdr .tag{color:var(--gold);font-size:.58rem;margin-top:10px;letter-spacing:.15em;opacity:.8}
-
-/* STATS */
-.stats{display:flex;justify-content:center;gap:25px;padding:10px 15px;
-  background:linear-gradient(90deg,transparent,rgba(0,255,65,.04),transparent);
-  border-bottom:1px solid var(--mx3);flex-wrap:wrap}
-.st{text-align:center}
-.st .v{font-family:'Orbitron',sans-serif;font-size:1.2rem;text-shadow:0 0 10px var(--mx)}
-.st .l{font-size:.5rem;color:var(--mx2);letter-spacing:.3em;text-transform:uppercase}
-.st .v.gold{color:var(--gold);text-shadow:0 0 10px rgba(255,215,64,.5)}
-.st .v.red{color:var(--red);text-shadow:0 0 10px rgba(255,23,68,.5)}
-
-/* SEARCH */
+.nav{display:flex;justify-content:center;gap:0;border-bottom:1px solid var(--mx3)}
+.nav button{flex:0 1 220px;padding:14px 20px;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--mx2);font-family:'Orbitron',sans-serif;font-size:.7rem;letter-spacing:.2em;cursor:pointer;transition:all .2s;text-transform:uppercase}
+.nav button:hover{color:var(--mx);background:rgba(0,255,65,.03)}
+.nav button.on{color:var(--mx);border-bottom-color:var(--mx);text-shadow:0 0 10px var(--mxdim)}
+.panel{display:none;max-width:1200px;margin:0 auto;padding:20px}.panel.on{display:block;animation:slideIn .3s}
+.stats{display:flex;justify-content:center;gap:25px;padding:10px 15px;background:linear-gradient(90deg,transparent,rgba(0,255,65,.04),transparent);border-bottom:1px solid var(--mx3);flex-wrap:wrap}
+.st{text-align:center}.st .v{font-family:'Orbitron',sans-serif;font-size:1.2rem;text-shadow:0 0 10px var(--mx)}.st .l{font-size:.5rem;color:var(--mx2);letter-spacing:.3em;text-transform:uppercase}.st .v.gold{color:var(--gold);text-shadow:0 0 10px rgba(255,215,64,.5)}.st .v.red{color:var(--red);text-shadow:0 0 10px rgba(255,23,68,.5)}
 .srch{max-width:750px;margin:25px auto;padding:0 20px}
-.sbox{position:relative}
-.sbox input{width:100%;padding:15px 55px 15px 48px;background:#000;
-  border:1px solid var(--mx3);color:var(--mx);
-  font-family:'Share Tech Mono',monospace;font-size:1rem;letter-spacing:.08em;outline:none;transition:all .3s}
-.sbox input:focus{border-color:var(--mx);box-shadow:0 0 25px var(--mxdim),inset 0 0 25px rgba(0,255,65,.03)}
-.sbox input::placeholder{color:var(--mx3)}
-.sbox .pr{position:absolute;left:15px;top:50%;transform:translateY(-50%);color:var(--mx);opacity:.5;font-size:1.1rem}
-.sbox .go{position:absolute;right:6px;top:50%;transform:translateY(-50%);
-  background:var(--mx3);border:1px solid var(--mx3);color:var(--mx);
-  padding:8px 16px;font-family:'Share Tech Mono',monospace;font-size:.7rem;
-  letter-spacing:.15em;cursor:pointer;text-transform:uppercase;transition:all .2s}
-.sbox .go:hover{background:var(--mx);color:#000;box-shadow:0 0 15px var(--mxdim)}
-.sbox .go:disabled{opacity:.3;cursor:default}
-.sbox .go:disabled:hover{background:var(--mx3);color:var(--mx);box-shadow:none}
-
-/* FILTERS */
-.flt{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;margin-top:14px}
-.flt button{background:transparent;border:1px solid var(--mx3);color:var(--mx2);
-  padding:3px 10px;font-family:'Share Tech Mono',monospace;font-size:.58rem;
-  cursor:pointer;text-transform:uppercase;letter-spacing:.12em;transition:all .15s}
-.flt button:hover,.flt button.on{background:var(--mx);color:#000;border-color:var(--mx)}
-
-/* PROGRESS */
-.prog{max-width:750px;margin:0 auto;padding:15px 20px;display:none}
-.prog.on{display:block}
-.prog .bar{height:3px;background:var(--mx3);overflow:hidden;margin:8px 0}
-.prog .bar .fill{height:100%;background:var(--mx);box-shadow:0 0 12px var(--mx);width:0%;transition:width .15s}
-.prog .info{display:flex;justify-content:space-between;font-size:.6rem;color:var(--mx2);letter-spacing:.1em}
-.prog .site-name{color:var(--mx);font-size:.65rem;margin-top:4px;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-
-/* SUMMARY */
-.summ{text-align:center;padding:20px;display:none}
-.summ.on{display:block;animation:slideIn .4s}
-.summ .big{font-family:'Orbitron',sans-serif;font-size:2.5rem;
-  text-shadow:0 0 30px var(--mx)}
-.summ .det{font-size:.65rem;color:var(--mx2);margin-top:6px;letter-spacing:.15em}
-
-/* RESULTS HEADER */
-.rh{display:none;justify-content:space-between;align-items:center;
-  padding:10px 0;border-bottom:1px solid var(--mx3);margin-bottom:12px}
-.rh.on{display:flex}
-.rh .ct{font-family:'Orbitron',sans-serif;color:var(--gold);font-size:.8rem}
-.rh .mode{font-size:.55rem;color:var(--mx2);letter-spacing:.25em}
-.rh .export{background:transparent;border:1px solid var(--gold);color:var(--gold);
-  padding:4px 12px;font-family:'Share Tech Mono',monospace;font-size:.55rem;
-  cursor:pointer;letter-spacing:.1em;transition:all .2s}
-.rh .export:hover{background:var(--gold);color:#000}
-
-/* TABS */
-.tabs{display:flex;gap:0;margin-bottom:12px}
-.tabs button{flex:1;max-width:180px;padding:8px;background:transparent;
-  border:1px solid var(--mx3);color:var(--mx2);font-family:'Share Tech Mono',monospace;
-  font-size:.6rem;cursor:pointer;letter-spacing:.15em;text-transform:uppercase;transition:all .15s}
-.tabs button.on{background:var(--mx);color:#000;border-color:var(--mx)}
-
-/* GRID */
-.results{max-width:1200px;margin:0 auto;padding:0 20px}
+.sbox{position:relative}.sbox input{width:100%;padding:15px 55px 15px 48px;background:#000;border:1px solid var(--mx3);color:var(--mx);font-family:'Share Tech Mono',monospace;font-size:1rem;letter-spacing:.08em;outline:none;transition:all .3s}.sbox input:focus{border-color:var(--mx);box-shadow:0 0 25px var(--mxdim),inset 0 0 25px rgba(0,255,65,.03)}.sbox input::placeholder{color:var(--mx3)}.sbox .pr{position:absolute;left:15px;top:50%;transform:translateY(-50%);color:var(--mx);opacity:.5;font-size:1.1rem}.sbox .go{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:var(--mx3);border:1px solid var(--mx3);color:var(--mx);padding:8px 16px;font-family:'Share Tech Mono',monospace;font-size:.7rem;letter-spacing:.15em;cursor:pointer;text-transform:uppercase;transition:all .2s}.sbox .go:hover{background:var(--mx);color:#000;box-shadow:0 0 15px var(--mxdim)}.sbox .go:disabled{opacity:.3;cursor:default}
+.flt{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;margin-top:14px}.flt button{background:transparent;border:1px solid var(--mx3);color:var(--mx2);padding:3px 10px;font-family:'Share Tech Mono',monospace;font-size:.58rem;cursor:pointer;text-transform:uppercase;letter-spacing:.12em;transition:all .15s}.flt button:hover,.flt button.on{background:var(--mx);color:#000;border-color:var(--mx)}
+.prog{max-width:750px;margin:0 auto;padding:15px 20px;display:none}.prog.on{display:block}.prog .bar{height:3px;background:var(--mx3);overflow:hidden;margin:8px 0}.prog .bar .fill{height:100%;background:var(--mx);box-shadow:0 0 12px var(--mx);width:0%;transition:width .15s}.prog .info{display:flex;justify-content:space-between;font-size:.6rem;color:var(--mx2);letter-spacing:.1em}.prog .site-name{color:var(--mx);font-size:.65rem;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.summ{text-align:center;padding:20px;display:none}.summ.on{display:block;animation:slideIn .4s}.summ .big{font-family:'Orbitron',sans-serif;font-size:2.5rem;text-shadow:0 0 30px var(--mx)}.summ .det{font-size:.65rem;color:var(--mx2);margin-top:6px;letter-spacing:.15em}
+.rh{display:none;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--mx3);margin-bottom:12px}.rh.on{display:flex}.rh .ct{font-family:'Orbitron',sans-serif;color:var(--gold);font-size:.8rem}.rh .export{background:transparent;border:1px solid var(--gold);color:var(--gold);padding:4px 12px;font-family:'Share Tech Mono',monospace;font-size:.55rem;cursor:pointer;letter-spacing:.1em;transition:all .2s}.rh .export:hover{background:var(--gold);color:#000}
+.vtabs{display:flex;gap:0;margin-bottom:12px}.vtabs button{flex:1;max-width:180px;padding:8px;background:transparent;border:1px solid var(--mx3);color:var(--mx2);font-family:'Share Tech Mono',monospace;font-size:.6rem;cursor:pointer;letter-spacing:.15em;text-transform:uppercase;transition:all .15s}.vtabs button.on{background:var(--mx);color:#000;border-color:var(--mx)}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:8px}
-
-/* CARD */
-.card{background:linear-gradient(135deg,#070d07,#0a130a);
-  border:1px solid var(--mx3);padding:12px 14px;position:relative;overflow:hidden;
-  transition:all .25s;animation:slideIn .3s both}
-.card::before{content:'';position:absolute;top:0;left:0;width:100%;height:1px;
-  background:linear-gradient(90deg,transparent,var(--mx),transparent);opacity:0;transition:opacity .3s}
-.card:hover{border-color:var(--mx);transform:translateY(-1px);
-  box-shadow:0 4px 25px rgba(0,255,65,.08)}
-.card:hover::before{opacity:1}
-.card .nm{font-family:'Orbitron',sans-serif;font-size:.78rem;font-weight:700;
-  display:flex;align-items:center;gap:8px}
-.card .nm .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
-.card.found .nm .dot{background:var(--mx);box-shadow:0 0 8px var(--mx)}
-.card.not-found .nm .dot{background:#333}
-.card.error .nm .dot{background:var(--amber);box-shadow:0 0 8px var(--amber)}
-.card .ur{font-size:.55rem;color:var(--mx2);margin-top:4px;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.5}
-.card .badge{position:absolute;top:9px;right:10px;font-size:.45rem;
-  padding:2px 7px;border:1px solid var(--mx3);color:var(--mx3);
-  letter-spacing:.12em;text-transform:uppercase}
-.card.found .badge{border-color:var(--mx2);color:var(--mx2)}
-.card .lnk{display:block;margin-top:8px;font-size:.58rem;color:var(--mx);
-  text-decoration:none;opacity:0;transition:opacity .2s}
-.card.found:hover .lnk{opacity:1}
-.card.found{cursor:pointer}
-.card.found:active{transform:scale(.98)}
-
-/* EMPTY */
-.empty{text-align:center;padding:60px 20px}
-.empty .ico{font-size:2.5rem;margin-bottom:12px;opacity:.2}
-.empty .msg{color:var(--mx2);font-size:.7rem;letter-spacing:.15em}
-
-/* LOG VIEW */
-.log{display:none;max-height:500px;overflow-y:auto;background:#000;
-  border:1px solid var(--mx3);padding:10px;font-size:.55rem;line-height:1.6}
-.log.on{display:block}
-.log .ln{opacity:.6}
-.log .ln.found{color:var(--mx);opacity:1}
-.log .ln.err{color:var(--amber);opacity:.8}
-
-/* FOOTER */
-.ftr{text-align:center;padding:25px 20px;border-top:1px solid var(--mx3);margin-top:30px}
-.ftr p{font-size:.5rem;color:var(--mx3);letter-spacing:.15em}
-
-@media(max-width:600px){
-  .hdr h1{letter-spacing:.1em}
-  .stats{gap:12px}
-  .grid{grid-template-columns:1fr}
-}
+.card{background:linear-gradient(135deg,#070d07,#0a130a);border:1px solid var(--mx3);padding:12px 14px;position:relative;overflow:hidden;transition:all .25s;animation:slideIn .3s both}.card::before{content:'';position:absolute;top:0;left:0;width:100%;height:1px;background:linear-gradient(90deg,transparent,var(--mx),transparent);opacity:0;transition:opacity .3s}.card:hover{border-color:var(--mx);transform:translateY(-1px);box-shadow:0 4px 25px rgba(0,255,65,.08)}.card:hover::before{opacity:1}.card .nm{font-family:'Orbitron',sans-serif;font-size:.78rem;font-weight:700;display:flex;align-items:center;gap:8px}.card .nm .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}.card.found .nm .dot{background:var(--mx);box-shadow:0 0 8px var(--mx)}.card.not-found .nm .dot{background:#333}.card.error .nm .dot{background:var(--amber)}.card .ur{font-size:.55rem;color:var(--mx2);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.5}.card .badge{position:absolute;top:9px;right:10px;font-size:.45rem;padding:2px 7px;border:1px solid var(--mx3);color:var(--mx3);letter-spacing:.12em;text-transform:uppercase}.card.found .badge{border-color:var(--mx2);color:var(--mx2)}.card .lnk{display:block;margin-top:8px;font-size:.58rem;color:var(--mx);text-decoration:none;opacity:0;transition:opacity .2s}.card.found:hover .lnk{opacity:1}.card.found{cursor:pointer}
+.log{display:none;max-height:500px;overflow-y:auto;background:#000;border:1px solid var(--mx3);padding:10px;font-size:.55rem;line-height:1.6}.log.on{display:block}.log .ln{opacity:.6}.log .ln.found{color:var(--mx);opacity:1}.log .ln.err{color:var(--amber)}
+.face-zone{max-width:800px;margin:0 auto}
+.drop-zone{border:2px dashed var(--mx3);padding:50px 20px;text-align:center;cursor:pointer;transition:all .3s;position:relative;background:rgba(0,255,65,.02)}.drop-zone:hover,.drop-zone.drag{border-color:var(--mx);background:rgba(0,255,65,.05);box-shadow:0 0 30px var(--mxdim)}.drop-zone .ico{font-size:2.5rem;margin-bottom:10px;opacity:.4}.drop-zone .msg{color:var(--mx2);font-size:.7rem;letter-spacing:.15em}.drop-zone .msg2{color:var(--mx3);font-size:.55rem;margin-top:8px}.drop-zone input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.face-preview{display:none;text-align:center;margin:20px 0}.face-preview canvas{max-width:100%;max-height:400px;border:1px solid var(--mx3)}
+.face-info{text-align:center;margin:15px 0;font-size:.65rem;color:var(--mx2);letter-spacing:.1em;display:none}.face-info.on{display:block;animation:slideIn .3s}.face-info .attr{display:inline-block;margin:4px 8px;padding:4px 12px;border:1px solid var(--mx3)}.face-info .attr span{color:var(--mx)}
+.search-engines{display:none;margin:25px 0}.search-engines.on{display:block;animation:slideIn .4s}.search-engines h3{font-family:'Orbitron',sans-serif;font-size:.75rem;text-align:center;margin-bottom:15px;letter-spacing:.2em;color:var(--gold)}
+.engines-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.eng-card{background:linear-gradient(135deg,#070d07,#0d150d);border:1px solid var(--mx3);padding:16px;text-align:center;cursor:pointer;transition:all .25s}.eng-card:hover{border-color:var(--mx);transform:translateY(-2px);box-shadow:0 4px 25px rgba(0,255,65,.1)}.eng-card .eng-name{font-family:'Orbitron',sans-serif;font-size:.8rem;margin-bottom:4px}.eng-card .eng-desc{font-size:.5rem;color:var(--mx2);letter-spacing:.1em}.eng-card .eng-type{display:inline-block;margin-top:8px;padding:2px 8px;font-size:.45rem;border:1px solid var(--mx3);color:var(--mx3);letter-spacing:.1em}.eng-card .eng-type.free{border-color:var(--mx);color:var(--mx)}.eng-card .eng-type.limited{border-color:var(--gold);color:var(--gold)}.eng-card .eng-type.paid{border-color:var(--red);color:var(--red)}
+.osint-tip{text-align:center;margin-top:30px;padding:20px;border:1px solid var(--mx3)}
+.osint-tip .tip-title{font-family:'Orbitron',sans-serif;font-size:.7rem;color:var(--gold);margin-bottom:10px;letter-spacing:.15em}
+.osint-tip .tip-body{font-size:.6rem;color:var(--mx2);line-height:1.8;letter-spacing:.05em}
+.empty{text-align:center;padding:60px 20px}.empty .ico{font-size:2.5rem;margin-bottom:12px;opacity:.2}.empty .msg{color:var(--mx2);font-size:.7rem;letter-spacing:.15em}
+.ftr{text-align:center;padding:25px 20px;border-top:1px solid var(--mx3);margin-top:30px}.ftr p{font-size:.5rem;color:var(--mx3);letter-spacing:.15em}
+@media(max-width:600px){.hdr h1{letter-spacing:.08em;font-size:2.2rem}.nav button{font-size:.55rem;padding:10px 8px;letter-spacing:.1em}.stats{gap:12px}.grid{grid-template-columns:1fr}.engines-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <canvas id="rain"></canvas>
 <div id="glowPulse"></div>
-
 <div class="hdr z">
-  <h1>WhatsMyName</h1>
-  <div class="sub">MATRIX : RELOADED // OSINT ENUMERATION</div>
-  <div class="tag">» Real-time username reconnaissance across 700+ platforms «</div>
+  <h1>THIS YOU<span class="q">?</span></h1>
+  <div class="sub">MATRIX : RELOADED // OSINT PLATFORM</div>
+  <div class="tag">» Username Enumeration • Face Search • Reverse Image • 731 Sites «</div>
+</div>
+<div class="nav z">
+  <button class="on" onclick="switchPanel('username')">USERNAME SCAN</button>
+  <button onclick="switchPanel('face')">FACE SEARCH</button>
 </div>
 
-<div class="stats z">
-  <div class="st"><div class="v" id="sTot">—</div><div class="l">Sites</div></div>
-  <div class="st"><div class="v" id="sCat">—</div><div class="l">Catégories</div></div>
-  <div class="st"><div class="v" id="sScn">0</div><div class="l">Scannés</div></div>
-  <div class="st"><div class="v gold" id="sFnd">0</div><div class="l">Trouvés</div></div>
-  <div class="st"><div class="v red" id="sErr">0</div><div class="l">Erreurs</div></div>
-</div>
-
-<div class="srch z">
-  <div class="sbox">
-    <span class="pr">›_</span>
-    <input type="text" id="inp" placeholder="username cible..." autocomplete="off" spellcheck="false">
-    <button class="go" id="goBtn" onclick="startScan()">SCAN</button>
+<!-- USERNAME PANEL -->
+<div class="panel on z" id="panel-username">
+  <div class="stats">
+    <div class="st"><div class="v" id="sTot">—</div><div class="l">Sites</div></div>
+    <div class="st"><div class="v" id="sCat">—</div><div class="l">Catégories</div></div>
+    <div class="st"><div class="v" id="sScn">0</div><div class="l">Scannés</div></div>
+    <div class="st"><div class="v gold" id="sFnd">0</div><div class="l">Trouvés</div></div>
+    <div class="st"><div class="v red" id="sErr">0</div><div class="l">Erreurs</div></div>
   </div>
-  <div class="flt" id="flt"></div>
+  <div class="srch"><div class="sbox"><span class="pr">›_</span><input type="text" id="inp" placeholder="username cible..." autocomplete="off" spellcheck="false"><button class="go" id="goBtn" onclick="startScan()">SCAN</button></div><div class="flt" id="flt"></div></div>
+  <div class="prog" id="prog"><div class="info"><span id="pTxt">Scanning...</span><span id="pPct">0%</span></div><div class="bar"><div class="fill" id="pFill"></div></div><div class="site-name" id="pSite"></div></div>
+  <div class="summ" id="summ"><div class="big" id="sumBig">0</div><div class="det" id="sumDet"></div></div>
+  <div class="results"><div class="rh" id="rh"><div class="ct" id="rCt"></div><div style="display:flex;gap:8px;align-items:center"><button class="export" onclick="exportResults()">EXPORT CSV</button></div></div><div class="vtabs" id="vtabsEl"><button class="on" onclick="setView('found')">TROUVÉS</button><button onclick="setView('all')">TOUS</button><button onclick="setView('log')">LOG</button></div><div class="grid" id="grid"></div><div class="log" id="logView"></div></div>
+  <div class="empty" id="empt"><div class="ico">⬡</div><div class="msg">Entrez un username pour lancer le scan OSINT en temps réel</div></div>
 </div>
 
-<div class="prog z" id="prog">
-  <div class="info">
-    <span id="pTxt">Scanning...</span>
-    <span id="pPct">0%</span>
+<!-- FACE PANEL -->
+<div class="panel z" id="panel-face">
+  <div class="face-zone">
+    <div class="drop-zone" id="dropZone"><div class="ico">◉</div><div class="msg">DÉPOSER UNE IMAGE OU CLIQUER POUR UPLOADER</div><div class="msg2">JPG, PNG — Détection de visage automatique par IA</div><input type="file" id="fileInput" accept="image/*"></div>
+    <div class="face-preview" id="facePreview"><canvas id="faceCanvas"></canvas></div>
+    <div class="face-info" id="faceInfo"></div>
+    <div class="search-engines" id="searchEngines"><h3>LANCER LA RECHERCHE FACIALE</h3><div class="engines-grid" id="engGrid"></div></div>
+    <div class="osint-tip"><div class="tip-title">ASTUCE OSINT</div><div class="tip-body">1. Uploadez la photo du visage cible<br>2. L'IA détecte le visage et analyse âge / genre / expression<br>3. Cliquez sur chaque moteur pour lancer la recherche inversée<br>4. Croisez les résultats PimEyes + Yandex + Google<br>5. Combinez avec le scan username pour une investigation complète</div></div>
   </div>
-  <div class="bar"><div class="fill" id="pFill"></div></div>
-  <div class="site-name" id="pSite"></div>
 </div>
 
-<div class="summ z" id="summ">
-  <div class="big" id="sumBig">0</div>
-  <div class="det" id="sumDet"></div>
-</div>
-
-<div class="results z">
-  <div class="rh" id="rh">
-    <div class="ct" id="rCt"></div>
-    <div style="display:flex;gap:8px;align-items:center">
-      <div class="mode">LIVE RECON</div>
-      <button class="export" onclick="exportResults()">EXPORT CSV</button>
-    </div>
-  </div>
-  <div class="tabs" id="tabsEl">
-    <button class="on" onclick="setView('found')">TROUVÉS</button>
-    <button onclick="setView('all')">TOUS</button>
-    <button onclick="setView('log')">LOG</button>
-  </div>
-  <div class="grid" id="grid"></div>
-  <div class="log" id="logView"></div>
-</div>
-
-<div class="empty z" id="empt">
-  <div class="ico">⬡</div>
-  <div class="msg">Entrez un username pour lancer le scan OSINT en temps réel</div>
-</div>
-
-<div class="ftr z"><p>WHATSMYNAME OSINT // MATRIX:RELOADED // DATA © MICAH HOFFMAN (CC BY-SA 4.0)</p></div>
+<div class="ftr z"><p>THIS YOU // OSINT PLATFORM // MATRIX:RELOADED // USERNAME DATA © MICAH HOFFMAN (CC BY-SA 4.0)</p></div>
 
 <script>
-// ═══ MATRIX RAIN ═══
 const cv=document.getElementById('rain'),cx=cv.getContext('2d');
-function rsz(){cv.width=innerWidth;cv.height=innerHeight}rsz();
-addEventListener('resize',rsz);
-const ch='アイウエオカキクケコサシスセソタチツテトナニヌネノ01onal';
-const fs=14,cols=()=>Math.floor(cv.width/fs);
-let dr=Array(cols()).fill(1);
-addEventListener('resize',()=>{dr=Array(cols()).fill(1)});
-setInterval(()=>{
-  cx.fillStyle='rgba(0,0,0,0.05)';cx.fillRect(0,0,cv.width,cv.height);
-  cx.fillStyle='#00ff41';cx.font=fs+'px monospace';
-  for(let i=0;i<dr.length;i++){
-    cx.fillText(ch[Math.random()*ch.length|0],i*fs,dr[i]*fs);
-    if(dr[i]*fs>cv.height&&Math.random()>.975)dr[i]=0;dr[i]++;
-  }
-},35);
+function rsz(){cv.width=innerWidth;cv.height=innerHeight}rsz();addEventListener('resize',rsz);
+const ch='アイウエオカキクケコTHISYOU01';const fs=14,cols=()=>Math.floor(cv.width/fs);
+let dr=Array(cols()).fill(1);addEventListener('resize',()=>{dr=Array(cols()).fill(1)});
+setInterval(()=>{cx.fillStyle='rgba(0,0,0,0.05)';cx.fillRect(0,0,cv.width,cv.height);cx.fillStyle='#00ff41';cx.font=fs+'px monospace';for(let i=0;i<dr.length;i++){cx.fillText(ch[Math.random()*ch.length|0],i*fs,dr[i]*fs);if(dr[i]*fs>cv.height&&Math.random()>.975)dr[i]=0;dr[i]++;}},35);
 
-// ═══ STATE ═══
-let activeCat='all', allResults=[], currentView='found', scanning=false, eventSource=null;
+function switchPanel(n){document.querySelectorAll('.nav button').forEach((b,i)=>{b.classList.toggle('on',(n==='username'&&i===0)||(n==='face'&&i===1))});document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));document.getElementById('panel-'+n).classList.add('on')}
 
-// ═══ INIT ═══
-fetch('/api/stats').then(r=>r.json()).then(d=>{
-  document.getElementById('sTot').textContent=d.totalSites;
-  document.getElementById('sCat').textContent=d.categories.length;
-  buildFilters(d.categories);
-});
+let activeCat='all',allResults=[],currentView='found',scanning=false,eventSource=null;
+fetch('/api/stats').then(r=>r.json()).then(d=>{document.getElementById('sTot').textContent=d.totalSites;document.getElementById('sCat').textContent=d.categories.length;buildFilters(d.categories)});
+function buildFilters(cats){const el=document.getElementById('flt');el.innerHTML='';const ab=mk('button','ALL');ab.classList.add('on');ab.onclick=()=>{activeCat='all';updFlt()};el.appendChild(ab);cats.forEach(c=>{const b=mk('button',c);b.onclick=()=>{activeCat=c;updFlt()};el.appendChild(b)})}
+function mk(t,x){const e=document.createElement(t);e.textContent=x;return e}
+function updFlt(){document.querySelectorAll('.flt button').forEach(b=>{b.classList.toggle('on',(activeCat==='all'&&b.textContent==='ALL')||b.textContent===activeCat)})}
+const inp=document.getElementById('inp');inp.addEventListener('keydown',e=>{if(e.key==='Enter')startScan()});
 
-function buildFilters(cats){
-  const el=document.getElementById('flt');
-  el.innerHTML='';
-  const ab=mk('button','ALL');ab.classList.add('on');
-  ab.onclick=()=>{activeCat='all';updFlt()};el.appendChild(ab);
-  cats.forEach(c=>{const b=mk('button',c);b.onclick=()=>{activeCat=c;updFlt()};el.appendChild(b)});
-}
-function mk(tag,txt){const e=document.createElement(tag);e.textContent=txt;return e}
-function updFlt(){document.querySelectorAll('.flt button').forEach(b=>{
-  b.classList.toggle('on',(activeCat==='all'&&b.textContent==='ALL')||b.textContent===activeCat);
-})}
+function startScan(){const u=inp.value.trim();if(!u||u.length<2||scanning)return;scanning=true;allResults=[];document.getElementById('goBtn').disabled=true;document.getElementById('goBtn').textContent='...';document.getElementById('empt').style.display='none';document.getElementById('prog').classList.add('on');document.getElementById('summ').classList.remove('on');document.getElementById('rh').classList.add('on');document.getElementById('grid').innerHTML='';document.getElementById('logView').innerHTML='';document.getElementById('sScn').textContent='0';document.getElementById('sFnd').textContent='0';document.getElementById('sErr').textContent='0';document.getElementById('pFill').style.width='0%';setView('found');if(eventSource)eventSource.close();eventSource=new EventSource('/api/scan/'+encodeURIComponent(u)+'?cat='+activeCat);let total=0,done=0,found=0,errors=0;
+eventSource.onmessage=function(ev){const d=JSON.parse(ev.data);if(d.type==='init'){total=d.total;document.getElementById('pTxt').textContent='Scanning 0/'+total;return}if(d.type==='result'){allResults.push(d);done=d.progress;found=d.found;if(d.status==='error')errors++;const pct=Math.round(done/total*100);document.getElementById('pFill').style.width=pct+'%';document.getElementById('pPct').textContent=pct+'%';document.getElementById('pTxt').textContent='Scanning '+done+'/'+total;document.getElementById('pSite').textContent=d.name;document.getElementById('sScn').textContent=done;document.getElementById('sFnd').textContent=found;document.getElementById('sErr').textContent=errors;updateCount();addLog(d);if(currentView==='found'&&d.status==='found')document.getElementById('grid').appendChild(makeCard(d));else if(currentView==='all')document.getElementById('grid').appendChild(makeCard(d));return}if(d.type==='done'){finishScan(d);return}};
+eventSource.onerror=function(){eventSource.close();finishScan({total:done,found})}}
 
-// ═══ SCAN ═══
-const inp=document.getElementById('inp');
-inp.addEventListener('keydown',e=>{if(e.key==='Enter')startScan()});
-
-function startScan(){
-  const u=inp.value.trim();
-  if(!u||u.length<2||scanning)return;
-  scanning=true;
-  allResults=[];
-  document.getElementById('goBtn').disabled=true;
-  document.getElementById('goBtn').textContent='...';
-  document.getElementById('empt').style.display='none';
-  document.getElementById('prog').classList.add('on');
-  document.getElementById('summ').classList.remove('on');
-  document.getElementById('rh').classList.add('on');
-  document.getElementById('grid').innerHTML='';
-  document.getElementById('logView').innerHTML='';
-  document.getElementById('sScn').textContent='0';
-  document.getElementById('sFnd').textContent='0';
-  document.getElementById('sErr').textContent='0';
-  document.getElementById('pFill').style.width='0%';
-  setView('found');
-
-  if(eventSource)eventSource.close();
-  const catQ=activeCat==='all'?'':'&cat='+encodeURIComponent(activeCat);
-  eventSource=new EventSource(`/api/scan/${encodeURIComponent(u)}?cat=${activeCat}`);
-
-  let total=0,done=0,found=0,errors=0;
-
-  eventSource.onmessage=function(ev){
-    const d=JSON.parse(ev.data);
-
-    if(d.type==='init'){
-      total=d.total;
-      document.getElementById('pTxt').textContent=`Scanning 0/${total}`;
-      return;
-    }
-
-    if(d.type==='result'){
-      allResults.push(d);
-      done=d.progress;found=d.found;
-      if(d.status==='error')errors++;
-      const pct=Math.round(done/total*100);
-      document.getElementById('pFill').style.width=pct+'%';
-      document.getElementById('pPct').textContent=pct+'%';
-      document.getElementById('pTxt').textContent=`Scanning ${done}/${total}`;
-      document.getElementById('pSite').textContent=d.name;
-      document.getElementById('sScn').textContent=done;
-      document.getElementById('sFnd').textContent=found;
-      document.getElementById('sErr').textContent=errors;
-      updateCount();
-
-      // Add to log
-      addLog(d);
-
-      // Add card if found (live)
-      if(currentView==='found'&&d.status==='found'){
-        document.getElementById('grid').appendChild(makeCard(d));
-      }else if(currentView==='all'){
-        document.getElementById('grid').appendChild(makeCard(d));
-      }
-      return;
-    }
-
-    if(d.type==='done'){
-      finishScan(d);
-      return;
-    }
-  };
-
-  eventSource.onerror=function(){
-    eventSource.close();
-    finishScan({total:done,found});
-  };
-}
-
-function finishScan(d){
-  scanning=false;
-  document.getElementById('goBtn').disabled=false;
-  document.getElementById('goBtn').textContent='SCAN';
-  document.getElementById('prog').classList.remove('on');
-  document.getElementById('summ').classList.add('on');
-  document.getElementById('sumBig').textContent=d.found;
-  document.getElementById('sumDet').textContent=
-    `comptes trouvés sur ${d.total} sites pour "${inp.value.trim()}"`;
-  if(eventSource)eventSource.close();
-}
-
-function makeCard(r){
-  const c=document.createElement('div');
-  c.className=`card ${r.status}`;
-  const urlSafe=r.url.replace(/"/g,'&quot;').replace(/</g,'&lt;');
-  c.innerHTML=`
-    <div class="nm"><span class="dot"></span>${esc(r.name)}</div>
-    <div class="ur">${esc(r.url)}</div>
-    <div class="badge">${esc(r.cat)}</div>
-    ${r.status==='found'?`<a class="lnk" href="${urlSafe}" target="_blank" rel="noopener">↗ OUVRIR LE PROFIL</a>`:''}`;
-  if(r.status==='found'){
-    c.onclick=()=>window.open(r.url,'_blank');
-  }
-  return c;
-}
-
-function addLog(r){
-  const l=document.getElementById('logView');
-  const cls=r.status==='found'?'found':r.status==='error'?'err':'';
-  const sym=r.status==='found'?'[+]':r.status==='error'?'[!]':'[-]';
-  const div=document.createElement('div');
-  div.className=`ln ${cls}`;
-  div.textContent=`${sym} ${r.name} — ${r.url}${r.error?' ('+r.error+')':''}`;
-  l.appendChild(div);
-  l.scrollTop=l.scrollHeight;
-}
-
+function finishScan(d){scanning=false;document.getElementById('goBtn').disabled=false;document.getElementById('goBtn').textContent='SCAN';document.getElementById('prog').classList.remove('on');document.getElementById('summ').classList.add('on');document.getElementById('sumBig').textContent=d.found;document.getElementById('sumDet').textContent='comptes trouvés sur '+d.total+' sites pour "'+inp.value.trim()+'"';if(eventSource)eventSource.close()}
+function makeCard(r){const c=document.createElement('div');c.className='card '+r.status;const u=r.url.replace(/"/g,'&quot;').replace(/</g,'&lt;');c.innerHTML='<div class="nm"><span class="dot"></span>'+esc(r.name)+'</div><div class="ur">'+esc(r.url)+'</div><div class="badge">'+esc(r.cat)+'</div>'+(r.status==='found'?'<a class="lnk" href="'+u+'" target="_blank" rel="noopener">↗ OUVRIR</a>':'');if(r.status==='found')c.onclick=()=>window.open(r.url,'_blank');return c}
+function addLog(r){const l=document.getElementById('logView');const cls=r.status==='found'?'found':r.status==='error'?'err':'';const sym=r.status==='found'?'[+]':r.status==='error'?'[!]':'[-]';const d=document.createElement('div');d.className='ln '+cls;d.textContent=sym+' '+r.name+' — '+r.url+(r.error?' ('+r.error+')':'');l.appendChild(d);l.scrollTop=l.scrollHeight}
 function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function updateCount(){const f=allResults.filter(r=>r.status==='found').length;document.getElementById('rCt').textContent=f+' TROUVÉS / '+allResults.length+' SCANNÉS'}
+function setView(v){currentView=v;document.querySelectorAll('.vtabs button').forEach((b,i)=>{b.classList.toggle('on',(v==='found'&&i===0)||(v==='all'&&i===1)||(v==='log'&&i===2))});document.getElementById('grid').style.display=v==='log'?'none':'grid';document.getElementById('logView').classList.toggle('on',v==='log');if(v!=='log'){const g=document.getElementById('grid');g.innerHTML='';(v==='found'?allResults.filter(r=>r.status==='found'):allResults).forEach(r=>g.appendChild(makeCard(r)))}}
+function exportResults(){const f=allResults.filter(r=>r.status==='found');if(!f.length)return;let csv='Site,URL,Category\n';f.forEach(r=>{csv+='"'+r.name+'","'+r.url+'","'+r.cat+'"\n'});const b=new Blob([csv],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='thisyou_'+inp.value.trim()+'_'+Date.now()+'.csv';a.click()}
 
-function updateCount(){
-  const f=allResults.filter(r=>r.status==='found').length;
-  document.getElementById('rCt').textContent=`${f} TROUVÉS / ${allResults.length} SCANNÉS`;
-}
+// ═══ FACE SEARCH ═══
+const ENGINES=[
+  {name:'PimEyes',desc:'IA faciale — 2B+ visages indexés',type:'limited',label:'10 GRATUIT/IP',url:'https://pimeyes.com/en'},
+  {name:'FaceCheck.ID',desc:'Recherche faciale OSINT',type:'limited',label:'ESSAI GRATUIT',url:'https://facecheck.id/'},
+  {name:'Search4faces',desc:'Profils VK & Odnoklassniki',type:'free',label:'GRATUIT',url:'https://search4faces.com/'},
+  {name:'Google Images',desc:'Reverse image — le plus large index web',type:'free',label:'GRATUIT',url:'https://images.google.com/'},
+  {name:'Yandex Images',desc:'Excellent pour reconnaissance faciale',type:'free',label:'GRATUIT',url:'https://yandex.com/images/'},
+  {name:'TinEye',desc:'Trouve les copies exactes d\'images',type:'free',label:'GRATUIT',url:'https://tineye.com/'},
+  {name:'Lenso.ai',desc:'Recherche par similarité faciale',type:'limited',label:'ESSAI GRATUIT',url:'https://lenso.ai/'},
+  {name:'Bing Visual',desc:'Recherche visuelle Microsoft',type:'free',label:'GRATUIT',url:'https://www.bing.com/visualsearch'},
+];
+let uploadedImageData=null;
 
-// ═══ VIEW TABS ═══
-function setView(v){
-  currentView=v;
-  document.querySelectorAll('.tabs button').forEach((b,i)=>{
-    b.classList.toggle('on',
-      (v==='found'&&i===0)||(v==='all'&&i===1)||(v==='log'&&i===2));
-  });
-  document.getElementById('grid').style.display=v==='log'?'none':'grid';
-  document.getElementById('logView').classList.toggle('on',v==='log');
+function buildEngines(){const g=document.getElementById('engGrid');g.innerHTML='';ENGINES.forEach(e=>{const c=document.createElement('div');c.className='eng-card';c.innerHTML='<div class="eng-name">'+e.name+'</div><div class="eng-desc">'+e.desc+'</div><div class="eng-type '+e.type+'">'+e.label+'</div>';c.onclick=()=>window.open(e.url,'_blank');g.appendChild(c)})}
 
-  if(v!=='log'){
-    const g=document.getElementById('grid');g.innerHTML='';
-    const list=v==='found'?allResults.filter(r=>r.status==='found'):allResults;
-    list.forEach(r=>g.appendChild(makeCard(r)));
-  }
-}
+const dropZone=document.getElementById('dropZone'),fileInput=document.getElementById('fileInput');
+['dragenter','dragover'].forEach(ev=>{dropZone.addEventListener(ev,e=>{e.preventDefault();dropZone.classList.add('drag')})});
+['dragleave','drop'].forEach(ev=>{dropZone.addEventListener(ev,e=>{e.preventDefault();dropZone.classList.remove('drag')})});
+dropZone.addEventListener('drop',e=>{if(e.dataTransfer.files.length)handleFile(e.dataTransfer.files[0])});
+fileInput.addEventListener('change',e=>{if(e.target.files.length)handleFile(e.target.files[0])});
 
-// ═══ EXPORT ═══
-function exportResults(){
-  const found=allResults.filter(r=>r.status==='found');
-  if(!found.length)return;
-  let csv='Site,URL,Category,Status\n';
-  found.forEach(r=>{csv+=`"${r.name}","${r.url}","${r.cat}","${r.status}"\n`});
-  const blob=new Blob([csv],{type:'text/csv'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download=`whatsmyname_${inp.value.trim()}_${Date.now()}.csv`;
-  a.click();
-}
+async function handleFile(file){
+  if(!file.type.startsWith('image/'))return;uploadedImageData=file;
+  const img=new Image(),reader=new FileReader();
+  reader.onload=async e=>{img.onload=async()=>{
+    const canvas=document.getElementById('faceCanvas'),ctx=canvas.getContext('2d');
+    let w=img.width,h=img.height;const maxW=500,maxH=500;
+    if(w>maxW){h*=maxW/w;w=maxW}if(h>maxH){w*=maxH/h;h=maxH}
+    canvas.width=w;canvas.height=h;ctx.drawImage(img,0,0,w,h);
+    document.getElementById('facePreview').style.display='block';
+    document.getElementById('searchEngines').classList.add('on');
+    await detectFaces(canvas)};img.src=e.target.result};reader.readAsDataURL(file)}
+
+async function detectFaces(canvas){
+  const info=document.getElementById('faceInfo');
+  info.innerHTML='<div class="attr">Chargement modèle IA...</div>';info.classList.add('on');
+  try{
+    if(typeof faceapi==='undefined'){info.innerHTML='<div class="attr" style="border-color:var(--amber);color:var(--amber)">Modèle en cours de chargement, réessayez dans quelques secondes...</div>';return}
+    if(!faceapi.nets.tinyFaceDetector.isLoaded){
+      const M='https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights/';
+      await faceapi.nets.tinyFaceDetector.loadFromUri(M);
+      await faceapi.nets.ageGenderNet.loadFromUri(M);
+      await faceapi.nets.faceExpressionNet.loadFromUri(M)}
+    const dets=await faceapi.detectAllFaces(canvas,new faceapi.TinyFaceDetectorOptions({inputSize:416,scoreThreshold:0.4})).withAgeAndGender().withFaceExpressions();
+    const ctx=canvas.getContext('2d');
+    if(!dets.length){info.innerHTML='<div class="attr" style="border-color:var(--amber);color:var(--amber)">AUCUN VISAGE DÉTECTÉ — essayez une photo plus nette</div>';return}
+    dets.forEach(d=>{const b=d.detection.box;ctx.strokeStyle='#00ff41';ctx.lineWidth=2;ctx.strokeRect(b.x,b.y,b.width,b.height);
+      ctx.lineWidth=3;const s=8;[[b.x,b.y,s,0,0,s],[b.x+b.width,b.y,-s,0,0,s],[b.x,b.y+b.height,s,0,0,-s],[b.x+b.width,b.y+b.height,-s,0,0,-s]].forEach(([x,y,a,c,e,f])=>{ctx.beginPath();ctx.moveTo(x+a,y+c);ctx.lineTo(x,y);ctx.lineTo(x+e,y+f);ctx.stroke()})});
+    const exprMap={neutral:'Neutre',happy:'Heureux',sad:'Triste',angry:'En colère',fearful:'Peur',disgusted:'Dégoûté',surprised:'Surpris'};
+    let html='<div class="attr" style="border-color:var(--mx);color:var(--mx)">'+dets.length+' VISAGE'+(dets.length>1?'S':'')+' DÉTECTÉ'+(dets.length>1?'S':'')+'</div>';
+    dets.forEach(d=>{const age=Math.round(d.age),gen=d.gender==='male'?'Homme':'Femme',gc=Math.round(d.genderProbability*100),te=Object.entries(d.expressions).sort((a,b)=>b[1]-a[1])[0];
+      html+='<div class="attr">Âge: <span>~'+age+'</span></div><div class="attr">Genre: <span>'+gen+' ('+gc+'%)</span></div><div class="attr">Expression: <span>'+(exprMap[te[0]]||te[0])+'</span></div>'});
+    info.innerHTML=html;
+  }catch(e){info.innerHTML='<div class="attr" style="border-color:var(--amber);color:var(--amber)">Erreur IA: '+e.message+'</div>'}}
+
+buildEngines();
 </script>
 </body>
 </html>
