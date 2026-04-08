@@ -14,11 +14,9 @@ html,body{height:100%;overflow-x:hidden;background:var(--bg);color:var(--mx);fon
 ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:#000}::-webkit-scrollbar-thumb{background:var(--mx3)}
 #rain{position:fixed;inset:0;z-index:0;opacity:.1;pointer-events:none}
 body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,255,65,.02) 2px,rgba(0,255,65,.02) 4px);pointer-events:none;z-index:9998}
-#glowPulse{position:fixed;inset:0;pointer-events:none;z-index:9997;background:radial-gradient(ellipse at 50% 0%,rgba(0,255,65,.04),transparent 70%);animation:glowAnim 6s ease-in-out infinite alternate}
-@keyframes glowAnim{0%{opacity:.5}100%{opacity:1}}
-@keyframes flicker{0%,93%{opacity:1}94%{opacity:.6}96%{opacity:.7}100%{opacity:1}}
+@keyframes glitchTitle{0%,100%{text-shadow:0 0 20px var(--mx),0 0 60px var(--mx2)}93%{text-shadow:-3px 0 var(--red),3px 0 var(--cyan)}94%{text-shadow:0 0 20px var(--mx)}97%{text-shadow:2px 0 var(--cyan),-2px 0 var(--red)}98%{text-shadow:0 0 20px var(--mx)}}
 @keyframes slideIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-@keyframes glitchTitle{0%,100%{text-shadow:0 0 20px var(--mx),0 0 60px var(--mx2)}92%{text-shadow:0 0 20px var(--mx),0 0 60px var(--mx2)}93%{text-shadow:-3px 0 var(--red),3px 0 var(--cyan),0 0 60px var(--mx2)}94%{text-shadow:0 0 20px var(--mx),0 0 60px var(--mx2)}97%{text-shadow:2px 0 var(--cyan),-2px 0 var(--red)}98%{text-shadow:0 0 20px var(--mx),0 0 60px var(--mx2)}}
+@keyframes pulse{0%,100%{opacity:.4}50%{opacity:1}}
 .z{position:relative;z-index:10}
 .hdr{text-align:center;padding:35px 20px 18px;border-bottom:1px solid var(--mx3)}
 .hdr h1{font-family:'Orbitron',sans-serif;font-size:clamp(2rem,6vw,4.5rem);font-weight:900;letter-spacing:.2em;animation:glitchTitle 5s infinite}
@@ -28,161 +26,214 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .nav{display:flex;justify-content:center;gap:0;border-bottom:1px solid var(--mx3)}
 .nav button{flex:0 1 220px;padding:14px 20px;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--mx2);font-family:'Orbitron',sans-serif;font-size:.7rem;letter-spacing:.2em;cursor:pointer;transition:all .2s;text-transform:uppercase}
 .nav button:hover{color:var(--mx);background:rgba(0,255,65,.03)}
-.nav button.on{color:var(--mx);border-bottom-color:var(--mx);text-shadow:0 0 10px var(--mxdim)}
+.nav button.on{color:var(--mx);border-bottom-color:var(--mx)}
 .panel{display:none;max-width:1200px;margin:0 auto;padding:20px}.panel.on{display:block;animation:slideIn .3s}
 .stats{display:flex;justify-content:center;gap:25px;padding:10px 15px;background:linear-gradient(90deg,transparent,rgba(0,255,65,.04),transparent);border-bottom:1px solid var(--mx3);flex-wrap:wrap}
-.st{text-align:center}.st .v{font-family:'Orbitron',sans-serif;font-size:1.2rem;text-shadow:0 0 10px var(--mx)}.st .l{font-size:.5rem;color:var(--mx2);letter-spacing:.3em;text-transform:uppercase}.st .v.gold{color:var(--gold);text-shadow:0 0 10px rgba(255,215,64,.5)}.st .v.red{color:var(--red);text-shadow:0 0 10px rgba(255,23,68,.5)}
+.st{text-align:center}.st .v{font-family:'Orbitron',sans-serif;font-size:1.2rem;text-shadow:0 0 10px var(--mx)}.st .l{font-size:.5rem;color:var(--mx2);letter-spacing:.3em;text-transform:uppercase}.st .v.gold{color:var(--gold)}.st .v.red{color:var(--red)}
 .srch{max-width:750px;margin:25px auto;padding:0 20px}
-.sbox{position:relative}.sbox input{width:100%;padding:15px 55px 15px 48px;background:#000;border:1px solid var(--mx3);color:var(--mx);font-family:'Share Tech Mono',monospace;font-size:1rem;letter-spacing:.08em;outline:none;transition:all .3s}.sbox input:focus{border-color:var(--mx);box-shadow:0 0 25px var(--mxdim),inset 0 0 25px rgba(0,255,65,.03)}.sbox input::placeholder{color:var(--mx3)}.sbox .pr{position:absolute;left:15px;top:50%;transform:translateY(-50%);color:var(--mx);opacity:.5;font-size:1.1rem}.sbox .go{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:var(--mx3);border:1px solid var(--mx3);color:var(--mx);padding:8px 16px;font-family:'Share Tech Mono',monospace;font-size:.7rem;letter-spacing:.15em;cursor:pointer;text-transform:uppercase;transition:all .2s}.sbox .go:hover{background:var(--mx);color:#000;box-shadow:0 0 15px var(--mxdim)}.sbox .go:disabled{opacity:.3;cursor:default}
+.sbox{position:relative}.sbox input{width:100%;padding:15px 55px 15px 48px;background:#000;border:1px solid var(--mx3);color:var(--mx);font-family:'Share Tech Mono',monospace;font-size:1rem;letter-spacing:.08em;outline:none;transition:all .3s}.sbox input:focus{border-color:var(--mx);box-shadow:0 0 25px var(--mxdim)}.sbox input::placeholder{color:var(--mx3)}.sbox .pr{position:absolute;left:15px;top:50%;transform:translateY(-50%);color:var(--mx);opacity:.5}.sbox .go{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:var(--mx3);border:1px solid var(--mx3);color:var(--mx);padding:8px 16px;font-family:'Share Tech Mono',monospace;font-size:.7rem;letter-spacing:.15em;cursor:pointer;text-transform:uppercase;transition:all .2s}.sbox .go:hover{background:var(--mx);color:#000}.sbox .go:disabled{opacity:.3;cursor:default}
 .flt{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;margin-top:14px}.flt button{background:transparent;border:1px solid var(--mx3);color:var(--mx2);padding:3px 10px;font-family:'Share Tech Mono',monospace;font-size:.58rem;cursor:pointer;text-transform:uppercase;letter-spacing:.12em;transition:all .15s}.flt button:hover,.flt button.on{background:var(--mx);color:#000;border-color:var(--mx)}
-.prog{max-width:750px;margin:0 auto;padding:15px 20px;display:none}.prog.on{display:block}.prog .bar{height:3px;background:var(--mx3);overflow:hidden;margin:8px 0}.prog .bar .fill{height:100%;background:var(--mx);box-shadow:0 0 12px var(--mx);width:0%;transition:width .15s}.prog .info{display:flex;justify-content:space-between;font-size:.6rem;color:var(--mx2);letter-spacing:.1em}.prog .site-name{color:var(--mx);font-size:.65rem;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.summ{text-align:center;padding:20px;display:none}.summ.on{display:block;animation:slideIn .4s}.summ .big{font-family:'Orbitron',sans-serif;font-size:2.5rem;text-shadow:0 0 30px var(--mx)}.summ .det{font-size:.65rem;color:var(--mx2);margin-top:6px;letter-spacing:.15em}
-.rh{display:none;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--mx3);margin-bottom:12px}.rh.on{display:flex}.rh .ct{font-family:'Orbitron',sans-serif;color:var(--gold);font-size:.8rem}.rh .export{background:transparent;border:1px solid var(--gold);color:var(--gold);padding:4px 12px;font-family:'Share Tech Mono',monospace;font-size:.55rem;cursor:pointer;letter-spacing:.1em;transition:all .2s}.rh .export:hover{background:var(--gold);color:#000}
+.prog{max-width:750px;margin:0 auto;padding:15px 20px;display:none}.prog.on{display:block}.prog .bar{height:3px;background:var(--mx3);overflow:hidden;margin:8px 0}.prog .bar .fill{height:100%;background:var(--mx);box-shadow:0 0 12px var(--mx);width:0%;transition:width .15s}.prog .info{display:flex;justify-content:space-between;font-size:.6rem;color:var(--mx2)}.prog .site-name{color:var(--mx);font-size:.65rem;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.summ{text-align:center;padding:20px;display:none}.summ.on{display:block;animation:slideIn .4s}.summ .big{font-family:'Orbitron',sans-serif;font-size:2.5rem;text-shadow:0 0 30px var(--mx)}.summ .det{font-size:.65rem;color:var(--mx2);margin-top:6px}
+.rh{display:none;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--mx3);margin-bottom:12px}.rh.on{display:flex}.rh .ct{font-family:'Orbitron',sans-serif;color:var(--gold);font-size:.8rem}.rh .export{background:transparent;border:1px solid var(--gold);color:var(--gold);padding:4px 12px;font-family:'Share Tech Mono',monospace;font-size:.55rem;cursor:pointer;transition:all .2s}.rh .export:hover{background:var(--gold);color:#000}
 .vtabs{display:flex;gap:0;margin-bottom:12px}.vtabs button{flex:1;max-width:180px;padding:8px;background:transparent;border:1px solid var(--mx3);color:var(--mx2);font-family:'Share Tech Mono',monospace;font-size:.6rem;cursor:pointer;letter-spacing:.15em;text-transform:uppercase;transition:all .15s}.vtabs button.on{background:var(--mx);color:#000;border-color:var(--mx)}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:8px}
 .card{background:linear-gradient(135deg,#070d07,#0a130a);border:1px solid var(--mx3);padding:12px 14px;position:relative;overflow:hidden;transition:all .25s;animation:slideIn .3s both}.card::before{content:'';position:absolute;top:0;left:0;width:100%;height:1px;background:linear-gradient(90deg,transparent,var(--mx),transparent);opacity:0;transition:opacity .3s}.card:hover{border-color:var(--mx);transform:translateY(-1px);box-shadow:0 4px 25px rgba(0,255,65,.08)}.card:hover::before{opacity:1}.card .nm{font-family:'Orbitron',sans-serif;font-size:.78rem;font-weight:700;display:flex;align-items:center;gap:8px}.card .nm .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}.card.found .nm .dot{background:var(--mx);box-shadow:0 0 8px var(--mx)}.card.not-found .nm .dot{background:#333}.card.error .nm .dot{background:var(--amber)}.card .ur{font-size:.55rem;color:var(--mx2);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.5}.card .badge{position:absolute;top:9px;right:10px;font-size:.45rem;padding:2px 7px;border:1px solid var(--mx3);color:var(--mx3);letter-spacing:.12em;text-transform:uppercase}.card.found .badge{border-color:var(--mx2);color:var(--mx2)}.card .lnk{display:block;margin-top:8px;font-size:.58rem;color:var(--mx);text-decoration:none;opacity:0;transition:opacity .2s}.card.found:hover .lnk{opacity:1}.card.found{cursor:pointer}
 .log{display:none;max-height:500px;overflow-y:auto;background:#000;border:1px solid var(--mx3);padding:10px;font-size:.55rem;line-height:1.6}.log.on{display:block}.log .ln{opacity:.6}.log .ln.found{color:var(--mx);opacity:1}.log .ln.err{color:var(--amber)}
-.face-zone{max-width:800px;margin:0 auto}
-.drop-zone{border:2px dashed var(--mx3);padding:50px 20px;text-align:center;cursor:pointer;transition:all .3s;position:relative;background:rgba(0,255,65,.02)}.drop-zone:hover,.drop-zone.drag{border-color:var(--mx);background:rgba(0,255,65,.05);box-shadow:0 0 30px var(--mxdim)}.drop-zone .ico{font-size:2.5rem;margin-bottom:10px;opacity:.4}.drop-zone .msg{color:var(--mx2);font-size:.7rem;letter-spacing:.15em}.drop-zone .msg2{color:var(--mx3);font-size:.55rem;margin-top:8px}.drop-zone input{position:absolute;inset:0;opacity:0;cursor:pointer}
-.face-preview{display:none;text-align:center;margin:20px 0}.face-preview canvas{max-width:100%;max-height:400px;border:1px solid var(--mx3)}
-.face-info{text-align:center;margin:15px 0;font-size:.65rem;color:var(--mx2);letter-spacing:.1em;display:none}.face-info.on{display:block;animation:slideIn .3s}.face-info .attr{display:inline-block;margin:4px 8px;padding:4px 12px;border:1px solid var(--mx3)}.face-info .attr span{color:var(--mx)}
-.search-engines{display:none;margin:25px 0}.search-engines.on{display:block;animation:slideIn .4s}.search-engines h3{font-family:'Orbitron',sans-serif;font-size:.75rem;text-align:center;margin-bottom:15px;letter-spacing:.2em;color:var(--gold)}
-.engines-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
-.eng-card{background:linear-gradient(135deg,#070d07,#0d150d);border:1px solid var(--mx3);padding:16px;text-align:center;cursor:pointer;transition:all .25s}.eng-card:hover{border-color:var(--mx);transform:translateY(-2px);box-shadow:0 4px 25px rgba(0,255,65,.1)}.eng-card .eng-name{font-family:'Orbitron',sans-serif;font-size:.8rem;margin-bottom:4px}.eng-card .eng-desc{font-size:.5rem;color:var(--mx2);letter-spacing:.1em}.eng-card .eng-type{display:inline-block;margin-top:8px;padding:2px 8px;font-size:.45rem;border:1px solid var(--mx3);color:var(--mx3);letter-spacing:.1em}.eng-card .eng-type.free{border-color:var(--mx);color:var(--mx)}.eng-card .eng-type.limited{border-color:var(--gold);color:var(--gold)}.eng-card .eng-type.paid{border-color:var(--red);color:var(--red)}
-.osint-tip{text-align:center;margin-top:30px;padding:20px;border:1px solid var(--mx3)}
-.osint-tip .tip-title{font-family:'Orbitron',sans-serif;font-size:.7rem;color:var(--gold);margin-bottom:10px;letter-spacing:.15em}
-.osint-tip .tip-body{font-size:.6rem;color:var(--mx2);line-height:1.8;letter-spacing:.05em}
+.drop-zone{border:2px dashed var(--mx3);padding:50px 20px;text-align:center;cursor:pointer;transition:all .3s;position:relative;background:rgba(0,255,65,.02);max-width:800px;margin:0 auto}.drop-zone:hover,.drop-zone.drag{border-color:var(--mx);background:rgba(0,255,65,.05);box-shadow:0 0 30px var(--mxdim)}.drop-zone .ico{font-size:2.5rem;margin-bottom:10px;opacity:.4}.drop-zone .msg{color:var(--mx2);font-size:.7rem;letter-spacing:.15em}.drop-zone .msg2{color:var(--mx3);font-size:.55rem;margin-top:8px}.drop-zone input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.face-preview{display:none;text-align:center;margin:20px auto;max-width:800px}.face-preview canvas{max-width:100%;max-height:400px;border:1px solid var(--mx3)}
+.face-info{text-align:center;margin:15px auto;font-size:.65rem;color:var(--mx2);display:none;max-width:800px}.face-info.on{display:block;animation:slideIn .3s}.face-info .attr{display:inline-block;margin:4px 8px;padding:4px 12px;border:1px solid var(--mx3)}.face-info .attr span{color:var(--mx)}
+/* DB SELECTOR */
+.db-sel{max-width:800px;margin:20px auto;text-align:center}.db-sel h3{font-family:'Orbitron',sans-serif;font-size:.7rem;color:var(--gold);margin-bottom:12px;letter-spacing:.2em}
+.db-btns{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+.db-btns button{background:transparent;border:1px solid var(--mx3);color:var(--mx2);padding:8px 14px;font-family:'Share Tech Mono',monospace;font-size:.55rem;cursor:pointer;transition:all .2s;text-align:left;min-width:160px}
+.db-btns button:hover{border-color:var(--mx);color:var(--mx)}.db-btns button.on{background:var(--mx);color:#000;border-color:var(--mx)}
+.db-btns button .dbcount{display:block;font-size:.45rem;color:var(--mx3);margin-top:2px}
+.db-btns button.on .dbcount{color:rgba(0,0,0,.5)}
+.scan-face-btn{display:none;max-width:800px;margin:15px auto;text-align:center}
+.scan-face-btn button{background:var(--mx);color:#000;border:none;padding:14px 40px;font-family:'Orbitron',sans-serif;font-size:.85rem;letter-spacing:.2em;cursor:pointer;transition:all .2s;text-transform:uppercase}.scan-face-btn button:hover{box-shadow:0 0 30px var(--mxdim);transform:translateY(-1px)}.scan-face-btn button:disabled{opacity:.4;cursor:default;transform:none;box-shadow:none}
+/* FACE RESULTS */
+.face-results{display:none;max-width:800px;margin:20px auto}.face-results.on{display:block;animation:slideIn .3s}
+.face-results h3{font-family:'Orbitron',sans-serif;font-size:.75rem;text-align:center;margin-bottom:15px;color:var(--mx);letter-spacing:.2em}
+.face-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
+.fcard{background:linear-gradient(135deg,#070d07,#0d150d);border:1px solid var(--mx3);padding:10px;text-align:center;transition:all .25s;cursor:pointer}
+.fcard:hover{border-color:var(--mx);box-shadow:0 4px 20px rgba(0,255,65,.1)}
+.fcard img{width:80px;height:80px;border-radius:50%;border:2px solid var(--mx3);object-fit:cover;margin-bottom:8px}
+.fcard:hover img{border-color:var(--mx)}
+.fcard .fname{font-size:.7rem;color:var(--mx);margin-bottom:2px}
+.fcard .fmeta{font-size:.5rem;color:var(--mx2)}
+.fcard .fscore{display:inline-block;margin-top:6px;padding:2px 8px;font-size:.5rem;border:1px solid var(--mx);color:var(--mx);letter-spacing:.1em}
+.face-status{text-align:center;padding:20px;font-size:.65rem;color:var(--mx2);letter-spacing:.1em;display:none;max-width:800px;margin:0 auto}.face-status.on{display:block}
+.face-status .loading{animation:pulse 1.5s infinite}
+/* EXTERNAL ENGINES */
+.ext-engines{max-width:800px;margin:20px auto;display:none}.ext-engines.on{display:block}
+.ext-engines h3{font-family:'Orbitron',sans-serif;font-size:.65rem;text-align:center;color:var(--mx2);margin-bottom:10px;letter-spacing:.15em}
+.ext-grid{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+.ext-grid a{display:inline-block;padding:6px 14px;border:1px solid var(--mx3);color:var(--mx2);font-size:.55rem;text-decoration:none;transition:all .2s;letter-spacing:.1em}
+.ext-grid a:hover{border-color:var(--mx);color:var(--mx)}
 .empty{text-align:center;padding:60px 20px}.empty .ico{font-size:2.5rem;margin-bottom:12px;opacity:.2}.empty .msg{color:var(--mx2);font-size:.7rem;letter-spacing:.15em}
 .ftr{text-align:center;padding:25px 20px;border-top:1px solid var(--mx3);margin-top:30px}.ftr p{font-size:.5rem;color:var(--mx3);letter-spacing:.15em}
-@media(max-width:600px){.hdr h1{letter-spacing:.08em;font-size:2.2rem}.nav button{font-size:.55rem;padding:10px 8px;letter-spacing:.1em}.stats{gap:12px}.grid{grid-template-columns:1fr}.engines-grid{grid-template-columns:1fr}}
+@media(max-width:600px){.hdr h1{letter-spacing:.08em;font-size:2.2rem}.nav button{font-size:.55rem;padding:10px 8px}.grid,.face-grid{grid-template-columns:1fr}.db-btns{flex-direction:column;align-items:center}}
 </style>
 </head>
 <body>
 <canvas id="rain"></canvas>
-<div id="glowPulse"></div>
-<div class="hdr z">
-  <h1>THIS YOU<span class="q">?</span></h1>
-  <div class="sub">MATRIX : RELOADED // OSINT PLATFORM</div>
-  <div class="tag">» Username Enumeration • Face Search • Reverse Image • 731 Sites «</div>
-</div>
-<div class="nav z">
-  <button class="on" onclick="switchPanel('username')">USERNAME SCAN</button>
-  <button onclick="switchPanel('face')">FACE SEARCH</button>
-</div>
+<div class="hdr z"><h1>THIS YOU<span class="q">?</span></h1><div class="sub">MATRIX : RELOADED // OSINT PLATFORM</div><div class="tag">» Username Scan • Face Recognition • 1.8B+ Faces • 731 Sites «</div></div>
+<div class="nav z"><button class="on" onclick="switchPanel('username')">USERNAME SCAN</button><button onclick="switchPanel('face')">FACE SEARCH</button></div>
 
-<!-- USERNAME PANEL -->
+<!-- ═══ USERNAME ═══ -->
 <div class="panel on z" id="panel-username">
-  <div class="stats">
-    <div class="st"><div class="v" id="sTot">—</div><div class="l">Sites</div></div>
-    <div class="st"><div class="v" id="sCat">—</div><div class="l">Catégories</div></div>
-    <div class="st"><div class="v" id="sScn">0</div><div class="l">Scannés</div></div>
-    <div class="st"><div class="v gold" id="sFnd">0</div><div class="l">Trouvés</div></div>
-    <div class="st"><div class="v red" id="sErr">0</div><div class="l">Erreurs</div></div>
-  </div>
-  <div class="srch"><div class="sbox"><span class="pr">›_</span><input type="text" id="inp" placeholder="username cible..." autocomplete="off" spellcheck="false"><button class="go" id="goBtn" onclick="startScan()">SCAN</button></div><div class="flt" id="flt"></div></div>
-  <div class="prog" id="prog"><div class="info"><span id="pTxt">Scanning...</span><span id="pPct">0%</span></div><div class="bar"><div class="fill" id="pFill"></div></div><div class="site-name" id="pSite"></div></div>
-  <div class="summ" id="summ"><div class="big" id="sumBig">0</div><div class="det" id="sumDet"></div></div>
-  <div class="results"><div class="rh" id="rh"><div class="ct" id="rCt"></div><div style="display:flex;gap:8px;align-items:center"><button class="export" onclick="exportResults()">EXPORT CSV</button></div></div><div class="vtabs" id="vtabsEl"><button class="on" onclick="setView('found')">TROUVÉS</button><button onclick="setView('all')">TOUS</button><button onclick="setView('log')">LOG</button></div><div class="grid" id="grid"></div><div class="log" id="logView"></div></div>
-  <div class="empty" id="empt"><div class="ico">⬡</div><div class="msg">Entrez un username pour lancer le scan OSINT en temps réel</div></div>
+<div class="stats"><div class="st"><div class="v" id="sTot">—</div><div class="l">Sites</div></div><div class="st"><div class="v" id="sCat">—</div><div class="l">Catégories</div></div><div class="st"><div class="v" id="sScn">0</div><div class="l">Scannés</div></div><div class="st"><div class="v gold" id="sFnd">0</div><div class="l">Trouvés</div></div><div class="st"><div class="v red" id="sErr">0</div><div class="l">Erreurs</div></div></div>
+<div class="srch"><div class="sbox"><span class="pr">›_</span><input type="text" id="inp" placeholder="username cible..." autocomplete="off" spellcheck="false"><button class="go" id="goBtn" onclick="startScan()">SCAN</button></div><div class="flt" id="flt"></div></div>
+<div class="prog" id="prog"><div class="info"><span id="pTxt">Scanning...</span><span id="pPct">0%</span></div><div class="bar"><div class="fill" id="pFill"></div></div><div class="site-name" id="pSite"></div></div>
+<div class="summ" id="summ"><div class="big" id="sumBig">0</div><div class="det" id="sumDet"></div></div>
+<div class="results"><div class="rh" id="rh"><div class="ct" id="rCt"></div><button class="export" onclick="exportResults()">EXPORT CSV</button></div><div class="vtabs"><button class="on" onclick="setView('found')">TROUVÉS</button><button onclick="setView('all')">TOUS</button><button onclick="setView('log')">LOG</button></div><div class="grid" id="grid"></div><div class="log" id="logView"></div></div>
+<div class="empty" id="empt"><div class="ico">⬡</div><div class="msg">Entrez un username pour lancer le scan OSINT</div></div>
 </div>
 
-<!-- FACE PANEL -->
+<!-- ═══ FACE ═══ -->
 <div class="panel z" id="panel-face">
-  <div class="face-zone">
-    <div class="drop-zone" id="dropZone"><div class="ico">◉</div><div class="msg">DÉPOSER UNE IMAGE OU CLIQUER POUR UPLOADER</div><div class="msg2">JPG, PNG — Détection de visage automatique par IA</div><input type="file" id="fileInput" accept="image/*"></div>
-    <div class="face-preview" id="facePreview"><canvas id="faceCanvas"></canvas></div>
-    <div class="face-info" id="faceInfo"></div>
-    <div class="search-engines" id="searchEngines"><h3>LANCER LA RECHERCHE FACIALE</h3><div class="engines-grid" id="engGrid"></div></div>
-    <div class="osint-tip"><div class="tip-title">ASTUCE OSINT</div><div class="tip-body">1. Uploadez la photo du visage cible<br>2. L'IA détecte le visage et analyse âge / genre / expression<br>3. Cliquez sur chaque moteur pour lancer la recherche inversée<br>4. Croisez les résultats PimEyes + Yandex + Google<br>5. Combinez avec le scan username pour une investigation complète</div></div>
-  </div>
+<div class="drop-zone" id="dropZone"><div class="ico">◉</div><div class="msg">DÉPOSER UNE PHOTO OU CLIQUER</div><div class="msg2">JPG / PNG — Détection IA automatique</div><input type="file" id="fileInput" accept="image/*"></div>
+<div class="face-preview" id="facePreview"><canvas id="faceCanvas"></canvas></div>
+<div class="face-info" id="faceInfo"></div>
+
+<div class="db-sel" id="dbSel" style="display:none">
+<h3>BASE DE DONNÉES SEARCH4FACES</h3>
+<div class="db-btns">
+<button class="on" data-src="vkok_avatar" onclick="selDb(this)">VK + OK Avatars<span class="dbcount">280M visages</span></button>
+<button data-src="vk_wall" onclick="selDb(this)">VK Photos mur<span class="dbcount">1.1B visages</span></button>
+<button data-src="vkokn_avatar" onclick="selDb(this)">VK + OK Récent<span class="dbcount">312M visages</span></button>
+<button data-src="tt_avatar" onclick="selDb(this)">TikTok Avatars<span class="dbcount">125M visages</span></button>
+<button data-src="ch_avatar" onclick="selDb(this)">Clubhouse<span class="dbcount">13M visages</span></button>
+</div>
+</div>
+
+<div class="scan-face-btn" id="scanFaceBtn"><button onclick="launchFaceSearch()" id="faceGoBtn">RECHERCHER CE VISAGE</button></div>
+<div class="face-status" id="faceStatus"></div>
+<div class="face-results" id="faceResults"><h3 id="faceResTitle">RÉSULTATS</h3><div class="face-grid" id="faceGrid"></div></div>
+
+<div class="ext-engines" id="extEngines">
+<h3>RECHERCHE COMPLÉMENTAIRE</h3>
+<div class="ext-grid">
+<a href="https://pimeyes.com/en" target="_blank">PimEyes</a>
+<a href="https://facecheck.id/" target="_blank">FaceCheck.ID</a>
+<a href="https://search4faces.com/en/" target="_blank">Search4faces (direct)</a>
+<a href="https://images.google.com/" target="_blank">Google Images</a>
+<a href="https://yandex.com/images/" target="_blank">Yandex Images</a>
+<a href="https://tineye.com/" target="_blank">TinEye</a>
+<a href="https://lenso.ai/" target="_blank">Lenso.ai</a>
+<a href="https://www.bing.com/visualsearch" target="_blank">Bing Visual</a>
+</div>
+</div>
 </div>
 
 <div class="ftr z"><p>THIS YOU // OSINT PLATFORM // MATRIX:RELOADED // USERNAME DATA © MICAH HOFFMAN (CC BY-SA 4.0)</p></div>
 
 <script>
+// ═══ MATRIX RAIN ═══
 const cv=document.getElementById('rain'),cx=cv.getContext('2d');
 function rsz(){cv.width=innerWidth;cv.height=innerHeight}rsz();addEventListener('resize',rsz);
 const ch='アイウエオカキクケコTHISYOU01';const fs=14,cols=()=>Math.floor(cv.width/fs);
 let dr=Array(cols()).fill(1);addEventListener('resize',()=>{dr=Array(cols()).fill(1)});
 setInterval(()=>{cx.fillStyle='rgba(0,0,0,0.05)';cx.fillRect(0,0,cv.width,cv.height);cx.fillStyle='#00ff41';cx.font=fs+'px monospace';for(let i=0;i<dr.length;i++){cx.fillText(ch[Math.random()*ch.length|0],i*fs,dr[i]*fs);if(dr[i]*fs>cv.height&&Math.random()>.975)dr[i]=0;dr[i]++;}},35);
 
-function switchPanel(n){document.querySelectorAll('.nav button').forEach((b,i)=>{b.classList.toggle('on',(n==='username'&&i===0)||(n==='face'&&i===1))});document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));document.getElementById('panel-'+n).classList.add('on')}
+// ═══ NAV ═══
+function switchPanel(n){document.querySelectorAll('.nav button').forEach((b,i)=>b.classList.toggle('on',(n==='username'&&i===0)||(n==='face'&&i===1)));document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));document.getElementById('panel-'+n).classList.add('on')}
 
+// ═══ USERNAME SCAN ═══
 let activeCat='all',allResults=[],currentView='found',scanning=false,eventSource=null;
 fetch('/api/stats').then(r=>r.json()).then(d=>{document.getElementById('sTot').textContent=d.totalSites;document.getElementById('sCat').textContent=d.categories.length;buildFilters(d.categories)});
 function buildFilters(cats){const el=document.getElementById('flt');el.innerHTML='';const ab=mk('button','ALL');ab.classList.add('on');ab.onclick=()=>{activeCat='all';updFlt()};el.appendChild(ab);cats.forEach(c=>{const b=mk('button',c);b.onclick=()=>{activeCat=c;updFlt()};el.appendChild(b)})}
 function mk(t,x){const e=document.createElement(t);e.textContent=x;return e}
-function updFlt(){document.querySelectorAll('.flt button').forEach(b=>{b.classList.toggle('on',(activeCat==='all'&&b.textContent==='ALL')||b.textContent===activeCat)})}
-const inp=document.getElementById('inp');inp.addEventListener('keydown',e=>{if(e.key==='Enter')startScan()});
-
-function startScan(){const u=inp.value.trim();if(!u||u.length<2||scanning)return;scanning=true;allResults=[];document.getElementById('goBtn').disabled=true;document.getElementById('goBtn').textContent='...';document.getElementById('empt').style.display='none';document.getElementById('prog').classList.add('on');document.getElementById('summ').classList.remove('on');document.getElementById('rh').classList.add('on');document.getElementById('grid').innerHTML='';document.getElementById('logView').innerHTML='';document.getElementById('sScn').textContent='0';document.getElementById('sFnd').textContent='0';document.getElementById('sErr').textContent='0';document.getElementById('pFill').style.width='0%';setView('found');if(eventSource)eventSource.close();eventSource=new EventSource('/api/scan/'+encodeURIComponent(u)+'?cat='+activeCat);let total=0,done=0,found=0,errors=0;
-eventSource.onmessage=function(ev){const d=JSON.parse(ev.data);if(d.type==='init'){total=d.total;document.getElementById('pTxt').textContent='Scanning 0/'+total;return}if(d.type==='result'){allResults.push(d);done=d.progress;found=d.found;if(d.status==='error')errors++;const pct=Math.round(done/total*100);document.getElementById('pFill').style.width=pct+'%';document.getElementById('pPct').textContent=pct+'%';document.getElementById('pTxt').textContent='Scanning '+done+'/'+total;document.getElementById('pSite').textContent=d.name;document.getElementById('sScn').textContent=done;document.getElementById('sFnd').textContent=found;document.getElementById('sErr').textContent=errors;updateCount();addLog(d);if(currentView==='found'&&d.status==='found')document.getElementById('grid').appendChild(makeCard(d));else if(currentView==='all')document.getElementById('grid').appendChild(makeCard(d));return}if(d.type==='done'){finishScan(d);return}};
-eventSource.onerror=function(){eventSource.close();finishScan({total:done,found})}}
-
-function finishScan(d){scanning=false;document.getElementById('goBtn').disabled=false;document.getElementById('goBtn').textContent='SCAN';document.getElementById('prog').classList.remove('on');document.getElementById('summ').classList.add('on');document.getElementById('sumBig').textContent=d.found;document.getElementById('sumDet').textContent='comptes trouvés sur '+d.total+' sites pour "'+inp.value.trim()+'"';if(eventSource)eventSource.close()}
-function makeCard(r){const c=document.createElement('div');c.className='card '+r.status;const u=r.url.replace(/"/g,'&quot;').replace(/</g,'&lt;');c.innerHTML='<div class="nm"><span class="dot"></span>'+esc(r.name)+'</div><div class="ur">'+esc(r.url)+'</div><div class="badge">'+esc(r.cat)+'</div>'+(r.status==='found'?'<a class="lnk" href="'+u+'" target="_blank" rel="noopener">↗ OUVRIR</a>':'');if(r.status==='found')c.onclick=()=>window.open(r.url,'_blank');return c}
-function addLog(r){const l=document.getElementById('logView');const cls=r.status==='found'?'found':r.status==='error'?'err':'';const sym=r.status==='found'?'[+]':r.status==='error'?'[!]':'[-]';const d=document.createElement('div');d.className='ln '+cls;d.textContent=sym+' '+r.name+' — '+r.url+(r.error?' ('+r.error+')':'');l.appendChild(d);l.scrollTop=l.scrollHeight}
-function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
-function updateCount(){const f=allResults.filter(r=>r.status==='found').length;document.getElementById('rCt').textContent=f+' TROUVÉS / '+allResults.length+' SCANNÉS'}
-function setView(v){currentView=v;document.querySelectorAll('.vtabs button').forEach((b,i)=>{b.classList.toggle('on',(v==='found'&&i===0)||(v==='all'&&i===1)||(v==='log'&&i===2))});document.getElementById('grid').style.display=v==='log'?'none':'grid';document.getElementById('logView').classList.toggle('on',v==='log');if(v!=='log'){const g=document.getElementById('grid');g.innerHTML='';(v==='found'?allResults.filter(r=>r.status==='found'):allResults).forEach(r=>g.appendChild(makeCard(r)))}}
-function exportResults(){const f=allResults.filter(r=>r.status==='found');if(!f.length)return;let csv='Site,URL,Category\n';f.forEach(r=>{csv+='"'+r.name+'","'+r.url+'","'+r.cat+'"\n'});const b=new Blob([csv],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='thisyou_'+inp.value.trim()+'_'+Date.now()+'.csv';a.click()}
+function updFlt(){document.querySelectorAll('.flt button').forEach(b=>b.classList.toggle('on',(activeCat==='all'&&b.textContent==='ALL')||b.textContent===activeCat))}
+document.getElementById('inp').addEventListener('keydown',e=>{if(e.key==='Enter')startScan()});
+function startScan(){const u=document.getElementById('inp').value.trim();if(!u||u.length<2||scanning)return;scanning=true;allResults=[];document.getElementById('goBtn').disabled=true;document.getElementById('goBtn').textContent='...';document.getElementById('empt').style.display='none';document.getElementById('prog').classList.add('on');document.getElementById('summ').classList.remove('on');document.getElementById('rh').classList.add('on');document.getElementById('grid').innerHTML='';document.getElementById('logView').innerHTML='';['sScn','sFnd','sErr'].forEach(x=>document.getElementById(x).textContent='0');document.getElementById('pFill').style.width='0%';setView('found');if(eventSource)eventSource.close();eventSource=new EventSource('/api/scan/'+encodeURIComponent(u)+'?cat='+activeCat);let total=0,done=0,found=0,errors=0;
+eventSource.onmessage=function(ev){const d=JSON.parse(ev.data);if(d.type==='init'){total=d.total;return}if(d.type==='result'){allResults.push(d);done=d.progress;found=d.found;if(d.status==='error')errors++;document.getElementById('pFill').style.width=Math.round(done/total*100)+'%';document.getElementById('pPct').textContent=Math.round(done/total*100)+'%';document.getElementById('pTxt').textContent='Scanning '+done+'/'+total;document.getElementById('pSite').textContent=d.name;document.getElementById('sScn').textContent=done;document.getElementById('sFnd').textContent=found;document.getElementById('sErr').textContent=errors;document.getElementById('rCt').textContent=found+' TROUVÉS / '+allResults.length+' SCANNÉS';addLog(d);if(currentView==='found'&&d.status==='found')document.getElementById('grid').appendChild(makeCard(d));else if(currentView==='all')document.getElementById('grid').appendChild(makeCard(d));return}if(d.type==='done'){scanning=false;document.getElementById('goBtn').disabled=false;document.getElementById('goBtn').textContent='SCAN';document.getElementById('prog').classList.remove('on');document.getElementById('summ').classList.add('on');document.getElementById('sumBig').textContent=d.found;document.getElementById('sumDet').textContent='comptes trouvés sur '+d.total+' sites';eventSource.close()}};eventSource.onerror=function(){eventSource.close();scanning=false;document.getElementById('goBtn').disabled=false;document.getElementById('goBtn').textContent='SCAN';document.getElementById('prog').classList.remove('on')}}
+function makeCard(r){const c=document.createElement('div');c.className='card '+r.status;c.innerHTML='<div class="nm"><span class="dot"></span>'+esc(r.name)+'</div><div class="ur">'+esc(r.url)+'</div><div class="badge">'+esc(r.cat)+'</div>'+(r.status==='found'?'<a class="lnk" href="'+esc(r.url)+'" target="_blank">↗ OUVRIR</a>':'');if(r.status==='found')c.onclick=()=>window.open(r.url,'_blank');return c}
+function addLog(r){const l=document.getElementById('logView');const d=document.createElement('div');d.className='ln '+(r.status==='found'?'found':r.status==='error'?'err':'');d.textContent=(r.status==='found'?'[+]':r.status==='error'?'[!]':'[-]')+' '+r.name+' — '+r.url;l.appendChild(d);l.scrollTop=l.scrollHeight}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function setView(v){currentView=v;document.querySelectorAll('.vtabs button').forEach((b,i)=>b.classList.toggle('on',(v==='found'&&i===0)||(v==='all'&&i===1)||(v==='log'&&i===2)));document.getElementById('grid').style.display=v==='log'?'none':'grid';document.getElementById('logView').classList.toggle('on',v==='log');if(v!=='log'){const g=document.getElementById('grid');g.innerHTML='';(v==='found'?allResults.filter(r=>r.status==='found'):allResults).forEach(r=>g.appendChild(makeCard(r)))}}
+function exportResults(){const f=allResults.filter(r=>r.status==='found');if(!f.length)return;let csv='Site,URL,Category\n';f.forEach(r=>csv+='"'+r.name+'","'+r.url+'","'+r.cat+'"\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='thisyou_'+Date.now()+'.csv';a.click()}
 
 // ═══ FACE SEARCH ═══
-const ENGINES=[
-  {name:'PimEyes',desc:'IA faciale — 2B+ visages indexés',type:'limited',label:'10 GRATUIT/IP',url:'https://pimeyes.com/en'},
-  {name:'FaceCheck.ID',desc:'Recherche faciale OSINT',type:'limited',label:'ESSAI GRATUIT',url:'https://facecheck.id/'},
-  {name:'Search4faces',desc:'Profils VK & Odnoklassniki',type:'free',label:'GRATUIT',url:'https://search4faces.com/'},
-  {name:'Google Images',desc:'Reverse image — le plus large index web',type:'free',label:'GRATUIT',url:'https://images.google.com/'},
-  {name:'Yandex Images',desc:'Excellent pour reconnaissance faciale',type:'free',label:'GRATUIT',url:'https://yandex.com/images/'},
-  {name:'TinEye',desc:'Trouve les copies exactes d\'images',type:'free',label:'GRATUIT',url:'https://tineye.com/'},
-  {name:'Lenso.ai',desc:'Recherche par similarité faciale',type:'limited',label:'ESSAI GRATUIT',url:'https://lenso.ai/'},
-  {name:'Bing Visual',desc:'Recherche visuelle Microsoft',type:'free',label:'GRATUIT',url:'https://www.bing.com/visualsearch'},
-];
-let uploadedImageData=null;
-
-function buildEngines(){const g=document.getElementById('engGrid');g.innerHTML='';ENGINES.forEach(e=>{const c=document.createElement('div');c.className='eng-card';c.innerHTML='<div class="eng-name">'+e.name+'</div><div class="eng-desc">'+e.desc+'</div><div class="eng-type '+e.type+'">'+e.label+'</div>';c.onclick=()=>window.open(e.url,'_blank');g.appendChild(c)})}
+let imageB64=null,selectedDb='vkok_avatar';
+function selDb(btn){document.querySelectorAll('.db-btns button').forEach(b=>b.classList.remove('on'));btn.classList.add('on');selectedDb=btn.dataset.src}
 
 const dropZone=document.getElementById('dropZone'),fileInput=document.getElementById('fileInput');
-['dragenter','dragover'].forEach(ev=>{dropZone.addEventListener(ev,e=>{e.preventDefault();dropZone.classList.add('drag')})});
-['dragleave','drop'].forEach(ev=>{dropZone.addEventListener(ev,e=>{e.preventDefault();dropZone.classList.remove('drag')})});
+['dragenter','dragover'].forEach(ev=>dropZone.addEventListener(ev,e=>{e.preventDefault();dropZone.classList.add('drag')}));
+['dragleave','drop'].forEach(ev=>dropZone.addEventListener(ev,e=>{e.preventDefault();dropZone.classList.remove('drag')}));
 dropZone.addEventListener('drop',e=>{if(e.dataTransfer.files.length)handleFile(e.dataTransfer.files[0])});
 fileInput.addEventListener('change',e=>{if(e.target.files.length)handleFile(e.target.files[0])});
 
 async function handleFile(file){
-  if(!file.type.startsWith('image/'))return;uploadedImageData=file;
-  const img=new Image(),reader=new FileReader();
-  reader.onload=async e=>{img.onload=async()=>{
-    const canvas=document.getElementById('faceCanvas'),ctx=canvas.getContext('2d');
-    let w=img.width,h=img.height;const maxW=500,maxH=500;
-    if(w>maxW){h*=maxW/w;w=maxW}if(h>maxH){w*=maxH/h;h=maxH}
-    canvas.width=w;canvas.height=h;ctx.drawImage(img,0,0,w,h);
-    document.getElementById('facePreview').style.display='block';
-    document.getElementById('searchEngines').classList.add('on');
-    await detectFaces(canvas)};img.src=e.target.result};reader.readAsDataURL(file)}
+  if(!file.type.startsWith('image/'))return;
+  const reader=new FileReader();
+  reader.onload=async e=>{
+    const dataUrl=e.target.result;
+    imageB64=dataUrl.split(',')[1]; // pure base64
+    const img=new Image();img.onload=async()=>{
+      const canvas=document.getElementById('faceCanvas'),ctx=canvas.getContext('2d');
+      let w=img.width,h=img.height;if(w>500){h*=500/w;w=500}if(h>500){w*=500/h;h=500}
+      canvas.width=w;canvas.height=h;ctx.drawImage(img,0,0,w,h);
+      document.getElementById('facePreview').style.display='block';
+      document.getElementById('dbSel').style.display='block';
+      document.getElementById('scanFaceBtn').style.display='block';
+      document.getElementById('extEngines').classList.add('on');
+      document.getElementById('faceResults').classList.remove('on');
+      document.getElementById('faceStatus').classList.remove('on');
+      await detectLocal(canvas)};
+    img.src=dataUrl};
+  reader.readAsDataURL(file)}
 
-async function detectFaces(canvas){
-  const info=document.getElementById('faceInfo');
-  info.innerHTML='<div class="attr">Chargement modèle IA...</div>';info.classList.add('on');
+async function detectLocal(canvas){
+  const info=document.getElementById('faceInfo');info.innerHTML='<div class="attr">Chargement modèle IA...</div>';info.classList.add('on');
   try{
-    if(typeof faceapi==='undefined'){info.innerHTML='<div class="attr" style="border-color:var(--amber);color:var(--amber)">Modèle en cours de chargement, réessayez dans quelques secondes...</div>';return}
-    if(!faceapi.nets.tinyFaceDetector.isLoaded){
-      const M='https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights/';
-      await faceapi.nets.tinyFaceDetector.loadFromUri(M);
-      await faceapi.nets.ageGenderNet.loadFromUri(M);
-      await faceapi.nets.faceExpressionNet.loadFromUri(M)}
+    if(typeof faceapi==='undefined'){info.innerHTML='<div class="attr" style="border-color:var(--amber);color:var(--amber)">Modèle en chargement, patientez...</div>';return}
+    if(!faceapi.nets.tinyFaceDetector.isLoaded){const M='https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights/';await faceapi.nets.tinyFaceDetector.loadFromUri(M);await faceapi.nets.ageGenderNet.loadFromUri(M);await faceapi.nets.faceExpressionNet.loadFromUri(M)}
     const dets=await faceapi.detectAllFaces(canvas,new faceapi.TinyFaceDetectorOptions({inputSize:416,scoreThreshold:0.4})).withAgeAndGender().withFaceExpressions();
     const ctx=canvas.getContext('2d');
-    if(!dets.length){info.innerHTML='<div class="attr" style="border-color:var(--amber);color:var(--amber)">AUCUN VISAGE DÉTECTÉ — essayez une photo plus nette</div>';return}
-    dets.forEach(d=>{const b=d.detection.box;ctx.strokeStyle='#00ff41';ctx.lineWidth=2;ctx.strokeRect(b.x,b.y,b.width,b.height);
-      ctx.lineWidth=3;const s=8;[[b.x,b.y,s,0,0,s],[b.x+b.width,b.y,-s,0,0,s],[b.x,b.y+b.height,s,0,0,-s],[b.x+b.width,b.y+b.height,-s,0,0,-s]].forEach(([x,y,a,c,e,f])=>{ctx.beginPath();ctx.moveTo(x+a,y+c);ctx.lineTo(x,y);ctx.lineTo(x+e,y+f);ctx.stroke()})});
-    const exprMap={neutral:'Neutre',happy:'Heureux',sad:'Triste',angry:'En colère',fearful:'Peur',disgusted:'Dégoûté',surprised:'Surpris'};
+    if(!dets.length){info.innerHTML='<div class="attr" style="border-color:var(--amber);color:var(--amber)">AUCUN VISAGE DÉTECTÉ</div>';return}
+    dets.forEach(d=>{const b=d.detection.box;ctx.strokeStyle='#00ff41';ctx.lineWidth=2;ctx.strokeRect(b.x,b.y,b.width,b.height);ctx.lineWidth=3;const s=8;[[b.x,b.y,s,0,0,s],[b.x+b.width,b.y,-s,0,0,s],[b.x,b.y+b.height,s,0,0,-s],[b.x+b.width,b.y+b.height,-s,0,0,-s]].forEach(([x,y,a,c,e,f])=>{ctx.beginPath();ctx.moveTo(x+a,y+c);ctx.lineTo(x,y);ctx.lineTo(x+e,y+f);ctx.stroke()})});
+    const em={neutral:'Neutre',happy:'Heureux',sad:'Triste',angry:'En colère',fearful:'Peur',disgusted:'Dégoûté',surprised:'Surpris'};
     let html='<div class="attr" style="border-color:var(--mx);color:var(--mx)">'+dets.length+' VISAGE'+(dets.length>1?'S':'')+' DÉTECTÉ'+(dets.length>1?'S':'')+'</div>';
-    dets.forEach(d=>{const age=Math.round(d.age),gen=d.gender==='male'?'Homme':'Femme',gc=Math.round(d.genderProbability*100),te=Object.entries(d.expressions).sort((a,b)=>b[1]-a[1])[0];
-      html+='<div class="attr">Âge: <span>~'+age+'</span></div><div class="attr">Genre: <span>'+gen+' ('+gc+'%)</span></div><div class="attr">Expression: <span>'+(exprMap[te[0]]||te[0])+'</span></div>'});
+    dets.forEach(d=>{html+='<div class="attr">~'+Math.round(d.age)+' ans</div><div class="attr">'+(d.gender==='male'?'Homme':'Femme')+' '+Math.round(d.genderProbability*100)+'%</div><div class="attr">'+(em[Object.entries(d.expressions).sort((a,b)=>b[1]-a[1])[0][0]]||'?')+'</div>'});
     info.innerHTML=html;
-  }catch(e){info.innerHTML='<div class="attr" style="border-color:var(--amber);color:var(--amber)">Erreur IA: '+e.message+'</div>'}}
+  }catch(e){info.innerHTML='<div class="attr" style="color:var(--amber)">'+e.message+'</div>'}}
 
-buildEngines();
+async function launchFaceSearch(){
+  if(!imageB64)return;
+  const btn=document.getElementById('faceGoBtn');btn.disabled=true;btn.textContent='SCANNING...';
+  const st=document.getElementById('faceStatus');st.innerHTML='<div class="loading">Envoi vers Search4faces ('+selectedDb+')...</div>';st.classList.add('on');
+  document.getElementById('faceResults').classList.remove('on');
+  try{
+    const res=await fetch('/api/face-search',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:imageB64,source:selectedDb,results:'50'})});
+    const data=await res.json();
+    if(data.success&&data.profiles&&data.profiles.length>0){
+      st.innerHTML='<div style="color:var(--mx)">'+data.profiles.length+' PROFILS TROUVÉS</div>';
+      showFaceResults(data.profiles);
+    }else{
+      st.innerHTML='<div style="color:var(--amber)">'+(data.message||'Aucun résultat')+'</div><div style="margin-top:10px;font-size:.55rem;color:var(--mx2)">Essayez une autre base de données ou utilisez les moteurs externes ci-dessous</div>';
+    }
+  }catch(e){
+    st.innerHTML='<div style="color:var(--amber)">Erreur: '+e.message+'</div>';
+  }
+  btn.disabled=false;btn.textContent='RECHERCHER CE VISAGE';
+}
+
+function showFaceResults(profiles){
+  const el=document.getElementById('faceResults');el.classList.add('on');
+  document.getElementById('faceResTitle').textContent=profiles.length+' PROFILS TROUVÉS';
+  const g=document.getElementById('faceGrid');g.innerHTML='';
+  profiles.forEach(p=>{
+    const c=document.createElement('div');c.className='fcard';
+    c.innerHTML='<img src="'+(p.face||'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7')+'" onerror="this.style.display=\'none\'">'
+      +'<div class="fname">'+esc(p.first_name||'')+' '+esc(p.last_name||'')+'</div>'
+      +'<div class="fmeta">'+(p.city||'')+(p.age?' • ~'+p.age+' ans':'')+'</div>'
+      +'<div class="fscore">'+p.score+'% match</div>';
+    c.onclick=()=>window.open(p.profile,'_blank');
+    g.appendChild(c);
+  });
+}
 </script>
 </body>
 </html>
