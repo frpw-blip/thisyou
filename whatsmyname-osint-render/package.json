@@ -1,14 +1,13 @@
 {
-  "name": "whatsmyname-matrix-osint",
-  "version": "1.0.0",
-  "description": "WhatsMyName OSINT - Matrix:Reloaded Edition",
+  "name": "thisyou-osint",
+  "version": "2.0.0",
+  "description": "THIS YOU? — OSINT Platform",
   "main": "server.js",
-  "scripts": {
-    "start": "node server.js"
-  },
+  "scripts": { "start": "node server.js" },
   "dependencies": {
     "express": "^4.21.0",
-    "libphonenumber-js": "^1.11.0",
-    "libphonenumber-js": "^1.12.41"
+    "express-rate-limit": "^7.5.0",
+    "helmet": "^8.0.0",
+    "libphonenumber-js": "^1.11.0"
   }
 }
