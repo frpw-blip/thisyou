@@ -9,44 +9,32 @@
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{height:100%;overflow:hidden;background:#000;font-family:'Share Tech Mono',monospace}
 canvas{position:fixed;inset:0;z-index:1}
-
-/* GHOST PASSWORD INDICATOR */
 #ghost{position:fixed;bottom:40px;left:50%;transform:translateX(-50%);z-index:10;
   display:flex;gap:6px;align-items:center;opacity:0;transition:opacity .5s}
 #ghost.show{opacity:1}
 #ghost .dot{width:10px;height:10px;border:1px solid rgba(0,255,65,.3);border-radius:50%;transition:all .2s}
-#ghost .dot.filled{background:#00ff41;border-color:#00ff41;box-shadow:0 0 8px #00ff41}
-
-/* WRONG PASSWORD SHAKE */
+#ghost .dot.filled{background:#00ff41;border-color:#00ff41;box-shadow:0 0 6px #00ff41}
 @keyframes shake{0%,100%{transform:translateX(-50%)}20%{transform:translateX(calc(-50% - 15px))}40%{transform:translateX(calc(-50% + 15px))}60%{transform:translateX(calc(-50% - 10px))}80%{transform:translateX(calc(-50% + 10px))}}
 #ghost.wrong{animation:shake .4s}
-#ghost.wrong .dot{border-color:#ff1744;background:#ff1744;box-shadow:0 0 8px #ff1744}
-
-/* HINT */
+#ghost.wrong .dot{border-color:#ff1744;background:#ff1744;box-shadow:0 0 6px #ff1744}
 #hint{position:fixed;bottom:15px;left:50%;transform:translateX(-50%);z-index:10;
   font-size:.5rem;color:rgba(0,255,65,.15);letter-spacing:.3em;text-transform:uppercase;
   transition:opacity .5s;opacity:0}
 #hint.show{opacity:1}
-
-/* ═══ RUSH EFFECT ═══ */
 #rush{position:fixed;inset:0;z-index:100;background:#000;display:none;overflow:hidden}
 #rush canvas{width:100%;height:100%}
-
-/* ═══ TITLE REVEAL ═══ */
 #titleReveal{position:fixed;inset:0;z-index:200;display:none;
   background:#000;justify-content:center;align-items:center;flex-direction:column}
 #titleReveal.show{display:flex}
 #titleReveal h1{font-family:'Orbitron',sans-serif;font-size:clamp(2.5rem,8vw,6rem);
   font-weight:900;color:#00ff41;letter-spacing:.3em;opacity:0;
-  text-shadow:0 0 30px #00ff41,0 0 80px #008f11;
+  text-shadow:0 0 30px #00ff41,0 0 60px #008f11;
   transform:scale(3);transition:all 1s cubic-bezier(.23,1,.32,1)}
 #titleReveal h1 .q{color:#ff1744;text-shadow:0 0 30px #ff1744}
 #titleReveal h1.in{opacity:1;transform:scale(1)}
 #titleReveal .sub{font-size:.6rem;color:#008f11;letter-spacing:.5em;opacity:0;
   margin-top:10px;transition:opacity .8s .5s}
 #titleReveal .sub.in{opacity:1}
-
-/* IFRAME APP */
 #appFrame{position:fixed;inset:0;z-index:300;border:none;display:none;width:100%;height:100%;background:#000}
 #appFrame.show{display:block}
 </style>
@@ -56,71 +44,56 @@ canvas{position:fixed;inset:0;z-index:1}
 <canvas id="rain"></canvas>
 <div id="ghost"></div>
 <div id="hint">tapez le mot de passe</div>
-
 <div id="rush"><canvas id="rushCv"></canvas></div>
 <div id="titleReveal"><h1 id="titleH1">THIS YOU<span class="q">?</span></h1><div class="sub" id="titleSub">ACCÈS AUTORISÉ</div></div>
 <iframe id="appFrame" src="about:blank"></iframe>
 
 <script>
 // ═══ CONFIG ═══
-// Hash SHA-256 du mot de passe — change ici
-// Default password: "thisyou" → hash below
-// To change: open browser console, run: crypto.subtle.digest('SHA-256',new TextEncoder().encode('TON_NOUVEAU_MDP')).then(h=>console.log([...new Uint8Array(h)].map(b=>b.toString(16).padStart(2,'0')).join('')))
-const PASS_HASH = '5515ea2b44a8208f9b2b9dc8d88b777c5adee7bf497b5d45f1d51cf2c0949abd'; // "thisyou"
+const PASS_HASH = '5515ea2b44a8208f9b2b9dc8d88b777c5adee7bf497b5d45f1d51cf2c0949abd';
 
-// ═══ MATRIX RAIN ═══
+// ═══ MATRIX RAIN — version allégée ═══
 const cv = document.getElementById('rain');
 const cx = cv.getContext('2d');
-function rsz() { cv.width = innerWidth; cv.height = innerHeight; }
-rsz(); addEventListener('resize', rsz);
 
-const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789ABCDEFTHISYOU?';
+function rsz() { cv.width = innerWidth; cv.height = innerHeight; initDrops(); }
+rsz();
+addEventListener('resize', rsz);
+
+// Caractères réduits = beaucoup moins lourd
+const chars = '0123456789ABCDEFTHISYOU?アイウエオカキクケコ';
 const fontSize = 16;
-let columns, drops;
+let drops = [];
 
 function initDrops() {
-  columns = Math.floor(cv.width / fontSize);
-  drops = [];
-  for (let i = 0; i < columns; i++) {
-    drops[i] = Math.random() * cv.height / fontSize | 0;
-  }
+  const columns = Math.floor(cv.width / fontSize);
+  drops = Array.from({length: columns}, () => Math.random() * cv.height / fontSize | 0);
 }
-initDrops();
-addEventListener('resize', initDrops);
 
-let rainSpeed = 33;
-let rainOpacity = 0.05;
+let lastRain = 0;
+const RAIN_INTERVAL = 50; // 20fps au lieu de 30fps — bien suffisant visuellement
+let rainRunning = true;
 
-function drawRain() {
-  cx.fillStyle = `rgba(0,0,0,${rainOpacity})`;
+function drawRain(ts) {
+  if (!rainRunning) return;
+  requestAnimationFrame(drawRain);
+  if (ts - lastRain < RAIN_INTERVAL) return;
+  lastRain = ts;
+
+  cx.fillStyle = 'rgba(0,0,0,0.07)';
   cx.fillRect(0, 0, cv.width, cv.height);
   cx.font = fontSize + 'px monospace';
+  cx.fillStyle = '#00ff41';
 
   for (let i = 0; i < drops.length; i++) {
     const char = chars[Math.random() * chars.length | 0];
-    const x = i * fontSize;
-    const y = drops[i] * fontSize;
-
-    // Head of column is brighter
-    cx.fillStyle = '#00ff41';
-    cx.fillText(char, x, y);
-
-    // Previous char dimmer
-    if (drops[i] > 1) {
-      cx.fillStyle = 'rgba(0,255,65,0.3)';
-      cx.fillText(chars[Math.random() * chars.length | 0], x, y - fontSize);
-    }
-
-    if (y > cv.height && Math.random() > 0.975) {
-      drops[i] = 0;
-    }
+    cx.fillText(char, i * fontSize, drops[i] * fontSize);
+    if (drops[i] * fontSize > cv.height && Math.random() > 0.975) drops[i] = 0;
     drops[i]++;
   }
 }
+requestAnimationFrame(drawRain);
 
-let rainInterval = setInterval(drawRain, rainSpeed);
-
-// Show hint after 2s
 setTimeout(() => document.getElementById('hint').classList.add('show'), 2000);
 
 // ═══ GHOST PASSWORD ═══
@@ -136,21 +109,17 @@ function updateGhost() {
     dot.className = 'dot filled';
     ghost.appendChild(dot);
   }
-  if (len > 0) ghost.classList.add('show');
-  else ghost.classList.remove('show');
+  ghost.classList.toggle('show', len > 0);
 }
 
-// ═══ SHA-256 ═══
 async function sha256(str) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
-  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2,'0')).join('');
 }
 
-// ═══ KEYBOARD INPUT ═══
 let locked = false;
 document.addEventListener('keydown', async (e) => {
   if (locked) return;
-
   if (e.key === 'Enter') {
     const hash = await sha256(typed);
     if (hash === PASS_HASH) {
@@ -158,27 +127,18 @@ document.addEventListener('keydown', async (e) => {
       document.getElementById('hint').classList.remove('show');
       launchRush();
     } else {
-      // Wrong password
       ghost.classList.add('wrong');
       setTimeout(() => { ghost.classList.remove('wrong'); typed = ''; updateGhost(); }, 600);
     }
     return;
   }
-
-  if (e.key === 'Backspace') {
-    typed = typed.slice(0, -1);
-    updateGhost();
-    return;
-  }
-
-  if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) {
-    typed += e.key;
-    updateGhost();
-  }
+  if (e.key === 'Backspace') { typed = typed.slice(0,-1); updateGhost(); return; }
+  if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) { typed += e.key; updateGhost(); }
 });
 
-// ═══ RUSH EFFECT — Matrix code rushing toward you ═══
+// ═══ RUSH — version allégée (60 streams au lieu de 150) ═══
 function launchRush() {
+  rainRunning = false;
   const rush = document.getElementById('rush');
   rush.style.display = 'block';
   const rcv = document.getElementById('rushCv');
@@ -186,92 +146,60 @@ function launchRush() {
   rcv.width = innerWidth;
   rcv.height = innerHeight;
 
-  // Stop rain
-  clearInterval(rainInterval);
-
-  // 3D columns rushing forward
   const centerX = rcv.width / 2;
   const centerY = rcv.height / 2;
-  const numStreams = 150;
-  const streams = [];
+  const numStreams = 60; // réduit de 150 à 60
 
-  for (let i = 0; i < numStreams; i++) {
+  const streams = Array.from({length: numStreams}, () => {
     const angle = Math.random() * Math.PI * 2;
     const dist = Math.random() * 0.3 + 0.05;
-    streams.push({
+    return {
       x: Math.cos(angle) * dist,
       y: Math.sin(angle) * dist,
       z: Math.random() * 3 + 1,
       speed: Math.random() * 0.08 + 0.04,
-      chars: Array.from({ length: 8 }, () => chars[Math.random() * chars.length | 0]),
-      charIdx: 0,
-    });
-  }
+      char: chars[Math.random() * chars.length | 0],
+    };
+  });
 
   let frame = 0;
-  const maxFrames = 90; // ~1.5s at 60fps
+  const maxFrames = 80;
 
   function drawRush() {
     frame++;
-    rcx.fillStyle = 'rgba(0,0,0,0.15)';
+    rcx.fillStyle = 'rgba(0,0,0,0.18)';
     rcx.fillRect(0, 0, rcv.width, rcv.height);
 
     const progress = frame / maxFrames;
-    const accel = 1 + progress * 8; // accelerating
+    const accel = 1 + progress * 8;
 
     for (const s of streams) {
       s.z -= s.speed * accel;
-
-      if (s.z <= 0.01) {
-        s.z = 3;
-        s.x = (Math.random() - 0.5) * 0.6;
-        s.y = (Math.random() - 0.5) * 0.6;
-      }
+      if (s.z <= 0.01) { s.z = 3; s.x = (Math.random()-.5)*.6; s.y = (Math.random()-.5)*.6; }
 
       const sx = centerX + (s.x / s.z) * rcv.width;
       const sy = centerY + (s.y / s.z) * rcv.height;
-      const size = Math.max(8, (1 / s.z) * 30);
-      const alpha = Math.min(1, (1 / s.z) * 0.8);
+      const size = Math.max(8, (1/s.z)*28);
+      const alpha = Math.min(1, (1/s.z)*0.8);
 
-      s.charIdx = (s.charIdx + 1) % s.chars.length;
-
+      if (Math.random() > 0.85) s.char = chars[Math.random() * chars.length | 0];
       rcx.font = size + 'px monospace';
       rcx.fillStyle = `rgba(0,255,65,${alpha})`;
-      rcx.fillText(s.chars[s.charIdx], sx, sy);
-
-      // Trail
-      const trail = 3;
-      for (let t = 1; t <= trail; t++) {
-        const tz = s.z + t * 0.3;
-        const tsx = centerX + (s.x / tz) * rcv.width;
-        const tsy = centerY + (s.y / tz) * rcv.height;
-        const tsz = Math.max(6, (1 / tz) * 20);
-        rcx.font = tsz + 'px monospace';
-        rcx.fillStyle = `rgba(0,255,65,${alpha * 0.3 / t})`;
-        rcx.fillText(s.chars[(s.charIdx + t) % s.chars.length], tsx, tsy);
-      }
+      rcx.fillText(s.char, sx, sy);
     }
 
-    // White flash toward end
     if (progress > 0.85) {
-      const flashAlpha = (progress - 0.85) / 0.15;
-      rcx.fillStyle = `rgba(0,255,65,${flashAlpha * 0.3})`;
+      rcx.fillStyle = `rgba(0,255,65,${((progress-.85)/.15)*.3})`;
       rcx.fillRect(0, 0, rcv.width, rcv.height);
     }
 
-    if (frame < maxFrames) {
-      requestAnimationFrame(drawRush);
-    } else {
-      // Flash white then show title
+    if (frame < maxFrames) requestAnimationFrame(drawRush);
+    else {
       rcx.fillStyle = 'rgba(255,255,255,0.8)';
       rcx.fillRect(0, 0, rcv.width, rcv.height);
-      setTimeout(() => {
-        rush.style.display = 'none';
-        showTitle();
-      }, 150);
+      setTimeout(() => { rush.style.display='none'; showTitle(); }, 150);
     }
   }
-
   requestAnimationFrame(drawRush);
 }
 
@@ -279,16 +207,13 @@ function launchRush() {
 function showTitle() {
   const reveal = document.getElementById('titleReveal');
   reveal.classList.add('show');
-
   setTimeout(() => document.getElementById('titleH1').classList.add('in'), 100);
   setTimeout(() => document.getElementById('titleSub').classList.add('in'), 600);
-
   setTimeout(() => {
     reveal.style.transition = 'opacity .6s';
     reveal.style.opacity = '0';
     setTimeout(() => {
       reveal.style.display = 'none';
-      // Load app
       const frame = document.getElementById('appFrame');
       frame.src = '/app.html';
       frame.classList.add('show');
