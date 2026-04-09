@@ -9,68 +9,55 @@
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{height:100%;overflow:hidden;background:#000;font-family:'Share Tech Mono',monospace}
 canvas{position:fixed;inset:0;z-index:1}
-#ghost{position:fixed;bottom:40px;left:50%;transform:translateX(-50%);z-index:10;
-  display:flex;gap:6px;align-items:center;opacity:0;transition:opacity .5s}
+#ghost{position:fixed;bottom:40px;left:50%;transform:translateX(-50%);z-index:10;display:flex;gap:6px;align-items:center;opacity:0;transition:opacity .5s}
 #ghost.show{opacity:1}
 #ghost .dot{width:10px;height:10px;border:1px solid rgba(0,255,65,.3);border-radius:50%;transition:all .2s}
 #ghost .dot.filled{background:#00ff41;border-color:#00ff41;box-shadow:0 0 6px #00ff41}
 @keyframes shake{0%,100%{transform:translateX(-50%)}20%{transform:translateX(calc(-50% - 15px))}40%{transform:translateX(calc(-50% + 15px))}60%{transform:translateX(calc(-50% - 10px))}80%{transform:translateX(calc(-50% + 10px))}}
 #ghost.wrong{animation:shake .4s}
 #ghost.wrong .dot{border-color:#ff1744;background:#ff1744;box-shadow:0 0 6px #ff1744}
-#hint{position:fixed;bottom:15px;left:50%;transform:translateX(-50%);z-index:10;
-  font-size:.5rem;color:rgba(0,255,65,.15);letter-spacing:.3em;text-transform:uppercase;
-  transition:opacity .5s;opacity:0}
+#hint{position:fixed;bottom:15px;left:50%;transform:translateX(-50%);z-index:10;font-size:.5rem;color:rgba(0,255,65,.15);letter-spacing:.3em;text-transform:uppercase;transition:opacity .5s;opacity:0}
 #hint.show{opacity:1}
 #rush{position:fixed;inset:0;z-index:100;background:#000;display:none;overflow:hidden}
 #rush canvas{width:100%;height:100%}
-#titleReveal{position:fixed;inset:0;z-index:200;display:none;
-  background:#000;justify-content:center;align-items:center;flex-direction:column}
+#titleReveal{position:fixed;inset:0;z-index:200;display:none;background:#000;justify-content:center;align-items:center;flex-direction:column}
 #titleReveal.show{display:flex}
-#titleReveal h1{font-family:'Orbitron',sans-serif;font-size:clamp(2.5rem,8vw,6rem);
-  font-weight:900;color:#00ff41;letter-spacing:.3em;opacity:0;
-  text-shadow:0 0 30px #00ff41,0 0 60px #008f11;
-  transform:scale(3);transition:all 1s cubic-bezier(.23,1,.32,1)}
+#titleReveal h1{font-family:'Orbitron',sans-serif;font-size:clamp(2.5rem,8vw,6rem);font-weight:900;color:#00ff41;letter-spacing:.3em;opacity:0;text-shadow:0 0 30px #00ff41,0 0 60px #008f11;transform:scale(3);transition:all 1s cubic-bezier(.23,1,.32,1)}
 #titleReveal h1 .q{color:#ff1744;text-shadow:0 0 30px #ff1744}
 #titleReveal h1.in{opacity:1;transform:scale(1)}
-#titleReveal .sub{font-size:.6rem;color:#008f11;letter-spacing:.5em;opacity:0;
-  margin-top:10px;transition:opacity .8s .5s}
+#titleReveal .sub{font-size:.6rem;color:#008f11;letter-spacing:.5em;opacity:0;margin-top:10px;transition:opacity .8s .5s}
 #titleReveal .sub.in{opacity:1}
 #appFrame{position:fixed;inset:0;z-index:300;border:none;display:none;width:100%;height:100%;background:#000}
 #appFrame.show{display:block}
 </style>
 </head>
 <body>
-
 <canvas id="rain"></canvas>
 <div id="ghost"></div>
 <div id="hint">tapez le mot de passe</div>
 <div id="rush"><canvas id="rushCv"></canvas></div>
 <div id="titleReveal"><h1 id="titleH1">THIS YOU<span class="q">?</span></h1><div class="sub" id="titleSub">ACCÈS AUTORISÉ</div></div>
 <iframe id="appFrame" src="about:blank"></iframe>
-
 <script>
-// ═══ CONFIG ═══
 const PASS_HASH = '5515ea2b44a8208f9b2b9dc8d88b777c5adee7bf497b5d45f1d51cf2c0949abd';
 
-// ═══ MATRIX RAIN — version allégée ═══
 const cv = document.getElementById('rain');
 const cx = cv.getContext('2d');
-
 const chars = '0123456789ABCDEFTHISYOU?アイウエオカキクケコ';
 const fontSize = 16;
 let drops = [];
-
-function rsz() { cv.width = innerWidth; cv.height = innerHeight; initDrops(); }
-addEventListener('resize', rsz);
-window.addEventListener('load', () => { rsz(); requestAnimationFrame(drawRain); });
 
 function initDrops() {
   const columns = Math.floor(cv.width / fontSize);
   drops = Array.from({length: columns}, () => Math.random() * cv.height / fontSize | 0);
 }
 
+function rsz() { cv.width = innerWidth; cv.height = innerHeight; initDrops(); }
+rsz();
+addEventListener('resize', rsz);
+
 let lastRain = 0;
-const RAIN_INTERVAL = 50; // 20fps au lieu de 30fps — bien suffisant visuellement
+const RAIN_INTERVAL = 50;
 let rainRunning = true;
 
 function drawRain(ts) {
@@ -78,29 +65,26 @@ function drawRain(ts) {
   requestAnimationFrame(drawRain);
   if (ts - lastRain < RAIN_INTERVAL) return;
   lastRain = ts;
-
   cx.fillStyle = 'rgba(0,0,0,0.07)';
   cx.fillRect(0, 0, cv.width, cv.height);
   cx.font = fontSize + 'px monospace';
   cx.fillStyle = '#00ff41';
-
   for (let i = 0; i < drops.length; i++) {
-    const char = chars[Math.random() * chars.length | 0];
-    cx.fillText(char, i * fontSize, drops[i] * fontSize);
+    cx.fillText(chars[Math.random() * chars.length | 0], i * fontSize, drops[i] * fontSize);
     if (drops[i] * fontSize > cv.height && Math.random() > 0.975) drops[i] = 0;
     drops[i]++;
   }
 }
+requestAnimationFrame(drawRain);
+
 setTimeout(() => document.getElementById('hint').classList.add('show'), 2000);
 
-// ═══ GHOST PASSWORD ═══
 let typed = '';
 const ghost = document.getElementById('ghost');
-const maxDots = 20;
 
 function updateGhost() {
   ghost.innerHTML = '';
-  const len = Math.min(typed.length, maxDots);
+  const len = Math.min(typed.length, 20);
   for (let i = 0; i < len; i++) {
     const dot = document.createElement('div');
     dot.className = 'dot filled';
@@ -133,7 +117,6 @@ document.addEventListener('keydown', async (e) => {
   if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) { typed += e.key; updateGhost(); }
 });
 
-// ═══ RUSH — version allégée (60 streams au lieu de 150) ═══
 function launchRush() {
   rainRunning = false;
   const rush = document.getElementById('rush');
@@ -142,65 +125,40 @@ function launchRush() {
   const rcx = rcv.getContext('2d');
   rcv.width = innerWidth;
   rcv.height = innerHeight;
-
   const centerX = rcv.width / 2;
   const centerY = rcv.height / 2;
-  const numStreams = 60; // réduit de 150 à 60
-
-  const streams = Array.from({length: numStreams}, () => {
+  const streams = Array.from({length: 60}, () => {
     const angle = Math.random() * Math.PI * 2;
     const dist = Math.random() * 0.3 + 0.05;
-    return {
-      x: Math.cos(angle) * dist,
-      y: Math.sin(angle) * dist,
-      z: Math.random() * 3 + 1,
-      speed: Math.random() * 0.08 + 0.04,
-      char: chars[Math.random() * chars.length | 0],
-    };
+    return { x: Math.cos(angle)*dist, y: Math.sin(angle)*dist, z: Math.random()*3+1, speed: Math.random()*0.08+0.04, char: chars[Math.random()*chars.length|0] };
   });
-
   let frame = 0;
   const maxFrames = 80;
-
   function drawRush() {
     frame++;
     rcx.fillStyle = 'rgba(0,0,0,0.18)';
     rcx.fillRect(0, 0, rcv.width, rcv.height);
-
     const progress = frame / maxFrames;
     const accel = 1 + progress * 8;
-
     for (const s of streams) {
       s.z -= s.speed * accel;
       if (s.z <= 0.01) { s.z = 3; s.x = (Math.random()-.5)*.6; s.y = (Math.random()-.5)*.6; }
-
-      const sx = centerX + (s.x / s.z) * rcv.width;
-      const sy = centerY + (s.y / s.z) * rcv.height;
+      const sx = centerX + (s.x/s.z)*rcv.width;
+      const sy = centerY + (s.y/s.z)*rcv.height;
       const size = Math.max(8, (1/s.z)*28);
       const alpha = Math.min(1, (1/s.z)*0.8);
-
-      if (Math.random() > 0.85) s.char = chars[Math.random() * chars.length | 0];
+      if (Math.random() > 0.85) s.char = chars[Math.random()*chars.length|0];
       rcx.font = size + 'px monospace';
       rcx.fillStyle = `rgba(0,255,65,${alpha})`;
       rcx.fillText(s.char, sx, sy);
     }
-
-    if (progress > 0.85) {
-      rcx.fillStyle = `rgba(0,255,65,${((progress-.85)/.15)*.3})`;
-      rcx.fillRect(0, 0, rcv.width, rcv.height);
-    }
-
+    if (progress > 0.85) { rcx.fillStyle = `rgba(0,255,65,${((progress-.85)/.15)*.3})`; rcx.fillRect(0,0,rcv.width,rcv.height); }
     if (frame < maxFrames) requestAnimationFrame(drawRush);
-    else {
-      rcx.fillStyle = 'rgba(255,255,255,0.8)';
-      rcx.fillRect(0, 0, rcv.width, rcv.height);
-      setTimeout(() => { rush.style.display='none'; showTitle(); }, 150);
-    }
+    else { rcx.fillStyle='rgba(255,255,255,0.8)'; rcx.fillRect(0,0,rcv.width,rcv.height); setTimeout(()=>{rush.style.display='none';showTitle();},150); }
   }
   requestAnimationFrame(drawRush);
 }
 
-// ═══ TITLE REVEAL ═══
 function showTitle() {
   const reveal = document.getElementById('titleReveal');
   reveal.classList.add('show');
@@ -209,12 +167,7 @@ function showTitle() {
   setTimeout(() => {
     reveal.style.transition = 'opacity .6s';
     reveal.style.opacity = '0';
-    setTimeout(() => {
-      reveal.style.display = 'none';
-      const frame = document.getElementById('appFrame');
-      frame.src = '/app.html';
-      frame.classList.add('show');
-    }, 600);
+    setTimeout(() => { reveal.style.display='none'; const f=document.getElementById('appFrame'); f.src='/app.html'; f.classList.add('show'); }, 600);
   }, 2200);
 }
 </script>
