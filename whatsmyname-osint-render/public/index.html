@@ -56,14 +56,13 @@ const PASS_HASH = '5515ea2b44a8208f9b2b9dc8d88b777c5adee7bf497b5d45f1d51cf2c0949
 const cv = document.getElementById('rain');
 const cx = cv.getContext('2d');
 
-function rsz() { cv.width = innerWidth; cv.height = innerHeight; initDrops(); }
-rsz();
-addEventListener('resize', rsz);
-
-// Caractères réduits = beaucoup moins lourd
 const chars = '0123456789ABCDEFTHISYOU?アイウエオカキクケコ';
 const fontSize = 16;
 let drops = [];
+
+function rsz() { cv.width = innerWidth; cv.height = innerHeight; initDrops(); }
+addEventListener('resize', rsz);
+window.addEventListener('load', () => { rsz(); requestAnimationFrame(drawRain); });
 
 function initDrops() {
   const columns = Math.floor(cv.width / fontSize);
@@ -92,8 +91,6 @@ function drawRain(ts) {
     drops[i]++;
   }
 }
-requestAnimationFrame(drawRain);
-
 setTimeout(() => document.getElementById('hint').classList.add('show'), 2000);
 
 // ═══ GHOST PASSWORD ═══
