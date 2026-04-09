@@ -55,7 +55,7 @@ canvas{position:fixed;inset:0;z-index:1}
 
 <canvas id="rain"></canvas>
 <div id="ghost"></div>
-<div id="hint">tapez le mot de passe</div>
+<div id="hint"></div>
 
 <div id="rush"><canvas id="rushCv"></canvas></div>
 <div id="titleReveal"><h1 id="titleH1">THIS YOU<span class="q">?</span></h1><div class="sub" id="titleSub">ACCÈS AUTORISÉ</div></div>
@@ -64,9 +64,9 @@ canvas{position:fixed;inset:0;z-index:1}
 <script>
 // ═══ CONFIG ═══
 // Hash SHA-256 du mot de passe — change ici
-// Default password: "thisyou" → hash below
+// Default password: freeman → hash below
 // To change: open browser console, run: crypto.subtle.digest('SHA-256',new TextEncoder().encode('YOUR_PASSWORD')).then(h=>console.log([...new Uint8Array(h)].map(b=>b.toString(16).padStart(2,'0')).join('')))
-const PASS_HASH = '4b148a517a51ed2c36241bc846b6950dae0e94e5b3cf41d1de2fda045df53f7e'; // "thisyou"
+const PASS_HASH = '4b148a517a51ed2c36241bc846b6950dae0e94e5b3cf41d1de2fda045df53f7e'; // freeman
 
 // ═══ MATRIX RAIN ═══
 const cv = document.getElementById('rain');
