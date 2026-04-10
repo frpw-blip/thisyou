@@ -258,7 +258,7 @@ h+=rw('Fuites (HIBP)',e.breachCount>0?e.breachCount+' BREACH(ES)':'Aucune détec
 if(e.breachCount>0){h+='<div class="rs"><h4>FUITES DE DONNÉES</h4><div class="bl">';e.breaches.forEach(b=>{h+='<span>'+E(b.name)+(b.date?' ('+b.date+')':'')+'</span>'});h+='</div></div>'}
 if(e.searches.length){h+='<div class="rs"><h4>RÉSULTATS WEB ('+e.searches.length+')</h4>';e.searches.forEach(s=>{h+='<div class="sr" onclick="window.open(\''+E(s.url)+'\',\'_blank\')"><div class="st2">'+E(s.title)+'</div><div class="su">'+E(s.url)+'</div></div>'});h+='</div>'}
 h+='<div class="rs"><h4>OUTILS</h4><div style="display:flex;flex-wrap:wrap;gap:4px">';
-[['HIBP','https://haveibeenpwned.com/account/'+encodeURIComponent(em)],['Epieos','https://epieos.com/?q='+encodeURIComponent(em)],['Hunter.io','https://hunter.io/email-verifier/'+encodeURIComponent(em)],['IntelX','https://intelx.io/?s='+encodeURIComponent(em)]].forEach(([n,u])=>{h+='<a href="'+E(u)+'" target="_blank" style="display:inline-block;padding:5px 10px;border:1px solid var(--mx3);color:var(--mx2);font-size:.48rem;text-decoration:none;transition:.2s">'+n+'</a>'});
+[['Epieos','https://epieos.com/?q='+encodeURIComponent(em)],['BreachDirectory','https://breachdirectory.org/'],['LeakCheck','https://leakcheck.io/']].forEach(([n,u])=>{h+='<a href="'+E(u)+'" target="_blank" style="display:inline-block;padding:5px 10px;border:1px solid var(--mx3);color:var(--mx2);font-size:.48rem;text-decoration:none;transition:.2s">'+n+'</a>'});
 h+='</div></div>';el.innerHTML=h}catch(e){el.innerHTML='<div class="rs"><p style="color:var(--red);font-size:.55rem">'+e.message+'</p></div>'}}
 
 // ═══ IP ═══
