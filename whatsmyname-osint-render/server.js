@@ -343,7 +343,50 @@ app.post('/api/crack', johnLimiter, async (req, res) => {
   });
 });
 
+// ═══ WEBINFO (analyse URL) ═══
+app.post('/api/webinfo', heavyLimiter, async (req, res) => {
+  const { url } = req.body;
+  if (!url || typeof url !== 'string') return res.json({ success: false, error: 'URL manquante' });
+  if (!url.startsWith('http://') && !url.startsWith('https://')) return res.json({ success: false, error: 'URL invalide — doit commencer par http:// ou https://' });
+  try {
+    const r = await httpGet(url, 8000);
+    const headers = r.headers || {};
+    const server = headers['server'] || headers['x-powered-by'] || '—';
+    const redirectUrl = headers['location'] || null;
+    // Détection de technologies basique depuis les headers et le body
+    const techs = [];
+    if (headers['x-powered-by']) techs.push(headers['x-powered-by']);
+    if (headers['server']) techs.push(headers['server']);
+    const body = r.body || '';
+    if (body.includes('wp-content')) techs.push('WordPress');
+    if (body.includes('Drupal')) techs.push('Drupal');
+    if (body.includes('Joomla')) techs.push('Joomla');
+    if (body.includes('shopify')) techs.push('Shopify');
+    if (body.includes('react')) techs.push('React');
+    if (body.includes('vue.js') || body.includes('vue.min.js')) techs.push('Vue.js');
+    if (body.includes('angular')) techs.push('Angular');
+    if (body.includes('jquery')) techs.push('jQuery');
+    if (body.includes('bootstrap')) techs.push('Bootstrap');
+    if (body.includes('cloudflare')) techs.push('Cloudflare');
+    if (headers['cf-ray']) techs.push('Cloudflare');
+    if (headers['x-vercel-id']) techs.push('Vercel');
+    if (headers['x-amz-request-id']) techs.push('AWS');
+    // Headers de sécurité
+    const secHeaders = {};
+    ['strict-transport-security','content-security-policy','x-frame-options','x-content-type-options','x-xss-protection','referrer-policy'].forEach(h => {
+      if (headers[h]) secHeaders[h] = headers[h];
+    });
+    res.json({ success: true, data: {
+      url, status: r.statusCode, server, redirectUrl,
+      headers: secHeaders,
+      techs: [...new Set(techs)],
+    }});
+  } catch (e) {
+    res.json({ success: false, error: 'Impossible de joindre le site : ' + e.message });
+  }
+});
+
 app.use((req, res) => { res.status(404).json({ error: 'Not found' }) });
 app.use((err, req, res, next) => { console.error('Server error:', err.message); res.status(500).json({ error: 'Erreur interne' }); });
 
-app.listen(PORT, '0.0.0.0', () => console.log(`THIS YOU? OSINT [SECURED] — port ${PORT} — ${SITES.length} sites`));
+app.listen(PORT, () => console.log(`THIS YOU? OSINT [SECURED] — port ${PORT} — ${SITES.length} sites`));
