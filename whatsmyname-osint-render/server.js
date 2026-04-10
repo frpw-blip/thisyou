@@ -7,7 +7,7 @@ const crypto = require('crypto');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const { parsePhoneNumberFromString } = require('libphonenumber-js');
-const { execFile } = require('child_process');
+const { execFile, exec } = require('child_process');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -109,6 +109,14 @@ async function searchDDG(query, max = 6) {
   return results;
 }
 
+// Trouver nikto au démarrage
+let NIKTO_CMD = null;
+exec('which nikto 2>/dev/null || find /usr -name "nikto.pl" 2>/dev/null | head -1', (err, stdout) => {
+  const p = (stdout || '').trim().split('\n')[0];
+  if (p) NIKTO_CMD = p;
+  console.log('Nikto:', NIKTO_CMD || 'non trouvé');
+});
+
 // ═══ PHONE ═══
 app.get('/api/phone/:number', heavyLimiter, async (req, res) => {
   try {
@@ -139,14 +147,10 @@ app.get('/api/email/:email', heavyLimiter, async (req, res) => {
     if (!isValidEmail(email)) return res.json({ success: false, error: 'Email invalide' });
     const [user, domain] = email.split('@');
     const md5 = crypto.createHash('md5').update(email).digest('hex');
-
     let hasGravatar = false;
     try { const g = await httpGet(`https://www.gravatar.com/avatar/${md5}?d=404`, 4000); hasGravatar = g.statusCode === 200 } catch (e) { }
-
     let gravatarProfile = null;
     try { const gp = await httpGet(`https://www.gravatar.com/${md5}.json`, 4000); if (gp.statusCode === 200) gravatarProfile = JSON.parse(gp.body).entry?.[0] || null } catch (e) { }
-
-    // LeakCheck — gratuit, sans clé
     let breaches = [];
     try {
       const lc = await httpGet(`https://leakcheck.io/api/public?check=${encodeURIComponent(email)}`, 6000);
@@ -157,9 +161,7 @@ app.get('/api/email/:email', heavyLimiter, async (req, res) => {
         }
       }
     } catch (e) { }
-
     const searches = await searchDDG(`"${email}"`, 8);
-
     res.json({
       success: true, data: {
         email, user, domain, md5,
@@ -286,27 +288,28 @@ app.get('/api/nikto/:target', niktoLimiter, async (req, res) => {
   const target = sanitize(req.params.target, 253);
   if (!isValidIP(target)) return res.json({ success: false, error: 'Cible invalide' });
   const url = target.startsWith('http') ? target : 'http://' + target;
-  const args = ['-h', url, '-maxtime', '30s', '-nointeractive', '-Format', 'json', '-output', '-'];
-  execFile('nikto', args, { timeout: 35000, maxBuffer: 1024 * 512 }, (err, stdout, stderr) => {
-    if (!stdout && err) return res.json({ success: false, error: 'Nikto indisponible ou cible injoignable' });
+  if (!NIKTO_CMD) return res.json({ success: false, error: 'Nikto non disponible sur ce serveur' });
+  const isScript = NIKTO_CMD.endsWith('.pl');
+  const cmd = isScript ? 'perl' : NIKTO_CMD;
+  const args = isScript
+    ? [NIKTO_CMD, '-h', url, '-maxtime', '30', '-nointeractive', '-Format', 'csv', '-output', '-']
+    : ['-h', url, '-maxtime', '30', '-nointeractive', '-Format', 'csv', '-output', '-'];
+  execFile(cmd, args, { timeout: 35000, maxBuffer: 1024 * 512 }, (err, stdout, stderr) => {
+    const output = stdout || '';
+    if (!output && err) return res.json({ success: false, error: 'Nikto injoignable — ' + (err.message || '') });
     try {
-      const lines = stdout.split('\n').filter(l => l.trim().startsWith('{'));
       const vulns = [];
+      const lines = output.split('\n').filter(l => l && !l.startsWith('#') && !l.startsWith('"Nikto'));
       for (const line of lines) {
-        try {
-          const obj = JSON.parse(line);
-          if (obj.vulnerabilities) {
-            for (const v of obj.vulnerabilities) {
-              vulns.push({
-                id: v.id || '?',
-                msg: v.msg || v.message || '?',
-                uri: v.uri || '',
-                method: v.method || 'GET',
-                references: v.references || ''
-              });
-            }
-          }
-        } catch(e) {}
+        const parts = line.split(',');
+        if (parts.length >= 7) {
+          vulns.push({
+            id: (parts[3] || '').replace(/"/g, '').trim(),
+            uri: (parts[4] || '').replace(/"/g, '').trim(),
+            method: (parts[5] || 'GET').replace(/"/g, '').trim(),
+            msg: (parts[6] || '').replace(/"/g, '').trim(),
+          });
+        }
       }
       res.json({ success: true, data: { target, vulnCount: vulns.length, vulns } });
     } catch (e) {
@@ -324,36 +327,28 @@ app.post('/api/crack', johnLimiter, async (req, res) => {
   if (!cleanHash) return res.json({ success: false, error: 'Hash invalide' });
   const validFormats = ['raw-md5','raw-sha1','raw-sha256','raw-sha512','bcrypt','nt','raw-md4'];
   const fmt = validFormats.includes(format) ? format : 'raw-md5';
-  const fs2 = require('fs');
-  const os = require('os');
-  const tmpFile = require('path').join(os.tmpdir(), 'john_' + Date.now() + '.txt');
-  fs2.writeFileSync(tmpFile, cleanHash + '\n');
+  const os2 = require('os');
+  const tmpFile = path.join(os2.tmpdir(), 'john_' + Date.now() + '.txt');
+  fs.writeFileSync(tmpFile, cleanHash + '\n');
   const wordlist = '/usr/share/john/rockyou.txt';
-  const args = ['--wordlist='+wordlist, '--format='+fmt, tmpFile];
-  execFile('john', args, { timeout: 30000, maxBuffer: 1024 * 256 }, (err, stdout, stderr) => {
-    // Try to get result
+  execFile('john', ['--wordlist='+wordlist, '--format='+fmt, tmpFile], { timeout: 30000, maxBuffer: 1024 * 256 }, () => {
     execFile('john', ['--show', '--format='+fmt, tmpFile], { timeout: 5000 }, (err2, stdout2) => {
-      try { fs2.unlinkSync(tmpFile) } catch(e) {}
+      try { fs.unlinkSync(tmpFile) } catch(e) {}
       const match = stdout2 && stdout2.match(/^[^:]+:(.+?)(?:\s*:\d+)?$/m);
-      if (match && match[1]) {
-        return res.json({ success: true, found: true, password: match[1], hash: cleanHash, format: fmt });
-      }
-      res.json({ success: true, found: false, hash: cleanHash, format: fmt, message: 'Mot de passe non trouvé dans rockyou.txt' });
+      if (match && match[1]) return res.json({ success: true, found: true, password: match[1], hash: cleanHash, format: fmt });
+      res.json({ success: true, found: false, hash: cleanHash, format: fmt });
     });
   });
 });
 
-// ═══ WEBINFO (analyse URL) ═══
+// ═══ WEBINFO ═══
 app.post('/api/webinfo', heavyLimiter, async (req, res) => {
   const { url } = req.body;
   if (!url || typeof url !== 'string') return res.json({ success: false, error: 'URL manquante' });
-  if (!url.startsWith('http://') && !url.startsWith('https://')) return res.json({ success: false, error: 'URL invalide — doit commencer par http:// ou https://' });
+  if (!url.startsWith('http://') && !url.startsWith('https://')) return res.json({ success: false, error: 'URL invalide' });
   try {
     const r = await httpGet(url, 8000);
     const headers = r.headers || {};
-    const server = headers['server'] || headers['x-powered-by'] || '—';
-    const redirectUrl = headers['location'] || null;
-    // Détection de technologies basique depuis les headers et le body
     const techs = [];
     if (headers['x-powered-by']) techs.push(headers['x-powered-by']);
     if (headers['server']) techs.push(headers['server']);
@@ -367,20 +362,14 @@ app.post('/api/webinfo', heavyLimiter, async (req, res) => {
     if (body.includes('angular')) techs.push('Angular');
     if (body.includes('jquery')) techs.push('jQuery');
     if (body.includes('bootstrap')) techs.push('Bootstrap');
-    if (body.includes('cloudflare')) techs.push('Cloudflare');
     if (headers['cf-ray']) techs.push('Cloudflare');
     if (headers['x-vercel-id']) techs.push('Vercel');
     if (headers['x-amz-request-id']) techs.push('AWS');
-    // Headers de sécurité
     const secHeaders = {};
     ['strict-transport-security','content-security-policy','x-frame-options','x-content-type-options','x-xss-protection','referrer-policy'].forEach(h => {
       if (headers[h]) secHeaders[h] = headers[h];
     });
-    res.json({ success: true, data: {
-      url, status: r.statusCode, server, redirectUrl,
-      headers: secHeaders,
-      techs: [...new Set(techs)],
-    }});
+    res.json({ success: true, data: { url, status: r.statusCode, server: headers['server'] || '—', redirectUrl: headers['location'] || null, headers: secHeaders, techs: [...new Set(techs)] } });
   } catch (e) {
     res.json({ success: false, error: 'Impossible de joindre le site : ' + e.message });
   }
@@ -391,44 +380,28 @@ const sqlmapLimiter = rateLimit({ windowMs: 60 * 1000, max: 2, message: { error:
 app.post('/api/sqlmap', sqlmapLimiter, async (req, res) => {
   const { url } = req.body;
   if (!url || typeof url !== 'string') return res.json({ success: false, error: 'URL manquante' });
-  if (!url.startsWith('http://') && !url.startsWith('https://')) return res.json({ success: false, error: 'URL invalide — doit commencer par http:// ou https://' });
+  if (!url.startsWith('http://') && !url.startsWith('https://')) return res.json({ success: false, error: 'URL invalide' });
   const cleanUrl = url.trim().slice(0, 500);
-  const args = [
-    '/opt/sqlmap/sqlmap.py',
-    '-u', cleanUrl,
-    '--batch',
-    '--level=1',
-    '--risk=1',
-    '--timeout=10',
-    '--retries=1',
-    '--output-dir=/tmp/sqlmap_out',
-    '--no-logging',
-    '--disable-coloring',
-  ];
+  const args = ['/opt/sqlmap/sqlmap.py', '-u', cleanUrl, '--batch', '--level=1', '--risk=1', '--timeout=10', '--retries=1', '--output-dir=/tmp/sqlmap_out', '--disable-coloring'];
   execFile('python3', args, { timeout: 60000, maxBuffer: 1024 * 512 }, (err, stdout, stderr) => {
     const output = (stdout || '') + (stderr || '');
     if (!output && err) return res.json({ success: false, error: 'SQLMap indisponible ou cible injoignable' });
-    // Parser les résultats
-    const vulns = [];
-    const lines = output.split('\n');
-    let injectable = false;
-    let dbms = null;
+    let injectable = false, dbms = null;
     const dbmsMatch = output.match(/back-end DBMS:\s*(.+)/i);
     if (dbmsMatch) dbms = dbmsMatch[1].trim();
     if (output.includes('is vulnerable') || output.includes('Parameter:')) injectable = true;
-    // Extraire les paramètres vulnérables
+    const vulns = [];
     const paramMatches = [...output.matchAll(/Parameter:\s*(.+?)\s*\((.+?)\)/g)];
     paramMatches.forEach(m => vulns.push({ param: m[1], type: m[2] }));
-    // Extraire les types d'injection
     const injTypes = [];
     ['boolean-based blind','time-based blind','error-based','UNION query','stacked queries'].forEach(t => {
       if (output.toLowerCase().includes(t)) injTypes.push(t);
     });
-    res.json({ success: true, data: { url: cleanUrl, injectable, dbms, vulns, injTypes, rawLines: lines.filter(l => l.includes('[') && !l.includes('[INFO]') && !l.includes('[DEBUG]')).slice(0, 30) } });
+    res.json({ success: true, data: { url: cleanUrl, injectable, dbms, vulns, injTypes } });
   });
 });
 
 app.use((req, res) => { res.status(404).json({ error: 'Not found' }) });
 app.use((err, req, res, next) => { console.error('Server error:', err.message); res.status(500).json({ error: 'Erreur interne' }); });
 
-app.listen(PORT, () => console.log(`THIS YOU? OSINT [SECURED] — port ${PORT} — ${SITES.length} sites`));
+app.listen(PORT, '0.0.0.0', () => console.log(`THIS YOU? OSINT [SECURED] — port ${PORT} — ${SITES.length} sites`));
