@@ -137,6 +137,11 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
     <button id="nmapB" style="background:var(--mx3);border:1px solid var(--mx2);color:var(--mx);padding:5px 14px;font-family:'Share Tech Mono',monospace;font-size:.55rem;cursor:pointer;letter-spacing:.1em;text-transform:uppercase;transition:.2s">LANCER NMAP</button>
   </div>
   <div id="nmapR" style="display:none"></div>
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-top:1px solid var(--mx3);margin-top:8px">
+    <span style="font-family:'Orbitron',sans-serif;font-size:.55rem;color:var(--red);letter-spacing:.1em">⚠ SCAN FAILLES — NIKTO</span>
+    <button id="niktoB" style="background:#1a0000;border:1px solid var(--red);color:var(--red);padding:5px 14px;font-family:'Share Tech Mono',monospace;font-size:.55rem;cursor:pointer;letter-spacing:.1em;text-transform:uppercase;transition:.2s">SCANNER LES FAILLES</button>
+  </div>
+  <div id="niktoR" style="display:none"></div>
 </div>
 <div class="em" id="ipE"><div class="ic">⟐</div><div class="mg">Géolocalisation, FAI, reverse DNS, proxy/VPN, carte</div></div>
 </div>
@@ -272,6 +277,7 @@ h+='</div></div>';el.innerHTML=h}catch(e){el.innerHTML='<div class="rs"><p style
 document.getElementById('ipI').addEventListener('keydown',e=>{if(e.key==='Enter')ipL()});
 document.getElementById('ipB').addEventListener('click',ipL);
 document.getElementById('nmapB').addEventListener('click',nmapScan);
+document.getElementById('niktoB').addEventListener('click',niktoScan);
 
 let lastIpTarget = '';
 async function nmapScan() {
@@ -312,7 +318,38 @@ async function nmapScan() {
   }
   btn.textContent = 'RELANCER'; btn.disabled = false;
 }
-async function ipL(){const ip=document.getElementById('ipI').value.trim();if(!ip)return;lastIpTarget=ip;document.getElementById('ipE').style.display='none';document.getElementById('nmapWrap').style.display='none';document.getElementById('nmapR').style.display='none';const el=document.getElementById('ipR');el.innerHTML='<div style="text-align:center;padding:20px;animation:pu 1.5s infinite;color:var(--mx2)">Géolocalisation + DNS + recherche web...</div>';el.classList.add('on');
+async function niktoScan() {
+  const target = lastIpTarget || document.getElementById('ipI').value.trim();
+  if (!target) return;
+  const btn = document.getElementById('niktoB');
+  const el = document.getElementById('niktoR');
+  btn.textContent = '...'; btn.disabled = true;
+  el.style.display = 'block';
+  el.innerHTML = '<div style="text-align:center;padding:16px;animation:pu 1.5s infinite;color:var(--red)">Scan des failles en cours (~30s)...</div>';
+  try {
+    const r = await fetch('/api/nikto/' + encodeURIComponent(target));
+    const d = await r.json();
+    if (!d.success) { el.innerHTML = '<div class="rs"><p style="color:var(--red);font-size:.55rem">' + E(d.error) + '</p></div>'; return; }
+    const g = d.data;
+    let h = '<div class="rs" style="border-color:var(--red)"><h4 style="color:var(--red)">FAILLES DÉTECTÉES (' + g.vulnCount + ')</h4>';
+    if (!g.vulns.length) {
+      h += '<p style="font-size:.55rem;color:var(--mx2)">Aucune faille détectée</p>';
+    } else {
+      g.vulns.forEach(v => {
+        h += '<div style="padding:6px 0;border-bottom:1px solid rgba(255,23,68,.15)">';
+        h += '<div style="font-size:.5rem;color:var(--red);margin-bottom:2px">[' + E(v.id) + '] ' + E(v.method) + ' ' + E(v.uri) + '</div>';
+        h += '<div style="font-size:.52rem;color:var(--mx)">' + E(v.msg) + '</div>';
+        if (v.references) h += '<div style="font-size:.42rem;color:var(--mx2);margin-top:2px">Réf: ' + E(v.references) + '</div>';
+        h += '</div>';
+      });
+    }
+    h += '</div>';
+    el.innerHTML = h;
+  } catch(e) {
+    el.innerHTML = '<div class="rs"><p style="color:var(--red);font-size:.55rem">' + e.message + '</p></div>';
+  }
+  btn.textContent = 'RELANCER'; btn.disabled = false;
+}const ip=document.getElementById('ipI').value.trim();if(!ip)return;lastIpTarget=ip;document.getElementById('ipE').style.display='none';document.getElementById('nmapWrap').style.display='none';document.getElementById('nmapR').style.display='none';const el=document.getElementById('ipR');el.innerHTML='<div style="text-align:center;padding:20px;animation:pu 1.5s infinite;color:var(--mx2)">Géolocalisation + DNS + recherche web...</div>';el.classList.add('on');
 try{const r=await fetch('/api/ip/'+encodeURIComponent(ip));const d=await r.json();if(!d.success){el.innerHTML='<div class="rs"><p style="color:var(--red);font-size:.55rem">'+E(d.error||d.data?.message||'Erreur')+'</p></div>';return}
 const g=d.data;let h='<div class="rs"><h4>GÉOLOCALISATION</h4>';
 h+=rw('IP/Domaine',g.query||ip);h+=rw('Pays',(g.country||'?')+' ('+(g.countryCode||'?')+')');h+=rw('Région',g.regionName);h+=rw('Ville',g.city);h+=rw('Code postal',g.zip);h+=rw('Coordonnées',g.lat+', '+g.lon);h+=rw('Timezone',g.timezone);
