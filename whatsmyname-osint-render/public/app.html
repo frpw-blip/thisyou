@@ -245,12 +245,16 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
     <button data-sp="sqli" data-tip="Injection SQL (SQLMap) — Teste si le site est vulnérable aux injections SQL. Une injection SQL permet de lire ou modifier la base de données d'un site. Nécessite une URL avec paramètres (ex: site.com/page?id=1).">
       <span class="sn-icon">💉</span>INJECTION SQL
     </button>
+    <button data-sp="exploits" data-tip="Exploits / CVE (Metasploit) — Après un scan Nmap, recherche automatiquement les failles connues (CVE) pour chaque service détecté. Affiche le score de dangerosité et les liens vers Metasploit et Exploit-DB.">
+      <span class="sn-icon">🎯</span>EXPLOITS
+    </button>
   </div>
 
   <div class="sub-panel on" id="spGeo"></div>
   <div class="sub-panel" id="spPorts"></div>
   <div class="sub-panel" id="spVulns"></div>
   <div class="sub-panel" id="spSqli"></div>
+  <div class="sub-panel" id="spExploits"></div>
 
   <div class="em" id="ipE">
     <div class="ic">⟐</div>
@@ -313,10 +317,12 @@ function swSub(n){
   document.getElementById('spPorts').classList.toggle('on',n==='ports');
   document.getElementById('spVulns').classList.toggle('on',n==='vulns');
   document.getElementById('spSqli').classList.toggle('on',n==='sqli');
+  document.getElementById('spExploits').classList.toggle('on',n==='exploits');
 }
 document.querySelector('[data-sp="ports"]').addEventListener('click',()=>{swSub('ports');if(!document.getElementById('spPorts').innerHTML&&lastIpTarget)nmapScan()});
 document.querySelector('[data-sp="vulns"]').addEventListener('click',()=>{swSub('vulns');if(!document.getElementById('spVulns').innerHTML&&lastIpTarget)niktoScan()});
 document.querySelector('[data-sp="sqli"]').addEventListener('click',()=>{swSub('sqli');if(!document.getElementById('spSqli').innerHTML&&lastIpTarget)sqlmapScan()});
+document.querySelector('[data-sp="exploits"]').addEventListener('click',()=>{swSub('exploits');if(!document.getElementById('spExploits').innerHTML&&lastIpTarget)exploitScan()});
 document.querySelector('[data-sp="geo"]').addEventListener('click',()=>swSub('geo'));
 
 function E(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
@@ -493,6 +499,7 @@ async function ipL(){
 }
 
 // NMAP
+let lastNmapPorts = [];
 async function nmapScan(){
   const el=document.getElementById('spPorts');
   el.innerHTML='<div style="text-align:center;padding:20px;animation:pu 1.5s infinite;color:var(--mx2)">Scan des ports en cours (~30s)...<br><span style="font-size:.45rem;color:var(--mx3)">Nmap analyse quels services réseau sont actifs sur cette machine</span></div>';
@@ -510,6 +517,8 @@ async function nmapScan(){
       g.ports.forEach(p=>{h+='<div style="display:grid;grid-template-columns:70px 60px 1fr 1fr;gap:3px;font-size:.48rem;padding:4px 0;border-bottom:1px solid rgba(0,255,65,.04)"><span style="color:var(--mx);font-family:\'Orbitron\',sans-serif">'+E(p.port)+'</span><span style="color:var(--mx2)">'+E(p.protocol)+'</span><span style="color:var(--gold)">'+E(p.service)+'</span><span>'+E((p.product+' '+p.version).trim()||'—')+'</span></div>'});
       h+='</div>';
     }else{h+='<div class="rs"><p style="font-size:.55rem;color:var(--mx2)">Aucun port ouvert détecté — la cible est probablement protégée par un pare-feu.</p></div>'}
+    if(g.ports.length){h+='<div style="margin-top:8px;text-align:center"><button onclick="document.querySelector(\'[data-sp=exploits]\').click()" style="background:transparent;border:1px solid var(--gold);color:var(--gold);padding:6px 16px;font-family:\'Share Tech Mono\',monospace;font-size:.5rem;cursor:pointer;letter-spacing:.1em">🎯 CHERCHER LES EXPLOITS POUR CES SERVICES</button></div>'}
+    lastNmapPorts=g.ports;
     el.innerHTML=h;
   }catch(e){el.innerHTML='<div class="rs"><p style="color:var(--red);font-size:.55rem">'+e.message+'</p></div>'}
 }
@@ -671,5 +680,53 @@ document.getElementById('crackB').addEventListener('click',async()=>{
   }
   btn.disabled=false;btn.textContent='ANALYSER';
 });
+
+// EXPLOITS / CVE
+async function exploitScan(){
+  const el=document.getElementById('spExploits');
+  if(!lastNmapPorts.length){
+    el.innerHTML='<div class="rs"><p style="font-size:.55rem;color:var(--mx2)">⚠️ Lance d\'abord un scan de ports (onglet PORTS OUVERTS) pour détecter les services — les exploits sont recherchés en fonction des services trouvés.</p></div>';
+    return;
+  }
+  el.innerHTML='<div style="text-align:center;padding:20px;animation:pu 1.5s infinite;color:var(--gold)">Recherche des CVE et exploits...<br><span style="font-size:.45rem;color:var(--mx3)">Interrogation de la base NIST pour chaque service détecté</span></div>';
+  try{
+    const r=await fetch('/api/exploits',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({services:lastNmapPorts})});
+    const d=await r.json();
+    if(!d.success){el.innerHTML='<div class="rs"><p style="color:var(--red);font-size:.55rem">'+E(d.error)+'</p></div>';return}
+    const results=d.data;
+    if(!results.length){
+      el.innerHTML='<div class="rs"><h4 style="color:var(--gold)">🎯 EXPLOITS / CVE</h4><p style="font-size:.55rem;color:var(--mx2)">Aucun CVE trouvé pour les services détectés — ils sont peut-être à jour ou peu connus.</p>'
+        +'<div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:4px">'
+        +lastNmapPorts.map(p=>'<a href="https://www.rapid7.com/db/search/?q='+encodeURIComponent(p.service)+'" target="_blank" class="tool-link" data-tip="Chercher des exploits Metasploit pour '+E(p.service)+'">Metasploit: '+E(p.service)+'</a>').join('')
+        +'</div></div>';
+      return;
+    }
+    let h='<div class="rs"><h4 style="color:var(--gold)">🎯 EXPLOITS ET CVE PAR SERVICE</h4>'
+      +'<p style="font-size:.48rem;color:var(--mx2);margin-bottom:8px">CVE = faille de sécurité connue et référencée. Le score va de 0 à 10 — plus c\'est élevé, plus c\'est dangereux.</p></div>';
+    results.forEach(svc=>{
+      const severityColor={'CRITICAL':'#ff1744','HIGH':'#ff6d00','MEDIUM':'#ffd740','LOW':'var(--mx)'}[svc.cves[0]?.severity]||'var(--mx2)';
+      h+='<div class="rs" style="border-color:'+severityColor+'">';
+      h+='<h4 style="color:'+severityColor+'">PORT '+E(svc.port)+' — '+E(svc.service).toUpperCase()+(svc.product?' ('+E(svc.product)+')':'')+'</h4>';
+      h+='<div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">';
+      h+='<a href="https://www.rapid7.com/db/search/?q='+encodeURIComponent(svc.service+' '+(svc.product||''))+'" target="_blank" class="tool-link" style="border-color:var(--gold);color:var(--gold)" data-tip="Recherche des modules Metasploit pour exploiter ce service — liste les exploits prêts à l\'emploi.">🎯 Metasploit</a>';
+      h+='<a href="https://www.exploit-db.com/search?q='+encodeURIComponent(svc.service+' '+(svc.product||''))+'" target="_blank" class="tool-link" style="border-color:var(--amb);color:var(--amb)" data-tip="Exploit-DB — Base de données publique d\'exploits. Contient des preuves de concept pour des milliers de failles.">💣 Exploit-DB</a>';
+      h+='<a href="https://nvd.nist.gov/vuln/search/results?query='+encodeURIComponent(svc.service+' '+(svc.product||''))+'" target="_blank" class="tool-link" data-tip="NIST NVD — Base officielle américaine des CVE. Référence mondiale pour les vulnérabilités connues.">📋 NIST CVE</a>';
+      h+='</div>';
+      svc.cves.forEach(cve=>{
+        const sc={'CRITICAL':'#ff1744','HIGH':'#ff6d00','MEDIUM':'#ffd740','LOW':'var(--mx)'}[cve.severity]||'var(--mx2)';
+        h+='<div style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,.05)">';
+        h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">';
+        h+='<a href="https://nvd.nist.gov/vuln/detail/'+E(cve.id)+'" target="_blank" style="color:var(--cyan);font-size:.5rem;font-family:\'Orbitron\',sans-serif;text-decoration:none">'+E(cve.id)+'</a>';
+        h+='<span style="font-size:.48rem;color:'+sc+';font-weight:bold">'+E(cve.severity)+(cve.score?' '+cve.score+'/10':'')+'</span>';
+        h+='</div>';
+        h+='<div style="font-size:.48rem;color:var(--mx2);line-height:1.5">'+E(cve.description)+'</div>';
+        h+='</div>';
+      });
+      h+='</div>';
+    });
+    el.innerHTML=h;
+  }catch(e){el.innerHTML='<div class="rs"><p style="color:var(--red);font-size:.55rem">'+e.message+'</p></div>'}
+}
 </script>
+</body></html>
 </body></html>
