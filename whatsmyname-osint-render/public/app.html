@@ -131,6 +131,13 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 <div class="P z" id="Pi">
 <div class="ib"><span class="pr">⟐</span><input id="ipI" placeholder="8.8.8.8 ou example.com" autocomplete="off"><button class="go" id="ipB">SCAN</button></div>
 <div class="rb" id="ipR"></div>
+<div id="nmapWrap" style="display:none;max-width:650px;margin:0 auto">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-top:1px solid var(--mx3);margin-top:8px">
+    <span style="font-family:'Orbitron',sans-serif;font-size:.55rem;color:var(--mx2);letter-spacing:.1em">PORT SCAN — NMAP</span>
+    <button id="nmapB" style="background:var(--mx3);border:1px solid var(--mx2);color:var(--mx);padding:5px 14px;font-family:'Share Tech Mono',monospace;font-size:.55rem;cursor:pointer;letter-spacing:.1em;text-transform:uppercase;transition:.2s">LANCER NMAP</button>
+  </div>
+  <div id="nmapR" style="display:none"></div>
+</div>
 <div class="em" id="ipE"><div class="ic">⟐</div><div class="mg">Géolocalisation, FAI, reverse DNS, proxy/VPN, carte</div></div>
 </div>
 
@@ -264,7 +271,48 @@ h+='</div></div>';el.innerHTML=h}catch(e){el.innerHTML='<div class="rs"><p style
 // ═══ IP ═══
 document.getElementById('ipI').addEventListener('keydown',e=>{if(e.key==='Enter')ipL()});
 document.getElementById('ipB').addEventListener('click',ipL);
-async function ipL(){const ip=document.getElementById('ipI').value.trim();if(!ip)return;document.getElementById('ipE').style.display='none';const el=document.getElementById('ipR');el.innerHTML='<div style="text-align:center;padding:20px;animation:pu 1.5s infinite;color:var(--mx2)">Géolocalisation + DNS + recherche web...</div>';el.classList.add('on');
+document.getElementById('nmapB').addEventListener('click',nmapScan);
+
+let lastIpTarget = '';
+async function nmapScan() {
+  const target = lastIpTarget || document.getElementById('ipI').value.trim();
+  if (!target) return;
+  const btn = document.getElementById('nmapB');
+  const el = document.getElementById('nmapR');
+  btn.textContent = '...'; btn.disabled = true;
+  el.style.display = 'block';
+  el.innerHTML = '<div style="text-align:center;padding:16px;animation:pu 1.5s infinite;color:var(--mx2)">Scan en cours (~30s)...</div>';
+  try {
+    const r = await fetch('/api/nmap/' + encodeURIComponent(target));
+    const d = await r.json();
+    if (!d.success) { el.innerHTML = '<div class="rs"><p style="color:var(--red);font-size:.55rem">' + E(d.error) + '</p></div>'; return; }
+    const g = d.data;
+    let h = '<div class="rs"><h4>PORTS OUVERTS (' + g.portCount + ')</h4>';
+    if (g.os) h += '<div class="rw"><span class="rl">OS détecté</span><span class="rv">' + E(g.os.name) + ' (' + g.os.accuracy + '%)</span></div>';
+    if (g.latency) h += '<div class="rw"><span class="rl">Latence</span><span class="rv">' + E(g.latency) + '</span></div>';
+    h += '</div>';
+    if (g.ports.length) {
+      h += '<div class="rs"><h4>SERVICES</h4>';
+      h += '<div style="display:grid;grid-template-columns:60px 60px 1fr 1fr;gap:3px;font-size:.45rem;color:var(--mx2);padding:4px 0;border-bottom:1px solid var(--mx3)"><span>PORT</span><span>PROTO</span><span>SERVICE</span><span>VERSION</span></div>';
+      g.ports.forEach(p => {
+        h += '<div style="display:grid;grid-template-columns:60px 60px 1fr 1fr;gap:3px;font-size:.48rem;padding:3px 0;border-bottom:1px solid rgba(0,255,65,.04)">';
+        h += '<span style="color:var(--mx)">' + E(p.port) + '</span>';
+        h += '<span>' + E(p.protocol) + '</span>';
+        h += '<span style="color:var(--gold)">' + E(p.service) + '</span>';
+        h += '<span>' + E((p.product + ' ' + p.version).trim() || '—') + '</span>';
+        h += '</div>';
+      });
+      h += '</div>';
+    } else {
+      h += '<div class="rs"><p style="font-size:.55rem;color:var(--mx2)">Aucun port ouvert détecté</p></div>';
+    }
+    el.innerHTML = h;
+  } catch(e) {
+    el.innerHTML = '<div class="rs"><p style="color:var(--red);font-size:.55rem">' + e.message + '</p></div>';
+  }
+  btn.textContent = 'RELANCER'; btn.disabled = false;
+}
+async function ipL(){const ip=document.getElementById('ipI').value.trim();if(!ip)return;lastIpTarget=ip;document.getElementById('ipE').style.display='none';document.getElementById('nmapWrap').style.display='none';document.getElementById('nmapR').style.display='none';const el=document.getElementById('ipR');el.innerHTML='<div style="text-align:center;padding:20px;animation:pu 1.5s infinite;color:var(--mx2)">Géolocalisation + DNS + recherche web...</div>';el.classList.add('on');
 try{const r=await fetch('/api/ip/'+encodeURIComponent(ip));const d=await r.json();if(!d.success){el.innerHTML='<div class="rs"><p style="color:var(--red);font-size:.55rem">'+E(d.error||d.data?.message||'Erreur')+'</p></div>';return}
 const g=d.data;let h='<div class="rs"><h4>GÉOLOCALISATION</h4>';
 h+=rw('IP/Domaine',g.query||ip);h+=rw('Pays',(g.country||'?')+' ('+(g.countryCode||'?')+')');h+=rw('Région',g.regionName);h+=rw('Ville',g.city);h+=rw('Code postal',g.zip);h+=rw('Coordonnées',g.lat+', '+g.lon);h+=rw('Timezone',g.timezone);
@@ -277,5 +325,5 @@ h+='</div>';
 if(g.searches?.length){h+='<div class="rs"><h4>RÉSULTATS WEB ('+g.searches.length+')</h4>';g.searches.forEach(s=>{h+='<div class="sr" onclick="window.open(\''+E(s.url)+'\',\'_blank\')"><div class="st2">'+E(s.title)+'</div><div class="su">'+E(s.url)+'</div></div>'});h+='</div>'}
 h+='<div class="rs"><h4>OUTILS</h4><div style="display:flex;flex-wrap:wrap;gap:4px">';
 [['Shodan','https://www.shodan.io/host/'+encodeURIComponent(g.query||ip)],['Censys','https://search.censys.io/hosts/'+encodeURIComponent(g.query||ip)],['VirusTotal','https://www.virustotal.com/gui/ip-address/'+encodeURIComponent(g.query||ip)],['AbuseIPDB','https://www.abuseipdb.com/check/'+encodeURIComponent(g.query||ip)],['WHOIS','https://who.is/whois/'+encodeURIComponent(ip)],['crt.sh','https://crt.sh/?q='+encodeURIComponent(ip)]].forEach(([n,u])=>{h+='<a href="'+E(u)+'" target="_blank" style="display:inline-block;padding:5px 10px;border:1px solid var(--mx3);color:var(--mx2);font-size:.48rem;text-decoration:none;transition:.2s">'+n+'</a>'});
-h+='</div></div>';el.innerHTML=h}catch(e){el.innerHTML='<div class="rs"><p style="color:var(--red);font-size:.55rem">'+e.message+'</p></div>'}}
+h+='</div></div>';el.innerHTML=h;document.getElementById('nmapWrap').style.display='block';}catch(e){el.innerHTML='<div class="rs"><p style="color:var(--red);font-size:.55rem">'+e.message+'</p></div>'}}
 </script></body></html>
