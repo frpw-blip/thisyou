@@ -288,8 +288,13 @@ app.get('/api/nikto/:target', niktoLimiter, async (req, res) => {
   const target = sanitize(req.params.target, 253);
   if (!isValidIP(target)) return res.json({ success: false, error: 'Cible invalide' });
   const url = target.startsWith('http') ? target : 'http://' + target;
-  const args = ['-h', url, '-maxtime', '30', '-nointeractive', '-Format', 'csv', '-output', '-'];
-  execFile('nikto', args, { timeout: 35000, maxBuffer: 1024 * 512 }, (err, stdout, stderr) => {
+  if (!NIKTO_CMD) return res.json({ success: false, error: 'Nikto non disponible sur ce serveur' });
+  const isScript = NIKTO_CMD.endsWith('.pl');
+  const cmd = isScript ? 'perl' : NIKTO_CMD;
+  const args = isScript
+    ? [NIKTO_CMD, '-h', url, '-maxtime', '30', '-nointeractive', '-Format', 'csv', '-output', '-']
+    : ['-h', url, '-maxtime', '30', '-nointeractive', '-Format', 'csv', '-output', '-'];
+  execFile(cmd, args, { timeout: 35000, maxBuffer: 1024 * 512 }, (err, stdout, stderr) => {
     const output = stdout || '';
     if (!output && err) return res.json({ success: false, error: 'Nikto injoignable — ' + (err.message || '') });
     try {
@@ -394,6 +399,33 @@ app.post('/api/sqlmap', sqlmapLimiter, async (req, res) => {
     });
     res.json({ success: true, data: { url: cleanUrl, injectable, dbms, vulns, injTypes } });
   });
+});
+
+// ═══ CVE / EXPLOITS ═══
+app.post('/api/exploits', heavyLimiter, async (req, res) => {
+  const { services } = req.body;
+  if (!services || !Array.isArray(services)) return res.json({ success: false, error: 'Services manquants' });
+  const results = [];
+  for (const svc of services.slice(0, 5)) {
+    const query = `${svc.service} ${svc.product || ''} ${svc.version || ''}`.trim();
+    if (!query || query === '?') continue;
+    try {
+      const r = await httpGet(`https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=${encodeURIComponent(query)}&resultsPerPage=5`, 8000);
+      if (r.statusCode === 200) {
+        const data = JSON.parse(r.body);
+        const cves = (data.vulnerabilities || []).map(v => ({
+          id: v.cve.id,
+          description: (v.cve.descriptions?.find(d => d.lang === 'en')?.value || '').slice(0, 200),
+          severity: v.cve.metrics?.cvssMetricV31?.[0]?.cvssData?.baseSeverity || v.cve.metrics?.cvssMetricV2?.[0]?.baseSeverity || '?',
+          score: v.cve.metrics?.cvssMetricV31?.[0]?.cvssData?.baseScore || v.cve.metrics?.cvssMetricV2?.[0]?.cvssData?.baseScore || null,
+          metasploitUrl: `https://www.rapid7.com/db/search/?q=${encodeURIComponent(svc.service + ' ' + (svc.product || ''))}`,
+          exploitdbUrl: `https://www.exploit-db.com/search?q=${encodeURIComponent(query)}`,
+        }));
+        if (cves.length) results.push({ service: svc.service, product: svc.product, version: svc.version, port: svc.port, cves });
+      }
+    } catch(e) {}
+  }
+  res.json({ success: true, data: results });
 });
 
 app.use((req, res) => { res.status(404).json({ error: 'Not found' }) });
