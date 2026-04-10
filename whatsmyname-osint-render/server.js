@@ -346,4 +346,4 @@ app.post('/api/crack', johnLimiter, async (req, res) => {
 app.use((req, res) => { res.status(404).json({ error: 'Not found' }) });
 app.use((err, req, res, next) => { console.error('Server error:', err.message); res.status(500).json({ error: 'Erreur interne' }); });
 
-app.listen(PORT, () => console.log(`THIS YOU? OSINT [SECURED] — port ${PORT} — ${SITES.length} sites`));
+app.listen(PORT, '0.0.0.0', () => console.log(`THIS YOU? OSINT [SECURED] — port ${PORT} — ${SITES.length} sites`));
