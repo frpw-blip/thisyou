@@ -261,25 +261,29 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 <div class="P z" id="Ph">
   <div style="max-width:650px;margin:18px auto;padding:0 12px">
     <div class="rs" style="margin-bottom:12px">
-      <h4>⚡ CASSEUR DE HASH — JOHN THE RIPPER</h4>
-      <p style="font-size:.5rem;color:var(--mx2);line-height:1.6">Colle un hash ci-dessous. John the Ripper va tester <strong style="color:var(--mx)">14 millions de mots de passe courants</strong> (rockyou.txt) pour retrouver le mot de passe original.<br>
-      <span style="color:var(--mx3)">Fonctionne bien sur les mots de passe simples. Les mots de passe complexes aléatoires ne seront pas trouvés.</span></p>
+      <h4>⚡ ANALYSE HASH / URL — JOHN THE RIPPER</h4>
+      <p style="font-size:.5rem;color:var(--mx2);line-height:1.6">
+        Colle un <strong style="color:var(--mx)">hash</strong> (MD5, SHA1, SHA256...) pour retrouver le mot de passe original.<br>
+        Colle une <strong style="color:var(--mx)">URL</strong> (https://...) pour analyser le site web.<br>
+        <span style="color:var(--mx3)">Le type est détecté automatiquement.</span>
+      </p>
     </div>
     <div style="margin-bottom:10px">
-      <textarea id="hashInput" placeholder="Colle ton hash ici...&#10;Ex: 5f4dcc3b5aa765d61d8327deb882cf99" style="width:100%;background:#000;border:1px solid var(--mx3);color:var(--mx);font-family:'Share Tech Mono',monospace;font-size:.75rem;padding:10px;outline:0;resize:vertical;min-height:70px;transition:.3s"></textarea>
+      <textarea id="hashInput" placeholder="Colle ton hash ou une URL ici...&#10;&#10;Hash MD5 : 5f4dcc3b5aa765d61d8327deb882cf99&#10;URL : https://example.com" style="width:100%;background:#000;border:1px solid var(--mx3);color:var(--mx);font-family:'Share Tech Mono',monospace;font-size:.75rem;padding:10px;outline:0;resize:vertical;min-height:90px;transition:.3s"></textarea>
+      <div id="detectLabel" style="font-size:.45rem;color:var(--mx3);margin-top:4px;letter-spacing:.08em">— en attente —</div>
     </div>
-    <div style="margin-bottom:12px">
-      <div style="font-size:.48rem;color:var(--mx2);margin-bottom:6px;letter-spacing:.1em">TYPE DE HASH</div>
+    <div id="hashFmtWrap" style="margin-bottom:12px">
+      <div style="font-size:.48rem;color:var(--mx2);margin-bottom:6px;letter-spacing:.1em">TYPE DE HASH (sélectionne si détection incorrecte)</div>
       <div style="display:flex;flex-wrap:wrap;gap:4px" id="fmtBtns">
-        <button class="on" data-f="raw-md5"     data-tip="MD5 — 32 caractères hexadécimaux. Ex: 5f4dcc3b5aa765d61d8327deb882cf99">MD5</button>
-        <button data-f="raw-sha1"   data-tip="SHA1 — 40 caractères hexadécimaux. Ex: 5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8">SHA1</button>
-        <button data-f="raw-sha256" data-tip="SHA256 — 64 caractères hexadécimaux.">SHA256</button>
-        <button data-f="raw-sha512" data-tip="SHA512 — 128 caractères hexadécimaux.">SHA512</button>
-        <button data-f="nt"         data-tip="NTLM — Hash Windows. Utilisé pour les mots de passe de comptes Windows.">NTLM (Windows)</button>
-        <button data-f="bcrypt"     data-tip="bcrypt — Hash sécurisé commençant par $2b$ ou $2a$. Très lent à casser.">bcrypt</button>
+        <button data-f="raw-md5"     data-tip="MD5 — 32 caractères. Ex: 5f4dcc3b5aa765d61d8327deb882cf99">MD5</button>
+        <button data-f="raw-sha1"    data-tip="SHA1 — 40 caractères. Ex: 5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8">SHA1</button>
+        <button data-f="raw-sha256"  data-tip="SHA256 — 64 caractères hexadécimaux.">SHA256</button>
+        <button data-f="raw-sha512"  data-tip="SHA512 — 128 caractères hexadécimaux.">SHA512</button>
+        <button data-f="nt"          data-tip="NTLM — Hash Windows pour les mots de passe de comptes Windows.">NTLM</button>
+        <button data-f="bcrypt"      data-tip="bcrypt — Hash commençant par $2b$ ou $2a$. Très lent à casser.">bcrypt</button>
       </div>
     </div>
-    <button id="crackB" data-tip="Lance John the Ripper avec le dictionnaire rockyou.txt (14 millions de mots de passe)." style="width:100%;padding:12px;background:var(--mx);color:#000;border:none;font-family:'Orbitron',sans-serif;font-size:.7rem;letter-spacing:.15em;cursor:pointer;text-transform:uppercase;transition:.2s">LANCER LE CASSAGE</button>
+    <button id="crackB" style="width:100%;padding:12px;background:var(--mx);color:#000;border:none;font-family:'Orbitron',sans-serif;font-size:.7rem;letter-spacing:.15em;cursor:pointer;text-transform:uppercase;transition:.2s">ANALYSER</button>
     <div id="crackR" style="margin-top:12px"></div>
   </div>
 </div>
@@ -519,39 +523,103 @@ async function niktoScan(){
   }catch(e){el.innerHTML='<div class="rs"><p style="color:var(--red);font-size:.55rem">'+e.message+'</p></div>'}
 }
 
-// HASH CRACKER
+// HASH / URL ANALYSER
+const fmtStyle='background:transparent;border:1px solid var(--mx3);color:var(--mx2);padding:3px 8px;font-family:\'Share Tech Mono\',monospace;font-size:.48rem;cursor:pointer;transition:.2s;text-transform:uppercase';
+const fmtStyleOn='background:var(--mx);border:1px solid var(--mx);color:#000;padding:3px 8px;font-family:\'Share Tech Mono\',monospace;font-size:.48rem;cursor:pointer;transition:.2s;text-transform:uppercase';
 let selectedFmt='raw-md5';
 document.querySelectorAll('#fmtBtns button').forEach(b=>{
-  b.style.cssText='background:0;border:1px solid var(--mx3);color:var(--mx2);padding:3px 8px;font-family:\'Share Tech Mono\',monospace;font-size:.48rem;cursor:pointer;transition:.2s;text-transform:uppercase';
+  b.style.cssText=fmtStyle;
   b.addEventListener('click',()=>{
-    document.querySelectorAll('#fmtBtns button').forEach(x=>{x.style.background='transparent';x.style.color='var(--mx2)';x.style.borderColor='var(--mx3)'});
-    b.style.background='var(--mx)';b.style.color='#000';b.style.borderColor='var(--mx)';
+    document.querySelectorAll('#fmtBtns button').forEach(x=>x.style.cssText=fmtStyle);
+    b.style.cssText=fmtStyleOn;
     selectedFmt=b.dataset.f;
   });
 });
-document.getElementById('hashInput').addEventListener('focus',e=>{e.target.style.borderColor='var(--mx)'});
-document.getElementById('hashInput').addEventListener('blur',e=>{e.target.style.borderColor='var(--mx3)'});
+document.querySelector('#fmtBtns button[data-f="raw-md5"]').style.cssText=fmtStyleOn;
+
+function detectInput(val){
+  val=val.trim();
+  if(val.startsWith('http://') || val.startsWith('https://')) return 'url';
+  if(/^\$2[ab]\$/.test(val)) return 'bcrypt';
+  if(/^[a-fA-F0-9]{128}$/.test(val)) return 'sha512';
+  if(/^[a-fA-F0-9]{64}$/.test(val)) return 'sha256';
+  if(/^[a-fA-F0-9]{40}$/.test(val)) return 'sha1';
+  if(/^[a-fA-F0-9]{32}$/.test(val)) return 'md5';
+  return 'unknown';
+}
+
+const inp=document.getElementById('hashInput');
+const lbl=document.getElementById('detectLabel');
+const fmtWrap=document.getElementById('hashFmtWrap');
+inp.addEventListener('input',()=>{
+  const v=inp.value.trim();
+  if(!v){lbl.textContent='— en attente —';lbl.style.color='var(--mx3)';fmtWrap.style.display='block';return}
+  const t=detectInput(v);
+  const labels={url:'🌐 URL détectée — analyse du site web',bcrypt:'🔑 bcrypt détecté',sha512:'🔑 SHA512 détecté',sha256:'🔑 SHA256 détecté',sha1:'🔑 SHA1 détecté',md5:'🔑 MD5 détecté',unknown:'❓ Type non reconnu — sélectionne manuellement'};
+  const fmtMap={sha512:'raw-sha512',sha256:'raw-sha256',sha1:'raw-sha1',md5:'raw-md5',bcrypt:'bcrypt'};
+  lbl.textContent=labels[t]||'❓ Type non reconnu';
+  lbl.style.color=t==='url'?'var(--cyan)':t==='unknown'?'var(--amb)':'var(--mx)';
+  fmtWrap.style.display=t==='url'?'none':'block';
+  if(fmtMap[t]){
+    selectedFmt='raw-'+t==='raw-md5'?'raw-md5':fmtMap[t];
+    selectedFmt=fmtMap[t];
+    document.querySelectorAll('#fmtBtns button').forEach(x=>x.style.cssText=fmtStyle);
+    const btn=document.querySelector('#fmtBtns button[data-f="'+fmtMap[t]+'"]');
+    if(btn)btn.style.cssText=fmtStyleOn;
+  }
+});
+inp.addEventListener('focus',()=>inp.style.borderColor='var(--mx)');
+inp.addEventListener('blur',()=>inp.style.borderColor='var(--mx3)');
+
 document.getElementById('crackB').addEventListener('click',async()=>{
-  const hash=document.getElementById('hashInput').value.trim();if(!hash)return;
+  const val=document.getElementById('hashInput').value.trim();if(!val)return;
   const btn=document.getElementById('crackB'),el=document.getElementById('crackR');
-  btn.disabled=true;btn.textContent='CASSAGE EN COURS... (~30s)';
-  el.innerHTML='<div style="text-align:center;padding:16px;animation:pu 1.5s infinite;color:var(--mx2)">John the Ripper teste 14 millions de mots de passe...<br><span style="font-size:.45rem;color:var(--mx3)">Jusqu\'à 30 secondes</span></div>';
-  try{
-    const r=await fetch('/api/crack',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({hash,format:selectedFmt})});
-    const d=await r.json();
-    if(!d.success){el.innerHTML='<div class="rs"><p style="color:var(--red);font-size:.55rem">'+E(d.error)+'</p></div>';return}
-    if(d.found){
-      el.innerHTML='<div class="rs" style="border-color:var(--mx);text-align:center"><h4 style="color:var(--mx);font-size:.8rem;margin-bottom:12px">✓ MOT DE PASSE TROUVÉ</h4>'
-        +'<div style="font-family:\'Orbitron\',sans-serif;font-size:1.4rem;color:var(--mx);text-shadow:0 0 20px var(--mx);letter-spacing:.1em;padding:10px 0">'+E(d.password)+'</div>'
-        +'<div style="font-size:.45rem;color:var(--mx2);margin-top:8px">Hash : '+E(d.hash)+'</div>'
-        +'<div style="font-size:.45rem;color:var(--mx2)">Format : '+E(d.format)+'</div></div>';
-    }else{
-      el.innerHTML='<div class="rs" style="border-color:var(--amb);text-align:center"><h4 style="color:var(--amb)">✗ MOT DE PASSE NON TROUVÉ</h4>'
-        +'<p style="font-size:.52rem;color:var(--mx2);margin-top:8px;line-height:1.6">Ce mot de passe ne figure pas dans rockyou.txt.<br>Il est probablement complexe, aléatoire ou très long.</p>'
-        +'<div style="font-size:.45rem;color:var(--mx3);margin-top:6px">Hash testé : '+E(d.hash)+'</div></div>';
-    }
-  }catch(e){el.innerHTML='<div class="rs"><p style="color:var(--red);font-size:.55rem">'+e.message+'</p></div>'}
-  btn.disabled=false;btn.textContent='RELANCER';
+  const type=detectInput(val);
+  btn.disabled=true;
+  if(type==='url'){
+    btn.textContent='ANALYSE EN COURS...';
+    el.innerHTML='<div style="text-align:center;padding:16px;animation:pu 1.5s infinite;color:var(--cyan)">Analyse du site web en cours...<br><span style="font-size:.45rem;color:var(--mx3)">Headers, technologies, redirections...</span></div>';
+    try{
+      const r=await fetch('/api/webinfo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:val})});
+      const d=await r.json();
+      if(!d.success){el.innerHTML='<div class="rs"><p style="color:var(--red);font-size:.55rem">'+E(d.error)+'</p></div>';return}
+      const g=d.data;
+      let h='<div class="rs"><h4>🌐 ANALYSE DU SITE WEB</h4>';
+      h+=rw('URL',g.url);h+=rw('Status HTTP',g.status,g.status>=400?'bad':g.status>=300?'':'ok');
+      h+=rw('Serveur',g.server);h+=rw('Redirection',g.redirectUrl||'Aucune');
+      h+='</div>';
+      if(g.headers&&Object.keys(g.headers).length){
+        h+='<div class="rs"><h4>EN-TÊTES HTTP</h4>';
+        Object.entries(g.headers).forEach(([k,v])=>{h+=rw(k,v)});
+        h+='</div>';
+      }
+      if(g.techs&&g.techs.length){
+        h+='<div class="rs"><h4>TECHNOLOGIES DÉTECTÉES</h4><div class="bl">';
+        g.techs.forEach(t=>{h+='<span style="border-color:var(--cyan);color:var(--cyan)">'+E(t)+'</span>'});
+        h+='</div></div>';
+      }
+      el.innerHTML=h;
+    }catch(e){el.innerHTML='<div class="rs"><p style="color:var(--red);font-size:.55rem">'+e.message+'</p></div>'}
+  } else {
+    btn.textContent='CASSAGE EN COURS... (~30s)';
+    el.innerHTML='<div style="text-align:center;padding:16px;animation:pu 1.5s infinite;color:var(--mx2)">John the Ripper teste 14 millions de mots de passe...<br><span style="font-size:.45rem;color:var(--mx3)">Jusqu\'à 30 secondes</span></div>';
+    try{
+      const r=await fetch('/api/crack',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({hash:val,format:selectedFmt})});
+      const d=await r.json();
+      if(!d.success){el.innerHTML='<div class="rs"><p style="color:var(--red);font-size:.55rem">'+E(d.error)+'</p></div>';return}
+      if(d.found){
+        el.innerHTML='<div class="rs" style="border-color:var(--mx);text-align:center"><h4 style="color:var(--mx);font-size:.8rem;margin-bottom:12px">✓ MOT DE PASSE TROUVÉ</h4>'
+          +'<div style="font-family:\'Orbitron\',sans-serif;font-size:1.4rem;color:var(--mx);text-shadow:0 0 20px var(--mx);letter-spacing:.1em;padding:10px 0">'+E(d.password)+'</div>'
+          +'<div style="font-size:.45rem;color:var(--mx2);margin-top:8px">Hash : '+E(d.hash)+'</div>'
+          +'<div style="font-size:.45rem;color:var(--mx2)">Format : '+E(d.format)+'</div></div>';
+      }else{
+        el.innerHTML='<div class="rs" style="border-color:var(--amb);text-align:center"><h4 style="color:var(--amb)">✗ MOT DE PASSE NON TROUVÉ</h4>'
+          +'<p style="font-size:.52rem;color:var(--mx2);margin-top:8px;line-height:1.6">Ce mot de passe ne figure pas dans rockyou.txt.<br>Il est probablement complexe, aléatoire ou très long.</p>'
+          +'<div style="font-size:.45rem;color:var(--mx3);margin-top:6px">Hash testé : '+E(d.hash)+'</div></div>';
+      }
+    }catch(e){el.innerHTML='<div class="rs"><p style="color:var(--red);font-size:.55rem">'+e.message+'</p></div>'}
+  }
+  btn.disabled=false;btn.textContent='ANALYSER';
 });
 </script>
 </body></html>
