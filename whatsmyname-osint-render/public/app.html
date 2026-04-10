@@ -45,7 +45,6 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .cd .bd{position:absolute;top:7px;right:7px;font-size:.38rem;padding:1px 5px;border:1px solid var(--mx3);color:var(--mx3);letter-spacing:.08em;text-transform:uppercase}.cd.found .bd{border-color:var(--mx2);color:var(--mx2)}
 .lg{display:none;max-height:350px;overflow-y:auto;background:#000;border:1px solid var(--mx3);padding:6px;font-size:.46rem;line-height:1.4}.lg.on{display:block}.lg .ln{opacity:.45}.lg .ln.found{color:var(--mx);opacity:1}.lg .ln.err{color:var(--amb)}
 .em{text-align:center;padding:40px 15px}.em .ic{font-size:1.8rem;margin-bottom:8px;opacity:.2}.em .mg{color:var(--mx2);font-size:.6rem;letter-spacing:.1em}
-/* FACE */
 .dz{border:2px dashed var(--mx3);padding:35px 15px;text-align:center;cursor:pointer;transition:.3s;position:relative;background:rgba(0,255,65,.015);max-width:650px;margin:0 auto}
 .dz:hover,.dz.drag{border-color:var(--mx);background:rgba(0,255,65,.04)}.dz .ic{font-size:1.8rem;margin-bottom:6px;opacity:.3}.dz .mg{color:var(--mx2);font-size:.6rem;letter-spacing:.1em}.dz .mg2{color:var(--mx3);font-size:.45rem;margin-top:5px}.dz input{position:absolute;inset:0;opacity:0;cursor:pointer}
 .fp{display:none;text-align:center;margin:14px auto;max-width:650px}.fp canvas{max-width:100%;max-height:320px;border:1px solid var(--mx3)}
@@ -61,13 +60,11 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .fc:hover{border-color:var(--mx);box-shadow:0 2px 12px rgba(0,255,65,.1)}
 .fc img{width:50px;height:50px;border-radius:50%;border:2px solid var(--mx3);object-fit:cover;margin-bottom:4px}.fc:hover img{border-color:var(--mx)}
 .fc .fn{font-size:.6rem;color:var(--mx)}.fc .fm{font-size:.4rem;color:var(--mx2)}.fc .fs{display:inline-block;margin-top:3px;padding:1px 5px;font-size:.4rem;border:1px solid var(--mx);color:var(--mx)}
-/* RESULTS BOX (phone/email/ip) */
 .rb{max-width:650px;margin:16px auto;display:none}.rb.on{display:block;animation:si .3s}
 .rs{border:1px solid var(--mx3);padding:12px;margin-bottom:8px;background:linear-gradient(135deg,#060c06,#0a120a)}
 .rs h4{font-family:'Orbitron',sans-serif;font-size:.58rem;color:var(--gold);margin-bottom:8px;letter-spacing:.1em}
 .rw{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(0,255,65,.04);font-size:.55rem}
 .rw .rl{color:var(--mx2)}.rw .rv{color:var(--mx);text-align:right;max-width:60%;word-break:break-all}.rw .rv.bad{color:var(--red)}.rw .rv.ok{color:var(--mx)}
-/* Search results embedded */
 .sr{border:1px solid var(--mx3);padding:8px 10px;margin-bottom:4px;background:rgba(0,0,0,.3);transition:.2s;cursor:pointer}
 .sr:hover{border-color:var(--mx);background:rgba(0,255,65,.03)}
 .sr .st2{font-size:.6rem;color:var(--mx);margin-bottom:2px}.sr .su{font-size:.42rem;color:var(--mx2);word-break:break-all;opacity:.5}
@@ -84,16 +81,22 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 </style></head><body>
 <canvas id="rain"></canvas>
 <div class="hdr z"><h1>THIS YOU<span class="q">?</span></h1><div class="sub">MATRIX : RELOADED // OSINT</div><div class="tag">» 958 Sites • Face Search • Phone • Email • IP Tracker «</div></div>
-<div class="nav z"><button class="on" onclick="sw('u')">USERNAME</button><button onclick="sw('f')">FACE</button><button onclick="sw('p')">PHONE</button><button onclick="sw('e')">EMAIL</button><button onclick="sw('i')">IP/DOMAIN</button></div>
+<div class="nav z">
+  <button class="on" data-p="u">USERNAME</button>
+  <button data-p="f">FACE</button>
+  <button data-p="p">PHONE</button>
+  <button data-p="e">EMAIL</button>
+  <button data-p="i">IP/DOMAIN</button>
+</div>
 
 <div class="P on z" id="Pu">
 <div class="sts"><div class="s"><div class="v" id="sTot">—</div><div class="l">Sites</div></div><div class="s"><div class="v" id="sCat">—</div><div class="l">Cat</div></div><div class="s"><div class="v" id="sScn">0</div><div class="l">Scannés</div></div><div class="s"><div class="v gd" id="sFnd">0</div><div class="l">Trouvés</div></div><div class="s"><div class="v rd" id="sErr">0</div><div class="l">Erreurs</div></div></div>
-<div class="ib"><span class="pr">›_</span><input id="inp" placeholder="username cible..." autocomplete="off" spellcheck="false"><button class="go" id="goB" onclick="scan()">SCAN</button></div>
+<div class="ib"><span class="pr">›_</span><input id="inp" placeholder="username cible..." autocomplete="off" spellcheck="false"><button class="go" id="goB">SCAN</button></div>
 <div class="fl" id="flt"></div>
 <div class="pg" id="pg"><div class="nf"><span id="pT"></span><span id="pP">0%</span></div><div class="br"><div class="fl2" id="pF"></div></div><div class="sn" id="pS"></div></div>
 <div class="sm" id="sm"><div class="bg" id="smB">0</div><div class="dt" id="smD"></div></div>
-<div><div class="rh" id="rh"><div class="ct" id="rC"></div><button class="ex" onclick="xCSV()">EXPORT</button></div>
-<div class="vt"><button class="on" onclick="sv('found')">TROUVÉS</button><button onclick="sv('all')">TOUS</button><button onclick="sv('log')">LOG</button></div>
+<div><div class="rh" id="rh"><div class="ct" id="rC"></div><button class="ex" id="exB">EXPORT</button></div>
+<div class="vt"><button class="on" data-v="found">TROUVÉS</button><button data-v="all">TOUS</button><button data-v="log">LOG</button></div>
 <div class="gr" id="gr"></div><div class="lg" id="lg"></div></div>
 <div class="em" id="emp"><div class="ic">⬡</div><div class="mg">Entrez un username — 958 sites scannés en temps réel</div></div>
 </div>
@@ -102,31 +105,31 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 <div class="dz" id="dz"><div class="ic">◉</div><div class="mg">DÉPOSER UNE PHOTO</div><div class="mg2">JPG/PNG — Détection IA</div><input type="file" id="fI" accept="image/*"></div>
 <div class="fp" id="fp"><canvas id="fC"></canvas></div><div class="fi" id="fN"></div>
 <div class="ds" id="dS"><h3>BASE SEARCH4FACES</h3><div class="db">
-<button class="on" data-s="vkok_avatar" onclick="sdb(this)">VK+OK<span class="dc">280M</span></button>
-<button data-s="vk_wall" onclick="sdb(this)">VK Mur<span class="dc">1.1B</span></button>
-<button data-s="vkokn_avatar" onclick="sdb(this)">Récent<span class="dc">312M</span></button>
-<button data-s="tt_avatar" onclick="sdb(this)">TikTok<span class="dc">125M</span></button>
-<button data-s="ch_avatar" onclick="sdb(this)">Club<span class="dc">13M</span></button>
+  <button class="on" data-s="vkok_avatar">VK+OK<span class="dc">280M</span></button>
+  <button data-s="vk_wall">VK Mur<span class="dc">1.1B</span></button>
+  <button data-s="vkokn_avatar">Récent<span class="dc">312M</span></button>
+  <button data-s="tt_avatar">TikTok<span class="dc">125M</span></button>
+  <button data-s="ch_avatar">Club<span class="dc">13M</span></button>
 </div></div>
-<div class="sfb" id="sfB"><button onclick="fSrch()" id="fG">RECHERCHER CE VISAGE</button></div>
+<div class="sfb" id="sfB"><button id="fG">RECHERCHER CE VISAGE</button></div>
 <div class="fst" id="fSt"></div><div class="fr" id="fR"><h3 id="fRT"></h3><div class="fg" id="fGr"></div></div>
 <div class="ee" id="fE"><h3>AUSSI ESSAYER</h3><div class="eg"><a href="https://pimeyes.com/en" target="_blank">PimEyes</a><a href="https://facecheck.id/" target="_blank">FaceCheck</a><a href="https://search4faces.com/en/" target="_blank">Search4faces</a><a href="https://yandex.com/images/" target="_blank">Yandex</a><a href="https://tineye.com/" target="_blank">TinEye</a></div></div>
 </div>
 
 <div class="P z" id="Pp">
-<div class="ib"><span class="pr">☎</span><input id="phI" placeholder="+33612345678" autocomplete="off"><button class="go" onclick="phL()">SCAN</button></div>
+<div class="ib"><span class="pr">☎</span><input id="phI" placeholder="+33612345678" autocomplete="off"><button class="go" id="phB">SCAN</button></div>
 <div class="rb" id="phR"></div>
 <div class="em" id="phE"><div class="ic">☎</div><div class="mg">Numéro au format international (+33, +1, +44...)<br><span style="color:var(--mx3);font-size:.5rem">Résultats web embarqués — plus besoin d'aller sur Google</span></div></div>
 </div>
 
 <div class="P z" id="Pe">
-<div class="ib"><span class="pr">@</span><input id="emI" placeholder="cible@example.com" autocomplete="off"><button class="go" onclick="emL()">SCAN</button></div>
+<div class="ib"><span class="pr">@</span><input id="emI" placeholder="cible@example.com" autocomplete="off"><button class="go" id="emB">SCAN</button></div>
 <div class="rb" id="emR"></div>
 <div class="em" id="emE"><div class="ic">@</div><div class="mg">Gravatar, fuites, recherche web — tout embarqué</div></div>
 </div>
 
 <div class="P z" id="Pi">
-<div class="ib"><span class="pr">⟐</span><input id="ipI" placeholder="8.8.8.8 ou example.com" autocomplete="off"><button class="go" onclick="ipL()">SCAN</button></div>
+<div class="ib"><span class="pr">⟐</span><input id="ipI" placeholder="8.8.8.8 ou example.com" autocomplete="off"><button class="go" id="ipB">SCAN</button></div>
 <div class="rb" id="ipR"></div>
 <div class="em" id="ipE"><div class="ic">⟐</div><div class="mg">Géolocalisation, FAI, reverse DNS, proxy/VPN, carte</div></div>
 </div>
@@ -134,35 +137,104 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 <div class="ft z"><p>THIS YOU? // OSINT PLATFORM // MATRIX:RELOADED // DATA © MICAH HOFFMAN (CC BY-SA 4.0)</p></div>
 
 <script>
-const cv=document.getElementById('rain'),cx=cv.getContext('2d');function rsz(){cv.width=innerWidth;cv.height=innerHeight}rsz();addEventListener('resize',rsz);
-const ch='アイウエオTHISYOU01';const fz=14,co=()=>Math.floor(cv.width/fz);let dr=Array(co()).fill(1);addEventListener('resize',()=>{dr=Array(co()).fill(1)});
+const cv=document.getElementById('rain'),cx=cv.getContext('2d');
+function rsz(){cv.width=innerWidth;cv.height=innerHeight}rsz();addEventListener('resize',rsz);
+const ch='アイウエオTHISYOU01';const fz=14,co=()=>Math.floor(cv.width/fz);let dr=Array(co()).fill(1);
+addEventListener('resize',()=>{dr=Array(co()).fill(1)});
 setInterval(()=>{cx.fillStyle='rgba(0,0,0,0.05)';cx.fillRect(0,0,cv.width,cv.height);cx.fillStyle='#00ff41';cx.font=fz+'px monospace';for(let i=0;i<dr.length;i++){cx.fillText(ch[Math.random()*ch.length|0],i*fz,dr[i]*fz);if(dr[i]*fz>cv.height&&Math.random()>.975)dr[i]=0;dr[i]++;}},35);
 
-const ps=['u','f','p','e','i'];function sw(n){document.querySelectorAll('.nav button').forEach((b,i)=>b.classList.toggle('on',ps[i]===n));ps.forEach(p=>{const e=document.getElementById('P'+p);e&&e.classList.toggle('on',p===n)})}
+const ps=['u','f','p','e','i'];
+function sw(n){
+  document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('on',b.dataset.p===n));
+  ps.forEach(p=>{const e=document.getElementById('P'+p);e&&e.classList.toggle('on',p===n)});
+}
+document.querySelectorAll('.nav button').forEach(b=>b.addEventListener('click',()=>sw(b.dataset.p)));
+
 function E(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
 function rw(l,v,c){return'<div class="rw"><span class="rl">'+E(l)+'</span><span class="rv'+(c?' '+c:'')+'">'+E(v||'—')+'</span></div>'}
 
 // ═══ USERNAME ═══
 let aC='all',aR=[],cV='found',sc=false,es=null;
-fetch('/api/stats').then(r=>r.json()).then(d=>{document.getElementById('sTot').textContent=d.totalSites;document.getElementById('sCat').textContent=d.categories.length;const e=document.getElementById('flt');e.innerHTML='';const a=mk('button','ALL');a.classList.add('on');a.onclick=()=>{aC='all';uf()};e.appendChild(a);d.categories.forEach(c=>{const b=mk('button',c);b.onclick=()=>{aC=c;uf()};e.appendChild(b)})});
-function mk(t,x){const e=document.createElement(t);e.textContent=x;return e}function uf(){document.querySelectorAll('.fl button').forEach(b=>b.classList.toggle('on',(aC==='all'&&b.textContent==='ALL')||b.textContent===aC))}
+fetch('/api/stats').then(r=>r.json()).then(d=>{
+  document.getElementById('sTot').textContent=d.totalSites;
+  document.getElementById('sCat').textContent=d.categories.length;
+  const e=document.getElementById('flt');e.innerHTML='';
+  const a=mk('button','ALL');a.classList.add('on');a.addEventListener('click',()=>{aC='all';uf()});e.appendChild(a);
+  d.categories.forEach(c=>{const b=mk('button',c);b.addEventListener('click',()=>{aC=c;uf()});e.appendChild(b)});
+});
+function mk(t,x){const e=document.createElement(t);e.textContent=x;return e}
+function uf(){document.querySelectorAll('.fl button').forEach(b=>b.classList.toggle('on',(aC==='all'&&b.textContent==='ALL')||b.textContent===aC))}
 document.getElementById('inp').addEventListener('keydown',e=>{if(e.key==='Enter')scan()});
-function scan(){const u=document.getElementById('inp').value.trim();if(!u||u.length<2||sc)return;sc=true;aR=[];document.getElementById('goB').disabled=true;document.getElementById('goB').textContent='...';document.getElementById('emp').style.display='none';document.getElementById('pg').classList.add('on');document.getElementById('sm').classList.remove('on');document.getElementById('rh').classList.add('on');document.getElementById('gr').innerHTML='';document.getElementById('lg').innerHTML='';['sScn','sFnd','sErr'].forEach(x=>document.getElementById(x).textContent='0');document.getElementById('pF').style.width='0%';sv('found');if(es)es.close();es=new EventSource('/api/scan/'+encodeURIComponent(u)+'?cat='+aC);let tot=0,dn=0,fd=0,er=0;
-es.onmessage=function(ev){const d=JSON.parse(ev.data);if(d.type==='init'){tot=d.total;return}if(d.type==='result'){aR.push(d);dn=d.progress;fd=d.found;if(d.status==='error')er++;document.getElementById('pF').style.width=Math.round(dn/tot*100)+'%';document.getElementById('pP').textContent=Math.round(dn/tot*100)+'%';document.getElementById('pT').textContent=dn+'/'+tot;document.getElementById('pS').textContent=d.name;document.getElementById('sScn').textContent=dn;document.getElementById('sFnd').textContent=fd;document.getElementById('sErr').textContent=er;document.getElementById('rC').textContent=fd+'/'+aR.length;const l=document.getElementById('lg'),ln=document.createElement('div');ln.className='ln '+(d.status==='found'?'found':d.status==='error'?'err':'');ln.textContent=(d.status==='found'?'[+]':d.status==='error'?'[!]':'[-]')+' '+d.name+' — '+d.url;l.appendChild(ln);l.scrollTop=l.scrollHeight;if(cV==='found'&&d.status==='found')document.getElementById('gr').appendChild(mc(d));else if(cV==='all')document.getElementById('gr').appendChild(mc(d));return}if(d.type==='done'){sc=false;document.getElementById('goB').disabled=false;document.getElementById('goB').textContent='SCAN';document.getElementById('pg').classList.remove('on');document.getElementById('sm').classList.add('on');document.getElementById('smB').textContent=d.found;document.getElementById('smD').textContent='sur '+d.total+' sites';es.close()}};es.onerror=function(){es.close();sc=false;document.getElementById('goB').disabled=false;document.getElementById('goB').textContent='SCAN';document.getElementById('pg').classList.remove('on')}}
-function mc(r){const c=document.createElement('div');c.className='cd '+r.status;c.innerHTML='<div class="nm"><span class="dt2"></span>'+E(r.name)+'</div><div class="ur">'+E(r.url)+'</div><div class="bd">'+E(r.cat)+'</div>';if(r.status==='found')c.onclick=()=>window.open(r.url,'_blank');return c}
-function sv(v){cV=v;document.querySelectorAll('.vt button').forEach((b,i)=>b.classList.toggle('on',(v==='found'&&i===0)||(v==='all'&&i===1)||(v==='log'&&i===2)));document.getElementById('gr').style.display=v==='log'?'none':'grid';document.getElementById('lg').classList.toggle('on',v==='log');if(v!=='log'){const g=document.getElementById('gr');g.innerHTML='';(v==='found'?aR.filter(r=>r.status==='found'):aR).forEach(r=>g.appendChild(mc(r)))}}
+document.getElementById('goB').addEventListener('click',scan);
+document.getElementById('exB').addEventListener('click',xCSV);
+document.querySelectorAll('.vt button').forEach(b=>b.addEventListener('click',()=>sv(b.dataset.v)));
+
+function scan(){
+  const u=document.getElementById('inp').value.trim();if(!u||u.length<2||sc)return;
+  sc=true;aR=[];
+  document.getElementById('goB').disabled=true;document.getElementById('goB').textContent='...';
+  document.getElementById('emp').style.display='none';document.getElementById('pg').classList.add('on');
+  document.getElementById('sm').classList.remove('on');document.getElementById('rh').classList.add('on');
+  document.getElementById('gr').innerHTML='';document.getElementById('lg').innerHTML='';
+  ['sScn','sFnd','sErr'].forEach(x=>document.getElementById(x).textContent='0');
+  document.getElementById('pF').style.width='0%';sv('found');
+  if(es)es.close();
+  es=new EventSource('/api/scan/'+encodeURIComponent(u)+'?cat='+aC);
+  let tot=0,dn=0,fd=0,er=0;
+  es.onmessage=function(ev){
+    const d=JSON.parse(ev.data);
+    if(d.type==='init'){tot=d.total;return}
+    if(d.type==='result'){
+      aR.push(d);dn=d.progress;fd=d.found;
+      if(d.status==='error')er++;
+      document.getElementById('pF').style.width=Math.round(dn/tot*100)+'%';
+      document.getElementById('pP').textContent=Math.round(dn/tot*100)+'%';
+      document.getElementById('pT').textContent=dn+'/'+tot;
+      document.getElementById('pS').textContent=d.name;
+      document.getElementById('sScn').textContent=dn;
+      document.getElementById('sFnd').textContent=fd;
+      document.getElementById('sErr').textContent=er;
+      document.getElementById('rC').textContent=fd+'/'+aR.length;
+      const l=document.getElementById('lg'),ln=document.createElement('div');
+      ln.className='ln '+(d.status==='found'?'found':d.status==='error'?'err':'');
+      ln.textContent=(d.status==='found'?'[+]':d.status==='error'?'[!]':'[-]')+' '+d.name+' — '+d.url;
+      l.appendChild(ln);l.scrollTop=l.scrollHeight;
+      if(cV==='found'&&d.status==='found')document.getElementById('gr').appendChild(mc(d));
+      else if(cV==='all')document.getElementById('gr').appendChild(mc(d));
+      return;
+    }
+    if(d.type==='done'){
+      sc=false;document.getElementById('goB').disabled=false;document.getElementById('goB').textContent='SCAN';
+      document.getElementById('pg').classList.remove('on');document.getElementById('sm').classList.add('on');
+      document.getElementById('smB').textContent=d.found;document.getElementById('smD').textContent='sur '+d.total+' sites';
+      es.close();
+    }
+  };
+  es.onerror=function(){es.close();sc=false;document.getElementById('goB').disabled=false;document.getElementById('goB').textContent='SCAN';document.getElementById('pg').classList.remove('on')};
+}
+function mc(r){const c=document.createElement('div');c.className='cd '+r.status;c.innerHTML='<div class="nm"><span class="dt2"></span>'+E(r.name)+'</div><div class="ur">'+E(r.url)+'</div><div class="bd">'+E(r.cat)+'</div>';if(r.status==='found')c.addEventListener('click',()=>window.open(r.url,'_blank'));return c}
+function sv(v){cV=v;document.querySelectorAll('.vt button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));document.getElementById('gr').style.display=v==='log'?'none':'grid';document.getElementById('lg').classList.toggle('on',v==='log');if(v!=='log'){const g=document.getElementById('gr');g.innerHTML='';(v==='found'?aR.filter(r=>r.status==='found'):aR).forEach(r=>g.appendChild(mc(r)))}}
 function xCSV(){const f=aR.filter(r=>r.status==='found');if(!f.length)return;let c='Site,URL,Cat\n';f.forEach(r=>c+='"'+r.name+'","'+r.url+'","'+r.cat+'"\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([c],{type:'text/csv'}));a.download='thisyou_'+Date.now()+'.csv';a.click()}
 
 // ═══ FACE ═══
-let iB=null,sS='vkok_avatar';function sdb(b){document.querySelectorAll('.db button').forEach(x=>x.classList.remove('on'));b.classList.add('on');sS=b.dataset.s}
-const dz=document.getElementById('dz');['dragenter','dragover'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.add('drag')}));['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.remove('drag')}));
-dz.addEventListener('drop',e=>{if(e.dataTransfer.files.length)hf(e.dataTransfer.files[0])});document.getElementById('fI').addEventListener('change',e=>{if(e.target.files.length)hf(e.target.files[0])});
-async function hf(file){if(!file.type.startsWith('image/'))return;const reader=new FileReader();reader.onload=async e=>{const du=e.target.result;iB=du.split(',')[1];const img=new Image();img.onload=async()=>{const cv=document.getElementById('fC'),ctx=cv.getContext('2d');let w=img.width,h=img.height;if(w>400){h*=400/w;w=400}if(h>400){w*=400/h;h=400}cv.width=w;cv.height=h;ctx.drawImage(img,0,0,w,h);document.getElementById('fp').style.display='block';document.getElementById('dS').style.display='block';document.getElementById('sfB').style.display='block';document.getElementById('fE').classList.add('on');await dl(cv)};img.src=du};reader.readAsDataURL(file)}
-async function dl(cv){const n=document.getElementById('fN');n.innerHTML='<div class="at">IA...</div>';n.classList.add('on');try{if(typeof faceapi==='undefined')return;if(!faceapi.nets.tinyFaceDetector.isLoaded){const M='https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights/';await faceapi.nets.tinyFaceDetector.loadFromUri(M);await faceapi.nets.ageGenderNet.loadFromUri(M);await faceapi.nets.faceExpressionNet.loadFromUri(M)}const ds=await faceapi.detectAllFaces(cv,new faceapi.TinyFaceDetectorOptions({inputSize:416,scoreThreshold:.4})).withAgeAndGender().withFaceExpressions();const ctx=cv.getContext('2d');if(!ds.length){n.innerHTML='<div class="at" style="color:var(--amb)">AUCUN VISAGE</div>';return}ds.forEach(d=>{const b=d.detection.box;ctx.strokeStyle='#00ff41';ctx.lineWidth=2;ctx.strokeRect(b.x,b.y,b.width,b.height)});const em={neutral:'Neutre',happy:'Heureux',sad:'Triste',angry:'Colère',surprised:'Surpris'};let h='<div class="at" style="border-color:var(--mx);color:var(--mx)">'+ds.length+' VISAGE(S)</div>';ds.forEach(d=>{h+='<div class="at">~'+Math.round(d.age)+'</div><div class="at">'+(d.gender==='male'?'H':'F')+' '+Math.round(d.genderProbability*100)+'%</div>'});n.innerHTML=h}catch(e){n.innerHTML='<div class="at" style="color:var(--amb)">'+e.message+'</div>'}}
-async function fSrch(){if(!iB)return;const btn=document.getElementById('fG');btn.disabled=true;btn.textContent='...';const st=document.getElementById('fSt');st.innerHTML='<div style="animation:pu 1.5s infinite">Recherche en cours...</div>';st.classList.add('on');document.getElementById('fR').classList.remove('on');try{const r=await fetch('/api/face-search',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:iB,source:sS,results:'50'})});const d=await r.json();if(d.success&&d.profiles?.length){st.innerHTML='<div style="color:var(--mx)">'+d.profiles.length+' profils</div>';document.getElementById('fR').classList.add('on');document.getElementById('fRT').textContent=d.profiles.length+' PROFILS';const g=document.getElementById('fGr');g.innerHTML='';d.profiles.forEach(p=>{const c=document.createElement('div');c.className='fc';c.innerHTML='<img src="'+(p.face||'')+'" onerror="this.style.display=\'none\'"><div class="fn">'+E((p.first_name||'')+' '+(p.last_name||''))+'</div><div class="fm">'+(p.city||'')+'</div><div class="fs">'+p.score+'%</div>';c.onclick=()=>window.open(p.profile,'_blank');g.appendChild(c)})}else st.innerHTML='<div style="color:var(--amb)">'+(d.message||'Aucun résultat')+'</div>'}catch(e){st.innerHTML='<div style="color:var(--amb)">'+e.message+'</div>'}btn.disabled=false;btn.textContent='RECHERCHER'}
+let iB=null,sS='vkok_avatar';
+function sdb(b){document.querySelectorAll('.db button').forEach(x=>x.classList.remove('on'));b.classList.add('on');sS=b.dataset.s}
+document.querySelectorAll('.db button').forEach(b=>b.addEventListener('click',()=>sdb(b)));
+document.getElementById('fG').addEventListener('click',fSrch);
 
-// ═══ PHONE — EMBEDDED RESULTS ═══
+const dz=document.getElementById('dz');
+['dragenter','dragover'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.add('drag')}));
+['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.remove('drag')}));
+dz.addEventListener('drop',e=>{if(e.dataTransfer.files.length)hf(e.dataTransfer.files[0])});
+document.getElementById('fI').addEventListener('change',e=>{if(e.target.files.length)hf(e.target.files[0])});
+
+async function hf(file){if(!file.type.startsWith('image/'))return;const reader=new FileReader();reader.onload=async e=>{const du=e.target.result;iB=du.split(',')[1];const img=new Image();img.onload=async()=>{const cv=document.getElementById('fC'),ctx=cv.getContext('2d');let w=img.width,h=img.height;if(w>400){h*=400/w;w=400}if(h>400){w*=400/h;h=400}cv.width=w;cv.height=h;ctx.drawImage(img,0,0,w,h);document.getElementById('fp').style.display='block';document.getElementById('dS').style.display='block';document.getElementById('sfB').style.display='block';document.getElementById('fE').classList.add('on');await dl(cv)};img.src=du};reader.readAsDataURL(file)}
+async function dl(cv){const n=document.getElementById('fN');n.innerHTML='<div class="at">IA...</div>';n.classList.add('on');try{if(typeof faceapi==='undefined')return;if(!faceapi.nets.tinyFaceDetector.isLoaded){const M='https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights/';await faceapi.nets.tinyFaceDetector.loadFromUri(M);await faceapi.nets.ageGenderNet.loadFromUri(M);await faceapi.nets.faceExpressionNet.loadFromUri(M)}const ds=await faceapi.detectAllFaces(cv,new faceapi.TinyFaceDetectorOptions({inputSize:416,scoreThreshold:.4})).withAgeAndGender().withFaceExpressions();const ctx=cv.getContext('2d');if(!ds.length){n.innerHTML='<div class="at" style="color:var(--amb)">AUCUN VISAGE</div>';return}ds.forEach(d=>{const b=d.detection.box;ctx.strokeStyle='#00ff41';ctx.lineWidth=2;ctx.strokeRect(b.x,b.y,b.width,b.height)});let h='<div class="at" style="border-color:var(--mx);color:var(--mx)">'+ds.length+' VISAGE(S)</div>';ds.forEach(d=>{h+='<div class="at">~'+Math.round(d.age)+'</div><div class="at">'+(d.gender==='male'?'H':'F')+' '+Math.round(d.genderProbability*100)+'%</div>'});n.innerHTML=h}catch(e){n.innerHTML='<div class="at" style="color:var(--amb)">'+e.message+'</div>'}}
+async function fSrch(){if(!iB)return;const btn=document.getElementById('fG');btn.disabled=true;btn.textContent='...';const st=document.getElementById('fSt');st.innerHTML='<div style="animation:pu 1.5s infinite">Recherche en cours...</div>';st.classList.add('on');document.getElementById('fR').classList.remove('on');try{const r=await fetch('/api/face-search',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:iB,source:sS,results:'50'})});const d=await r.json();if(d.success&&d.profiles?.length){st.innerHTML='<div style="color:var(--mx)">'+d.profiles.length+' profils</div>';document.getElementById('fR').classList.add('on');document.getElementById('fRT').textContent=d.profiles.length+' PROFILS';const g=document.getElementById('fGr');g.innerHTML='';d.profiles.forEach(p=>{const c=document.createElement('div');c.className='fc';c.innerHTML='<img src="'+(p.face||'')+'" onerror="this.style.display=\'none\'"><div class="fn">'+E((p.first_name||'')+' '+(p.last_name||''))+'</div><div class="fm">'+(p.city||'')+'</div><div class="fs">'+p.score+'%</div>';c.addEventListener('click',()=>window.open(p.profile,'_blank'));g.appendChild(c)})}else st.innerHTML='<div style="color:var(--amb)">'+(d.message||'Aucun résultat')+'</div>'}catch(e){st.innerHTML='<div style="color:var(--amb)">'+e.message+'</div>'}btn.disabled=false;btn.textContent='RECHERCHER'}
+
+// ═══ PHONE ═══
 document.getElementById('phI').addEventListener('keydown',e=>{if(e.key==='Enter')phL()});
+document.getElementById('phB').addEventListener('click',phL);
 async function phL(){const n=document.getElementById('phI').value.trim();if(!n)return;document.getElementById('phE').style.display='none';const el=document.getElementById('phR');el.innerHTML='<div style="text-align:center;padding:20px;animation:pu 1.5s infinite;color:var(--mx2)">Analyse + recherche web en cours...</div>';el.classList.add('on');
 try{const r=await fetch('/api/phone/'+encodeURIComponent(n));const d=await r.json();if(!d.success){el.innerHTML='<div class="rs"><h4>ERREUR</h4><p style="color:var(--red);font-size:.55rem">'+E(d.error)+'</p></div>';return}
 const p=d.data;let h='<div class="rs"><h4>ANALYSE DU NUMÉRO</h4>';
@@ -170,11 +242,12 @@ h+=rw('International',p.international);h+=rw('National',p.national);h+=rw('E.164
 if(p.searches.length){h+='<div class="rs"><h4>RÉSULTATS WEB ('+p.searches.length+')</h4>';p.searches.forEach(s=>{h+='<div class="sr" onclick="window.open(\''+E(s.url)+'\',\'_blank\')"><div class="st2">'+E(s.title)+'</div><div class="su">'+E(s.url)+'</div><div class="ss">via '+E(s.source||'web')+'</div></div>'});h+='</div>'}
 else h+='<div class="rs"><h4>RÉSULTATS WEB</h4><p style="font-size:.55rem;color:var(--mx2)">Aucun résultat trouvé sur le web pour ce numéro</p></div>';
 h+='<div class="rs"><h4>OUTILS SPÉCIALISÉS</h4><div style="display:flex;flex-wrap:wrap;gap:4px">';
-[['Truecaller','https://www.truecaller.com/search/'+encodeURIComponent(p.international.replace(/\s/g,''))],['Sync.me','https://sync.me/search/?number='+encodeURIComponent(p.e164)],['NumLookup','https://www.numlookup.com/'],['SpyDialer','https://www.spydialer.com/'],['Infobel','https://www.infobel.com/']].forEach(([name,url])=>{h+='<a href="'+E(url)+'" target="_blank" style="display:inline-block;padding:5px 10px;border:1px solid var(--mx3);color:var(--mx2);font-size:.48rem;text-decoration:none;transition:.2s" onmouseover="this.style.borderColor=\'var(--mx)\';this.style.color=\'var(--mx)\'" onmouseout="this.style.borderColor=\'var(--mx3)\';this.style.color=\'var(--mx2)\'">'+name+'</a>'});
+[['Truecaller','https://www.truecaller.com/search/'+encodeURIComponent(p.international.replace(/\s/g,''))],['Sync.me','https://sync.me/search/?number='+encodeURIComponent(p.e164)],['NumLookup','https://www.numlookup.com/'],['SpyDialer','https://www.spydialer.com/'],['Infobel','https://www.infobel.com/']].forEach(([name,url])=>{h+='<a href="'+E(url)+'" target="_blank" style="display:inline-block;padding:5px 10px;border:1px solid var(--mx3);color:var(--mx2);font-size:.48rem;text-decoration:none;transition:.2s">'+name+'</a>'});
 h+='</div></div>';el.innerHTML=h}catch(e){el.innerHTML='<div class="rs"><p style="color:var(--red);font-size:.55rem">'+e.message+'</p></div>'}}
 
-// ═══ EMAIL — EMBEDDED ═══
+// ═══ EMAIL ═══
 document.getElementById('emI').addEventListener('keydown',e=>{if(e.key==='Enter')emL()});
+document.getElementById('emB').addEventListener('click',emL);
 async function emL(){const em=document.getElementById('emI').value.trim();if(!em)return;document.getElementById('emE').style.display='none';const el=document.getElementById('emR');el.innerHTML='<div style="text-align:center;padding:20px;animation:pu 1.5s infinite;color:var(--mx2)">Gravatar + breaches + recherche web...</div>';el.classList.add('on');
 try{const r=await fetch('/api/email/'+encodeURIComponent(em));const d=await r.json();if(!d.success){el.innerHTML='<div class="rs"><p style="color:var(--red);font-size:.55rem">'+E(d.error)+'</p></div>';return}
 const e=d.data;let h='';
@@ -185,11 +258,12 @@ h+=rw('Fuites (HIBP)',e.breachCount>0?e.breachCount+' BREACH(ES)':'Aucune détec
 if(e.breachCount>0){h+='<div class="rs"><h4>FUITES DE DONNÉES</h4><div class="bl">';e.breaches.forEach(b=>{h+='<span>'+E(b.name)+(b.date?' ('+b.date+')':'')+'</span>'});h+='</div></div>'}
 if(e.searches.length){h+='<div class="rs"><h4>RÉSULTATS WEB ('+e.searches.length+')</h4>';e.searches.forEach(s=>{h+='<div class="sr" onclick="window.open(\''+E(s.url)+'\',\'_blank\')"><div class="st2">'+E(s.title)+'</div><div class="su">'+E(s.url)+'</div></div>'});h+='</div>'}
 h+='<div class="rs"><h4>OUTILS</h4><div style="display:flex;flex-wrap:wrap;gap:4px">';
-[['HIBP','https://haveibeenpwned.com/account/'+encodeURIComponent(em)],['Epieos','https://epieos.com/?q='+encodeURIComponent(em)],['Hunter.io','https://hunter.io/email-verifier/'+encodeURIComponent(em)],['IntelX','https://intelx.io/?s='+encodeURIComponent(em)]].forEach(([n,u])=>{h+='<a href="'+E(u)+'" target="_blank" style="display:inline-block;padding:5px 10px;border:1px solid var(--mx3);color:var(--mx2);font-size:.48rem;text-decoration:none;transition:.2s" onmouseover="this.style.borderColor=\'var(--mx)\'" onmouseout="this.style.borderColor=\'var(--mx3)\'">'+n+'</a>'});
+[['HIBP','https://haveibeenpwned.com/account/'+encodeURIComponent(em)],['Epieos','https://epieos.com/?q='+encodeURIComponent(em)],['Hunter.io','https://hunter.io/email-verifier/'+encodeURIComponent(em)],['IntelX','https://intelx.io/?s='+encodeURIComponent(em)]].forEach(([n,u])=>{h+='<a href="'+E(u)+'" target="_blank" style="display:inline-block;padding:5px 10px;border:1px solid var(--mx3);color:var(--mx2);font-size:.48rem;text-decoration:none;transition:.2s">'+n+'</a>'});
 h+='</div></div>';el.innerHTML=h}catch(e){el.innerHTML='<div class="rs"><p style="color:var(--red);font-size:.55rem">'+e.message+'</p></div>'}}
 
-// ═══ IP — EMBEDDED ═══
+// ═══ IP ═══
 document.getElementById('ipI').addEventListener('keydown',e=>{if(e.key==='Enter')ipL()});
+document.getElementById('ipB').addEventListener('click',ipL);
 async function ipL(){const ip=document.getElementById('ipI').value.trim();if(!ip)return;document.getElementById('ipE').style.display='none';const el=document.getElementById('ipR');el.innerHTML='<div style="text-align:center;padding:20px;animation:pu 1.5s infinite;color:var(--mx2)">Géolocalisation + DNS + recherche web...</div>';el.classList.add('on');
 try{const r=await fetch('/api/ip/'+encodeURIComponent(ip));const d=await r.json();if(!d.success){el.innerHTML='<div class="rs"><p style="color:var(--red);font-size:.55rem">'+E(d.error||d.data?.message||'Erreur')+'</p></div>';return}
 const g=d.data;let h='<div class="rs"><h4>GÉOLOCALISATION</h4>';
@@ -202,6 +276,6 @@ if(g.ipinfo){const ii=g.ipinfo;if(ii.hostname)h+=rw('Hostname',ii.hostname);if(i
 h+='</div>';
 if(g.searches?.length){h+='<div class="rs"><h4>RÉSULTATS WEB ('+g.searches.length+')</h4>';g.searches.forEach(s=>{h+='<div class="sr" onclick="window.open(\''+E(s.url)+'\',\'_blank\')"><div class="st2">'+E(s.title)+'</div><div class="su">'+E(s.url)+'</div></div>'});h+='</div>'}
 h+='<div class="rs"><h4>OUTILS</h4><div style="display:flex;flex-wrap:wrap;gap:4px">';
-[['Shodan','https://www.shodan.io/host/'+encodeURIComponent(g.query||ip)],['Censys','https://search.censys.io/hosts/'+encodeURIComponent(g.query||ip)],['VirusTotal','https://www.virustotal.com/gui/ip-address/'+encodeURIComponent(g.query||ip)],['AbuseIPDB','https://www.abuseipdb.com/check/'+encodeURIComponent(g.query||ip)],['WHOIS','https://who.is/whois/'+encodeURIComponent(ip)],['crt.sh','https://crt.sh/?q='+encodeURIComponent(ip)]].forEach(([n,u])=>{h+='<a href="'+E(u)+'" target="_blank" style="display:inline-block;padding:5px 10px;border:1px solid var(--mx3);color:var(--mx2);font-size:.48rem;text-decoration:none;transition:.2s" onmouseover="this.style.borderColor=\'var(--mx)\'" onmouseout="this.style.borderColor=\'var(--mx3)\'">'+n+'</a>'});
+[['Shodan','https://www.shodan.io/host/'+encodeURIComponent(g.query||ip)],['Censys','https://search.censys.io/hosts/'+encodeURIComponent(g.query||ip)],['VirusTotal','https://www.virustotal.com/gui/ip-address/'+encodeURIComponent(g.query||ip)],['AbuseIPDB','https://www.abuseipdb.com/check/'+encodeURIComponent(g.query||ip)],['WHOIS','https://who.is/whois/'+encodeURIComponent(ip)],['crt.sh','https://crt.sh/?q='+encodeURIComponent(ip)]].forEach(([n,u])=>{h+='<a href="'+E(u)+'" target="_blank" style="display:inline-block;padding:5px 10px;border:1px solid var(--mx3);color:var(--mx2);font-size:.48rem;text-decoration:none;transition:.2s">'+n+'</a>'});
 h+='</div></div>';el.innerHTML=h}catch(e){el.innerHTML='<div class="rs"><p style="color:var(--red);font-size:.55rem">'+e.message+'</p></div>'}}
 </script></body></html>
