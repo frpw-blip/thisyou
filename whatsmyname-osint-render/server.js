@@ -315,6 +315,34 @@ app.get('/api/nikto/:target', niktoLimiter, async (req, res) => {
   });
 });
 
+// ═══ JOHN THE RIPPER ═══
+const johnLimiter = rateLimit({ windowMs: 60 * 1000, max: 3, message: { error: 'Maximum 3 tentatives par minute.' }, validate: false });
+app.post('/api/crack', johnLimiter, async (req, res) => {
+  const { hash, format } = req.body;
+  if (!hash || typeof hash !== 'string') return res.json({ success: false, error: 'Hash manquant' });
+  const cleanHash = hash.trim().replace(/[^a-fA-F0-9$./:\\*!@#%^&+=\[\]{}|<>?~`\-]/g, '').slice(0, 512);
+  if (!cleanHash) return res.json({ success: false, error: 'Hash invalide' });
+  const validFormats = ['raw-md5','raw-sha1','raw-sha256','raw-sha512','bcrypt','nt','raw-md4'];
+  const fmt = validFormats.includes(format) ? format : 'raw-md5';
+  const fs2 = require('fs');
+  const os = require('os');
+  const tmpFile = require('path').join(os.tmpdir(), 'john_' + Date.now() + '.txt');
+  fs2.writeFileSync(tmpFile, cleanHash + '\n');
+  const wordlist = '/usr/share/john/rockyou.txt';
+  const args = ['--wordlist='+wordlist, '--format='+fmt, tmpFile];
+  execFile('john', args, { timeout: 30000, maxBuffer: 1024 * 256 }, (err, stdout, stderr) => {
+    // Try to get result
+    execFile('john', ['--show', '--format='+fmt, tmpFile], { timeout: 5000 }, (err2, stdout2) => {
+      try { fs2.unlinkSync(tmpFile) } catch(e) {}
+      const match = stdout2 && stdout2.match(/^[^:]+:(.+?)(?:\s*:\d+)?$/m);
+      if (match && match[1]) {
+        return res.json({ success: true, found: true, password: match[1], hash: cleanHash, format: fmt });
+      }
+      res.json({ success: true, found: false, hash: cleanHash, format: fmt, message: 'Mot de passe non trouvé dans rockyou.txt' });
+    });
+  });
+});
+
 app.use((req, res) => { res.status(404).json({ error: 'Not found' }) });
 app.use((err, req, res, next) => { console.error('Server error:', err.message); res.status(500).json({ error: 'Erreur interne' }); });
 
