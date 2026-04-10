@@ -11,11 +11,6 @@ const { parsePhoneNumberFromString } = require('libphonenumber-js');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ═══════════════════════════════════════
-// SECURITY MIDDLEWARE
-// ═══════════════════════════════════════
-
-// Helmet — security headers (CSP, HSTS, X-Frame, etc.)
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -30,11 +25,10 @@ app.use(helmet({
       baseUri: ["'self'"],
     }
   },
-  crossOriginEmbedderPolicy: false, // needed for external images
+  crossOriginEmbedderPolicy: false,
   hsts: { maxAge: 31536000, includeSubDomains: true },
 }));
 
-// Force HTTPS on Render
 app.use((req, res, next) => {
   if (req.headers['x-forwarded-proto'] && req.headers['x-forwarded-proto'] !== 'https') {
     return res.redirect(301, 'https://' + req.hostname + req.url);
@@ -42,82 +36,33 @@ app.use((req, res, next) => {
   next();
 });
 
-// Trust Render proxy
 app.set('trust proxy', 1);
 
-// Global rate limit: 100 requests per 15 min per IP
 const globalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
-  standardHeaders: true,
-  legacyHeaders: false,
+  windowMs: 15 * 60 * 1000, max: 100, standardHeaders: true, legacyHeaders: false,
   message: { error: 'Trop de requêtes. Réessayez dans 15 minutes.' },
-  keyGenerator: (req) => req.ip || 'unknown',
-  validate: false,
+  keyGenerator: (req) => req.ip || 'unknown', validate: false,
 });
 app.use('/api/', globalLimiter);
 
-// Strict limiter for heavy endpoints
-const heavyLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 5,
-  message: { error: 'Maximum 5 scans par minute. Patientez.' },
-  validate: false,
-});
+const heavyLimiter = rateLimit({ windowMs: 60 * 1000, max: 5, message: { error: 'Maximum 5 scans par minute. Patientez.' }, validate: false });
+const faceLimiter = rateLimit({ windowMs: 60 * 1000, max: 3, message: { error: 'Maximum 3 recherches faciales par minute.' }, validate: false });
 
-// Face search — extra strict
-const faceLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 3,
-  message: { error: 'Maximum 3 recherches faciales par minute.' },
-  validate: false,
-});
-
-// Body parser with size limit
 app.use(express.json({ limit: '5mb' }));
-
-// Static files
-app.use(express.static(path.join(__dirname, 'public'), {
-  maxAge: '1h',
-  etag: true,
-}));
-
-// Remove X-Powered-By
+app.use(express.static(path.join(__dirname, 'public'), { maxAge: '1h', etag: true }));
 app.disable('x-powered-by');
 
-// ═══════════════════════════════════════
-// INPUT VALIDATION
-// ═══════════════════════════════════════
 function sanitize(str, maxLen = 100) {
   if (typeof str !== 'string') return '';
   return str.replace(/[<>"'`;\\{}()]/g, '').trim().slice(0, maxLen);
 }
+function isValidUsername(u) { return /^[a-zA-Z0-9._\-]{2,64}$/.test(u); }
+function isValidEmail(e) { return /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/.test(e) && e.length <= 254; }
+function isValidPhone(p) { return /^\+?[0-9\s\-()]{6,20}$/.test(p); }
+function isValidIP(t) { return /^[a-zA-Z0-9.\-:]{2,253}$/.test(t); }
 
-function isValidUsername(u) {
-  return /^[a-zA-Z0-9._\-]{2,64}$/.test(u);
-}
-
-function isValidEmail(e) {
-  return /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/.test(e) && e.length <= 254;
-}
-
-function isValidPhone(p) {
-  return /^\+?[0-9\s\-()]{6,20}$/.test(p);
-}
-
-function isValidIP(t) {
-  // IP or domain
-  return /^[a-zA-Z0-9.\-:]{2,253}$/.test(t);
-}
-
-// ═══════════════════════════════════════
-// LOAD DATA
-// ═══════════════════════════════════════
 const SITES = JSON.parse(fs.readFileSync(path.join(__dirname, 'wmn-data.json'), 'utf8'));
 
-// ═══════════════════════════════════════
-// HTTP HELPERS (with timeout + size limit)
-// ═══════════════════════════════════════
 function httpGet(url, timeout = 8000) {
   return new Promise((resolve, reject) => {
     const mod = url.startsWith('https') ? https : http;
@@ -150,7 +95,6 @@ function httpsPost(hostname, urlpath, body, headers = {}, timeout = 15000) {
   });
 }
 
-// DuckDuckGo scrape helper
 async function searchDDG(query, max = 6) {
   const results = [];
   try {
@@ -164,9 +108,7 @@ async function searchDDG(query, max = 6) {
   return results;
 }
 
-// ═══════════════════════════════════════
-// API: PHONE LOOKUP
-// ═══════════════════════════════════════
+// ═══ PHONE ═══
 app.get('/api/phone/:number', heavyLimiter, async (req, res) => {
   try {
     const raw = sanitize(req.params.number, 25).replace(/[^\d+]/g, '');
@@ -174,14 +116,11 @@ app.get('/api/phone/:number', heavyLimiter, async (req, res) => {
     const num = raw.startsWith('+') ? raw : '+' + raw;
     const phone = parsePhoneNumberFromString(num);
     if (!phone) return res.json({ success: false, error: 'Numéro non reconnu' });
-
     const result = {
       international: phone.formatInternational(), national: phone.formatNational(),
       e164: phone.format('E.164'), country: phone.country || '?', type: phone.getType() || 'inconnu',
       valid: phone.isValid(), possible: phone.isPossible(),
     };
-
-    // Search DDG with multiple formats
     const searches = [];
     for (const fmt of [result.international, result.e164, result.e164.replace('+', '')]) {
       const sr = await searchDDG(`"${fmt}"`);
@@ -192,9 +131,7 @@ app.get('/api/phone/:number', heavyLimiter, async (req, res) => {
   } catch (e) { res.json({ success: false, error: 'Erreur serveur' }); }
 });
 
-// ═══════════════════════════════════════
-// API: EMAIL OSINT
-// ═══════════════════════════════════════
+// ═══ EMAIL ═══
 app.get('/api/email/:email', heavyLimiter, async (req, res) => {
   try {
     const email = sanitize(req.params.email, 254).toLowerCase();
@@ -208,8 +145,17 @@ app.get('/api/email/:email', heavyLimiter, async (req, res) => {
     let gravatarProfile = null;
     try { const gp = await httpGet(`https://www.gravatar.com/${md5}.json`, 4000); if (gp.statusCode === 200) gravatarProfile = JSON.parse(gp.body).entry?.[0] || null } catch (e) { }
 
+    // LeakCheck — gratuit, sans clé
     let breaches = [];
-    try { const h = await httpGet(`https://haveibeenpwned.com/api/v2/breachedaccount/${encodeURIComponent(email)}`, 6000); if (h.statusCode === 200 && h.body) breaches = JSON.parse(h.body).map(b => ({ name: b.Name, date: b.BreachDate, count: b.PwnCount })) } catch (e) { }
+    try {
+      const lc = await httpGet(`https://leakcheck.io/api/public?check=${encodeURIComponent(email)}`, 6000);
+      if (lc.statusCode === 200 && lc.body) {
+        const lcData = JSON.parse(lc.body);
+        if (lcData.success && lcData.sources) {
+          breaches = lcData.sources.map(s => ({ name: s.name, date: s.date || '', count: s.records || 0 }));
+        }
+      }
+    } catch (e) { }
 
     const searches = await searchDDG(`"${email}"`, 8);
 
@@ -223,37 +169,23 @@ app.get('/api/email/:email', heavyLimiter, async (req, res) => {
   } catch (e) { res.json({ success: false, error: 'Erreur serveur' }); }
 });
 
-// ═══════════════════════════════════════
-// API: IP / DOMAIN
-// ═══════════════════════════════════════
+// ═══ IP ═══
 app.get('/api/ip/:target', heavyLimiter, async (req, res) => {
   try {
     const target = sanitize(req.params.target, 253);
     if (!isValidIP(target)) return res.json({ success: false, error: 'IP/domaine invalide' });
-
     const r = await httpGet(`http://ip-api.com/json/${encodeURIComponent(target)}?fields=66846719`, 6000);
     const geo = JSON.parse(r.body);
-
     let ipinfo = null;
     try { const i = await httpGet(`https://ipinfo.io/${encodeURIComponent(target)}/json`, 5000); if (i.statusCode === 200) ipinfo = JSON.parse(i.body) } catch (e) { }
-
     let reverseDns = null;
     try { const dns = require('dns'); reverseDns = await new Promise((resolve, reject) => { dns.reverse(target, (err, h) => { if (err) resolve(null); else resolve(h) }) }) } catch (e) { }
-
     const searches = await searchDDG(`"${target}"`, 6);
-
-    res.json({
-      success: true, data: {
-        ...geo, ipinfo, reverseDns, searches,
-        mapUrl: `https://www.openstreetmap.org/?mlat=${geo.lat}&mlon=${geo.lon}#map=13/${geo.lat}/${geo.lon}`
-      }
-    });
+    res.json({ success: true, data: { ...geo, ipinfo, reverseDns, searches, mapUrl: `https://www.openstreetmap.org/?mlat=${geo.lat}&mlon=${geo.lon}#map=13/${geo.lat}/${geo.lon}` } });
   } catch (e) { res.json({ success: false, error: 'Erreur serveur' }); }
 });
 
-// ═══════════════════════════════════════
-// API: FACE SEARCH
-// ═══════════════════════════════════════
+// ═══ FACE ═══
 app.post('/api/face-search', faceLimiter, async (req, res) => {
   const { image, source, results: maxR } = req.body;
   if (!image || typeof image !== 'string') return res.status(400).json({ error: 'No image' });
@@ -269,9 +201,7 @@ app.post('/api/face-search', faceLimiter, async (req, res) => {
   } catch (e) { return res.json({ success: false, message: 'Erreur serveur' }) }
 });
 
-// ═══════════════════════════════════════
-// API: USERNAME SCAN (SSE)
-// ═══════════════════════════════════════
+// ═══ USERNAME SCAN (SSE) ═══
 async function checkSite(site, username) {
   const url = site.uri_check.replace('{account}', encodeURIComponent(username));
   const result = { name: site.name, url, cat: site.cat, status: 'not-found', error: null };
@@ -324,13 +254,7 @@ app.get('/api/stats', (req, res) => {
   res.json({ totalSites: SITES.length, categories: cats });
 });
 
-// 404 catch-all
 app.use((req, res) => { res.status(404).json({ error: 'Not found' }) });
-
-// Error handler — never leak stack traces
-app.use((err, req, res, next) => {
-  console.error('Server error:', err.message);
-  res.status(500).json({ error: 'Erreur interne' });
-});
+app.use((err, req, res, next) => { console.error('Server error:', err.message); res.status(500).json({ error: 'Erreur interne' }); });
 
 app.listen(PORT, () => console.log(`THIS YOU? OSINT [SECURED] — port ${PORT} — ${SITES.length} sites`));
