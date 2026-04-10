@@ -287,8 +287,8 @@ app.get('/api/nikto/:target', niktoLimiter, async (req, res) => {
   if (!isValidIP(target)) return res.json({ success: false, error: 'Cible invalide' });
   const url = target.startsWith('http') ? target : 'http://' + target;
   const args = ['-h', url, '-maxtime', '30s', '-nointeractive', '-Format', 'json', '-output', '-'];
-execFile('perl', ['/usr/bin/nikto', ...args], { timeout: 35000, maxBuffer: 1024 * 512 }, (err, stdout, stderr) => {
-  if (!stdout && err) return res.json({ success: false, error: 'Nikto indisponible ou cible injoignable — ' + (err.message||'') });
+  execFile('nikto', args, { timeout: 35000, maxBuffer: 1024 * 512 }, (err, stdout, stderr) => {
+    if (!stdout && err) return res.json({ success: false, error: 'Nikto indisponible ou cible injoignable' });
     try {
       const lines = stdout.split('\n').filter(l => l.trim().startsWith('{'));
       const vulns = [];
@@ -384,6 +384,48 @@ app.post('/api/webinfo', heavyLimiter, async (req, res) => {
   } catch (e) {
     res.json({ success: false, error: 'Impossible de joindre le site : ' + e.message });
   }
+});
+
+// ═══ SQLMAP ═══
+const sqlmapLimiter = rateLimit({ windowMs: 60 * 1000, max: 2, message: { error: 'Maximum 2 scans SQLMap par minute.' }, validate: false });
+app.post('/api/sqlmap', sqlmapLimiter, async (req, res) => {
+  const { url } = req.body;
+  if (!url || typeof url !== 'string') return res.json({ success: false, error: 'URL manquante' });
+  if (!url.startsWith('http://') && !url.startsWith('https://')) return res.json({ success: false, error: 'URL invalide — doit commencer par http:// ou https://' });
+  const cleanUrl = url.trim().slice(0, 500);
+  const args = [
+    '/opt/sqlmap/sqlmap.py',
+    '-u', cleanUrl,
+    '--batch',
+    '--level=1',
+    '--risk=1',
+    '--timeout=10',
+    '--retries=1',
+    '--output-dir=/tmp/sqlmap_out',
+    '--no-logging',
+    '--disable-coloring',
+  ];
+  execFile('python3', args, { timeout: 60000, maxBuffer: 1024 * 512 }, (err, stdout, stderr) => {
+    const output = (stdout || '') + (stderr || '');
+    if (!output && err) return res.json({ success: false, error: 'SQLMap indisponible ou cible injoignable' });
+    // Parser les résultats
+    const vulns = [];
+    const lines = output.split('\n');
+    let injectable = false;
+    let dbms = null;
+    const dbmsMatch = output.match(/back-end DBMS:\s*(.+)/i);
+    if (dbmsMatch) dbms = dbmsMatch[1].trim();
+    if (output.includes('is vulnerable') || output.includes('Parameter:')) injectable = true;
+    // Extraire les paramètres vulnérables
+    const paramMatches = [...output.matchAll(/Parameter:\s*(.+?)\s*\((.+?)\)/g)];
+    paramMatches.forEach(m => vulns.push({ param: m[1], type: m[2] }));
+    // Extraire les types d'injection
+    const injTypes = [];
+    ['boolean-based blind','time-based blind','error-based','UNION query','stacked queries'].forEach(t => {
+      if (output.toLowerCase().includes(t)) injTypes.push(t);
+    });
+    res.json({ success: true, data: { url: cleanUrl, injectable, dbms, vulns, injTypes, rawLines: lines.filter(l => l.includes('[') && !l.includes('[INFO]') && !l.includes('[DEBUG]')).slice(0, 30) } });
+  });
 });
 
 app.use((req, res) => { res.status(404).json({ error: 'Not found' }) });
