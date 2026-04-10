@@ -280,6 +280,41 @@ app.get('/api/nmap/:target', nmapLimiter, async (req, res) => {
   });
 });
 
+// ═══ NIKTO ═══
+const niktoLimiter = rateLimit({ windowMs: 60 * 1000, max: 2, message: { error: 'Maximum 2 scans nikto par minute.' }, validate: false });
+app.get('/api/nikto/:target', niktoLimiter, async (req, res) => {
+  const target = sanitize(req.params.target, 253);
+  if (!isValidIP(target)) return res.json({ success: false, error: 'Cible invalide' });
+  const url = target.startsWith('http') ? target : 'http://' + target;
+  const args = ['-h', url, '-maxtime', '30s', '-nointeractive', '-Format', 'json', '-output', '-'];
+  execFile('nikto', args, { timeout: 35000, maxBuffer: 1024 * 512 }, (err, stdout, stderr) => {
+    if (!stdout && err) return res.json({ success: false, error: 'Nikto indisponible ou cible injoignable' });
+    try {
+      const lines = stdout.split('\n').filter(l => l.trim().startsWith('{'));
+      const vulns = [];
+      for (const line of lines) {
+        try {
+          const obj = JSON.parse(line);
+          if (obj.vulnerabilities) {
+            for (const v of obj.vulnerabilities) {
+              vulns.push({
+                id: v.id || '?',
+                msg: v.msg || v.message || '?',
+                uri: v.uri || '',
+                method: v.method || 'GET',
+                references: v.references || ''
+              });
+            }
+          }
+        } catch(e) {}
+      }
+      res.json({ success: true, data: { target, vulnCount: vulns.length, vulns } });
+    } catch (e) {
+      res.json({ success: false, error: 'Erreur parsing résultats' });
+    }
+  });
+});
+
 app.use((req, res) => { res.status(404).json({ error: 'Not found' }) });
 app.use((err, req, res, next) => { console.error('Server error:', err.message); res.status(500).json({ error: 'Erreur interne' }); });
 
