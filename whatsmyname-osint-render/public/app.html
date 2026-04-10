@@ -4,8 +4,10 @@
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
 <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 <style>
-*{margin:0;padding:0;box-sizing:border-box}:root{--mx:#00ff41;--mx2:#008f11;--mx3:#003b00;--mxd:#00ff4118;--red:#ff1744;--gold:#ffd740;--amb:#ffab40;--cyan:#00e5ff;--bg:#050805}
-html,body{height:100%;overflow-x:hidden;background:var(--bg);color:var(--mx);font-family:'Share Tech Mono',monospace}::selection{background:var(--mx);color:#000}
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--mx:#00ff41;--mx2:#008f11;--mx3:#003b00;--mxd:#00ff4118;--red:#ff1744;--gold:#ffd740;--amb:#ffab40;--cyan:#00e5ff;--bg:#050805}
+html,body{height:100%;overflow-x:hidden;background:var(--bg);color:var(--mx);font-family:'Share Tech Mono',monospace}
+::selection{background:var(--mx);color:#000}
 ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:#000}::-webkit-scrollbar-thumb{background:var(--mx3)}
 #rain{position:fixed;inset:0;z-index:0;opacity:.08;pointer-events:none}
 body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,255,65,.015) 2px,rgba(0,255,65,.015) 4px);pointer-events:none;z-index:1}
@@ -15,11 +17,17 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .z{position:relative;z-index:10}
 .hdr{text-align:center;padding:28px 15px 12px;border-bottom:1px solid var(--mx3)}
 .hdr h1{font-family:'Orbitron',sans-serif;font-size:clamp(1.8rem,5vw,3.8rem);font-weight:900;letter-spacing:.18em;animation:g 5s infinite}
-.hdr h1 .q{color:var(--red);text-shadow:0 0 20px var(--red)}.hdr .sub{font-size:.55rem;color:var(--mx2);letter-spacing:.4em;margin-top:3px;opacity:.6}
+.hdr h1 .q{color:var(--red);text-shadow:0 0 20px var(--red)}
+.hdr .sub{font-size:.55rem;color:var(--mx2);letter-spacing:.4em;margin-top:3px;opacity:.6}
 .hdr .tag{color:var(--gold);font-size:.48rem;margin-top:6px;letter-spacing:.1em;opacity:.7}
 .nav{display:flex;justify-content:center;border-bottom:1px solid var(--mx3);overflow-x:auto;-webkit-overflow-scrolling:touch}
-.nav button{flex:0 1 150px;padding:11px 8px;background:0;border:none;border-bottom:2px solid transparent;color:var(--mx2);font-family:'Orbitron',sans-serif;font-size:.5rem;letter-spacing:.1em;cursor:pointer;transition:.2s;text-transform:uppercase;white-space:nowrap}
-.nav button:hover{color:var(--mx);background:rgba(0,255,65,.02)}.nav button.on{color:var(--mx);border-bottom-color:var(--mx)}
+.nav button{flex:0 1 150px;padding:11px 8px;background:0;border:none;border-bottom:2px solid transparent;color:var(--mx2);font-family:'Orbitron',sans-serif;font-size:.5rem;letter-spacing:.1em;cursor:pointer;transition:.2s;text-transform:uppercase;white-space:nowrap;position:relative}
+.nav button:hover{color:var(--mx);background:rgba(0,255,65,.02)}
+.nav button.on{color:var(--mx);border-bottom-color:var(--mx)}
+/* TOOLTIPS */
+[data-tip]{position:relative}
+[data-tip]::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:#000;border:1px solid var(--mx3);color:var(--mx2);font-family:'Share Tech Mono',monospace;font-size:.48rem;line-height:1.5;padding:7px 10px;white-space:normal;width:230px;text-align:left;opacity:0;pointer-events:none;transition:opacity .15s;z-index:9999;letter-spacing:0;text-transform:none;font-weight:normal}
+[data-tip]:hover::after{opacity:1}
 .P{display:none;max-width:1100px;margin:0 auto;padding:16px}.P.on{display:block;animation:si .3s}
 .sts{display:flex;justify-content:center;gap:18px;padding:8px;background:linear-gradient(90deg,transparent,rgba(0,255,65,.03),transparent);border-bottom:1px solid var(--mx3);flex-wrap:wrap}
 .s{text-align:center}.s .v{font-family:'Orbitron',sans-serif;font-size:1rem;text-shadow:0 0 8px var(--mx)}.s .l{font-size:.42rem;color:var(--mx2);letter-spacing:.2em;text-transform:uppercase}.s .v.gd{color:var(--gold)}.s .v.rd{color:var(--red)}
@@ -29,12 +37,21 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .ib .pr{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--mx);opacity:.4;font-size:.9rem}
 .ib .go{position:absolute;right:4px;top:50%;transform:translateY(-50%);background:var(--mx3);border:1px solid var(--mx3);color:var(--mx);padding:6px 12px;font-family:'Share Tech Mono',monospace;font-size:.6rem;letter-spacing:.1em;cursor:pointer;text-transform:uppercase;transition:.2s}
 .ib .go:hover{background:var(--mx);color:#000}.ib .go:disabled{opacity:.3}
-.fl{display:flex;flex-wrap:wrap;gap:3px;justify-content:center;margin-top:10px}.fl button{background:0;border:1px solid var(--mx3);color:var(--mx2);padding:2px 7px;font-family:'Share Tech Mono',monospace;font-size:.48rem;cursor:pointer;text-transform:uppercase;letter-spacing:.08em;transition:.15s}.fl button:hover,.fl button.on{background:var(--mx);color:#000;border-color:var(--mx)}
-.pg{max-width:650px;margin:0 auto;padding:10px 12px;display:none}.pg.on{display:block}.pg .br{height:3px;background:var(--mx3);overflow:hidden;margin:5px 0}.pg .br .fl2{height:100%;background:var(--mx);box-shadow:0 0 8px var(--mx);width:0%;transition:width .15s}.pg .nf{display:flex;justify-content:space-between;font-size:.5rem;color:var(--mx2)}.pg .sn{color:var(--mx);font-size:.55rem;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.sm{text-align:center;padding:14px;display:none}.sm.on{display:block;animation:si .3s}.sm .bg{font-family:'Orbitron',sans-serif;font-size:2rem;text-shadow:0 0 20px var(--mx)}.sm .dt{font-size:.55rem;color:var(--mx2);margin-top:3px}
-.rh{display:none;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--mx3);margin-bottom:8px}.rh.on{display:flex}.rh .ct{font-family:'Orbitron',sans-serif;color:var(--gold);font-size:.7rem}
+.fl{display:flex;flex-wrap:wrap;gap:3px;justify-content:center;margin-top:10px}
+.fl button{background:0;border:1px solid var(--mx3);color:var(--mx2);padding:2px 7px;font-family:'Share Tech Mono',monospace;font-size:.48rem;cursor:pointer;text-transform:uppercase;letter-spacing:.08em;transition:.15s}
+.fl button:hover,.fl button.on{background:var(--mx);color:#000;border-color:var(--mx)}
+.pg{max-width:650px;margin:0 auto;padding:10px 12px;display:none}.pg.on{display:block}
+.pg .br{height:3px;background:var(--mx3);overflow:hidden;margin:5px 0}
+.pg .br .fl2{height:100%;background:var(--mx);box-shadow:0 0 8px var(--mx);width:0%;transition:width .15s}
+.pg .nf{display:flex;justify-content:space-between;font-size:.5rem;color:var(--mx2)}
+.pg .sn{color:var(--mx);font-size:.55rem;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sm{text-align:center;padding:14px;display:none}.sm.on{display:block;animation:si .3s}
+.sm .bg{font-family:'Orbitron',sans-serif;font-size:2rem;text-shadow:0 0 20px var(--mx)}.sm .dt{font-size:.55rem;color:var(--mx2);margin-top:3px}
+.rh{display:none;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--mx3);margin-bottom:8px}.rh.on{display:flex}
+.rh .ct{font-family:'Orbitron',sans-serif;color:var(--gold);font-size:.7rem}
 .rh .ex{background:0;border:1px solid var(--gold);color:var(--gold);padding:3px 8px;font-family:'Share Tech Mono',monospace;font-size:.45rem;cursor:pointer;transition:.2s}.rh .ex:hover{background:var(--gold);color:#000}
-.vt{display:flex;gap:0;margin-bottom:8px}.vt button{flex:1;max-width:140px;padding:6px;background:0;border:1px solid var(--mx3);color:var(--mx2);font-family:'Share Tech Mono',monospace;font-size:.5rem;cursor:pointer;letter-spacing:.1em;text-transform:uppercase;transition:.15s}.vt button.on{background:var(--mx);color:#000}
+.vt{display:flex;gap:0;margin-bottom:8px}
+.vt button{flex:1;max-width:140px;padding:6px;background:0;border:1px solid var(--mx3);color:var(--mx2);font-family:'Share Tech Mono',monospace;font-size:.5rem;cursor:pointer;letter-spacing:.1em;text-transform:uppercase;transition:.15s}.vt button.on{background:var(--mx);color:#000}
 .gr{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:6px}
 .cd{background:linear-gradient(135deg,#070d07,#0a130a);border:1px solid var(--mx3);padding:9px 11px;position:relative;overflow:hidden;transition:.2s;animation:si .3s both;cursor:pointer}
 .cd:hover{border-color:var(--mx);box-shadow:0 2px 15px rgba(0,255,65,.07)}
@@ -43,18 +60,25 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .cd.found .nm .dt2{background:var(--mx);box-shadow:0 0 6px var(--mx)}.cd.not-found .nm .dt2{background:#222}.cd.error .nm .dt2{background:var(--amb)}
 .cd .ur{font-size:.46rem;color:var(--mx2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.35}
 .cd .bd{position:absolute;top:7px;right:7px;font-size:.38rem;padding:1px 5px;border:1px solid var(--mx3);color:var(--mx3);letter-spacing:.08em;text-transform:uppercase}.cd.found .bd{border-color:var(--mx2);color:var(--mx2)}
-.lg{display:none;max-height:350px;overflow-y:auto;background:#000;border:1px solid var(--mx3);padding:6px;font-size:.46rem;line-height:1.4}.lg.on{display:block}.lg .ln{opacity:.45}.lg .ln.found{color:var(--mx);opacity:1}.lg .ln.err{color:var(--amb)}
+.lg{display:none;max-height:350px;overflow-y:auto;background:#000;border:1px solid var(--mx3);padding:6px;font-size:.46rem;line-height:1.4}.lg.on{display:block}
+.lg .ln{opacity:.45}.lg .ln.found{color:var(--mx);opacity:1}.lg .ln.err{color:var(--amb)}
 .em{text-align:center;padding:40px 15px}.em .ic{font-size:1.8rem;margin-bottom:8px;opacity:.2}.em .mg{color:var(--mx2);font-size:.6rem;letter-spacing:.1em}
 .dz{border:2px dashed var(--mx3);padding:35px 15px;text-align:center;cursor:pointer;transition:.3s;position:relative;background:rgba(0,255,65,.015);max-width:650px;margin:0 auto}
-.dz:hover,.dz.drag{border-color:var(--mx);background:rgba(0,255,65,.04)}.dz .ic{font-size:1.8rem;margin-bottom:6px;opacity:.3}.dz .mg{color:var(--mx2);font-size:.6rem;letter-spacing:.1em}.dz .mg2{color:var(--mx3);font-size:.45rem;margin-top:5px}.dz input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.dz:hover,.dz.drag{border-color:var(--mx);background:rgba(0,255,65,.04)}
+.dz .ic{font-size:1.8rem;margin-bottom:6px;opacity:.3}.dz .mg{color:var(--mx2);font-size:.6rem;letter-spacing:.1em}.dz .mg2{color:var(--mx3);font-size:.45rem;margin-top:5px}.dz input{position:absolute;inset:0;opacity:0;cursor:pointer}
 .fp{display:none;text-align:center;margin:14px auto;max-width:650px}.fp canvas{max-width:100%;max-height:320px;border:1px solid var(--mx3)}
-.fi{text-align:center;margin:10px auto;font-size:.55rem;color:var(--mx2);display:none;max-width:650px}.fi.on{display:block;animation:si .3s}.fi .at{display:inline-block;margin:2px 5px;padding:3px 8px;border:1px solid var(--mx3)}.fi .at span{color:var(--mx)}
+.fi{text-align:center;margin:10px auto;font-size:.55rem;color:var(--mx2);display:none;max-width:650px}.fi.on{display:block;animation:si .3s}
+.fi .at{display:inline-block;margin:2px 5px;padding:3px 8px;border:1px solid var(--mx3)}
 .ds{max-width:650px;margin:14px auto;text-align:center;display:none}.ds h3{font-family:'Orbitron',sans-serif;font-size:.6rem;color:var(--gold);margin-bottom:8px;letter-spacing:.12em}
-.db{display:flex;flex-wrap:wrap;gap:4px;justify-content:center}.db button{background:0;border:1px solid var(--mx3);color:var(--mx2);padding:5px 10px;font-family:'Share Tech Mono',monospace;font-size:.46rem;cursor:pointer;transition:.2s;min-width:120px}.db button:hover{border-color:var(--mx);color:var(--mx)}.db button.on{background:var(--mx);color:#000}.db button .dc{display:block;font-size:.38rem;color:var(--mx3);margin-top:1px}.db button.on .dc{color:rgba(0,0,0,.4)}
+.db{display:flex;flex-wrap:wrap;gap:4px;justify-content:center}
+.db button{background:0;border:1px solid var(--mx3);color:var(--mx2);padding:5px 10px;font-family:'Share Tech Mono',monospace;font-size:.46rem;cursor:pointer;transition:.2s;min-width:120px}
+.db button:hover{border-color:var(--mx);color:var(--mx)}.db button.on{background:var(--mx);color:#000}
+.db button .dc{display:block;font-size:.38rem;color:var(--mx3);margin-top:1px}.db button.on .dc{color:rgba(0,0,0,.4)}
 .sfb{display:none;max-width:650px;margin:10px auto;text-align:center}
 .sfb button{background:var(--mx);color:#000;border:0;padding:10px 30px;font-family:'Orbitron',sans-serif;font-size:.7rem;letter-spacing:.12em;cursor:pointer;transition:.2s;text-transform:uppercase}.sfb button:hover{box-shadow:0 0 20px var(--mxd)}.sfb button:disabled{opacity:.3}
 .fst{text-align:center;padding:12px;font-size:.55rem;color:var(--mx2);display:none;max-width:650px;margin:0 auto}.fst.on{display:block}
-.fr{display:none;max-width:650px;margin:14px auto}.fr.on{display:block;animation:si .3s}.fr h3{font-family:'Orbitron',sans-serif;font-size:.65rem;text-align:center;margin-bottom:10px;color:var(--mx);letter-spacing:.12em}
+.fr{display:none;max-width:650px;margin:14px auto}.fr.on{display:block;animation:si .3s}
+.fr h3{font-family:'Orbitron',sans-serif;font-size:.65rem;text-align:center;margin-bottom:10px;color:var(--mx);letter-spacing:.12em}
 .fg{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:6px}
 .fc{background:linear-gradient(135deg,#070d07,#0d150d);border:1px solid var(--mx3);padding:8px;text-align:center;transition:.2s;cursor:pointer}
 .fc:hover{border-color:var(--mx);box-shadow:0 2px 12px rgba(0,255,65,.1)}
@@ -68,82 +92,168 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .sr{border:1px solid var(--mx3);padding:8px 10px;margin-bottom:4px;background:rgba(0,0,0,.3);transition:.2s;cursor:pointer}
 .sr:hover{border-color:var(--mx);background:rgba(0,255,65,.03)}
 .sr .st2{font-size:.6rem;color:var(--mx);margin-bottom:2px}.sr .su{font-size:.42rem;color:var(--mx2);word-break:break-all;opacity:.5}
-.sr .ss{font-size:.38rem;color:var(--mx3);margin-top:2px}
 .gi{width:80px;height:80px;border-radius:50%;border:2px solid var(--mx);margin:8px auto;display:block}
 .bl{display:flex;flex-wrap:wrap;gap:3px;margin-top:4px}.bl span{padding:1px 6px;font-size:.4rem;border:1px solid var(--red);color:var(--red)}
 .ml{display:inline-block;margin-top:6px;padding:5px 12px;border:1px solid var(--cyan);color:var(--cyan);font-size:.5rem;text-decoration:none;transition:.2s}.ml:hover{background:var(--cyan);color:#000}
 .ee{max-width:650px;margin:12px auto;display:none}.ee.on{display:block}
 .ee h3{font-family:'Orbitron',sans-serif;font-size:.5rem;text-align:center;color:var(--mx3);margin-bottom:6px;letter-spacing:.1em}
 .eg{display:flex;flex-wrap:wrap;gap:4px;justify-content:center}
-.eg a{display:inline-block;padding:4px 10px;border:1px solid var(--mx3);color:var(--mx3);font-size:.45rem;text-decoration:none;transition:.2s}.eg a:hover{border-color:var(--mx);color:var(--mx)}
+.eg a,.tool-link{display:inline-block;padding:4px 10px;border:1px solid var(--mx3);color:var(--mx3);font-size:.45rem;text-decoration:none;transition:.2s}
+.eg a:hover,.tool-link:hover{border-color:var(--mx);color:var(--mx)}
+.tool-link{font-size:.48rem;padding:5px 10px;color:var(--mx2)}
+/* SOUS-ONGLETS IP */
+.sub-nav{display:none;max-width:650px;margin:14px auto 0;border:1px solid var(--mx3);overflow:hidden}
+.sub-nav.on{display:flex}
+.sub-nav button{flex:1;padding:10px 4px;background:0;border:none;border-right:1px solid var(--mx3);color:var(--mx2);font-family:'Share Tech Mono',monospace;font-size:.45rem;cursor:pointer;text-transform:uppercase;letter-spacing:.06em;transition:.2s;text-align:center;line-height:1.4}
+.sub-nav button:last-child{border-right:none}
+.sub-nav button:hover{background:rgba(0,255,65,.05);color:var(--mx)}
+.sub-nav button.on{background:var(--mx3);color:var(--mx)}
+.sub-nav button .sn-icon{display:block;font-size:1rem;margin-bottom:2px}
+.sub-panel{display:none;max-width:650px;margin:0 auto;padding-top:8px}.sub-panel.on{display:block;animation:si .3s}
 .ft{text-align:center;padding:18px;border-top:1px solid var(--mx3);margin-top:20px}.ft p{font-size:.42rem;color:var(--mx3);letter-spacing:.1em}
-@media(max-width:600px){.hdr h1{letter-spacing:.05em;font-size:1.8rem}.nav button{font-size:.42rem;padding:7px 5px;flex:0 1 auto}.gr,.fg{grid-template-columns:1fr}}
-</style></head><body>
+@media(max-width:600px){.hdr h1{letter-spacing:.05em;font-size:1.8rem}.nav button{font-size:.42rem;padding:7px 5px;flex:0 1 auto}.gr,.fg{grid-template-columns:1fr}[data-tip]::after{width:180px;font-size:.44rem}}
+</style>
+</head><body>
 <canvas id="rain"></canvas>
-<div class="hdr z"><h1>THIS YOU<span class="q">?</span></h1><div class="sub">MATRIX : RELOADED // OSINT</div><div class="tag">» 958 Sites • Face Search • Phone • Email • IP Tracker «</div></div>
+<div class="hdr z">
+  <h1>THIS YOU<span class="q">?</span></h1>
+  <div class="sub">MATRIX : RELOADED // OSINT</div>
+  <div class="tag">» 958 Sites • Recherche Visage • Téléphone • Email • IP/Domaine «</div>
+</div>
+
 <div class="nav z">
-  <button class="on" data-p="u">USERNAME</button>
-  <button data-p="f">FACE</button>
-  <button data-p="p">PHONE</button>
-  <button data-p="e">EMAIL</button>
-  <button data-p="i">IP/DOMAIN</button>
+  <button class="on" data-p="u" data-tip="Cherche un pseudo sur 958 sites (réseaux sociaux, forums, jeux vidéo...). Indique si un compte existe ou non sur chaque plateforme.">PSEUDO</button>
+  <button data-p="f" data-tip="Analyse une photo pour détecter un visage, estimer l'âge et le genre, puis cherche des profils correspondants dans des bases de données (VK, TikTok, Odnoklassniki...).">VISAGE</button>
+  <button data-p="p" data-tip="Analyse un numéro de téléphone : pays, opérateur, type de ligne. Recherche aussi toutes les mentions publiques de ce numéro sur internet.">TÉLÉPHONE</button>
+  <button data-p="e" data-tip="Analyse un email : vérifie s'il a un avatar public, s'il apparaît dans des bases de données hackées (fuites), et cherche ses mentions publiques sur le web.">EMAIL</button>
+  <button data-p="i" data-tip="Analyse une IP ou un domaine : localisation géographique, fournisseur internet, ports réseau ouverts (Nmap), et scan de failles web (Nikto).">IP / DOMAINE</button>
 </div>
 
+<!-- USERNAME -->
 <div class="P on z" id="Pu">
-<div class="sts"><div class="s"><div class="v" id="sTot">—</div><div class="l">Sites</div></div><div class="s"><div class="v" id="sCat">—</div><div class="l">Cat</div></div><div class="s"><div class="v" id="sScn">0</div><div class="l">Scannés</div></div><div class="s"><div class="v gd" id="sFnd">0</div><div class="l">Trouvés</div></div><div class="s"><div class="v rd" id="sErr">0</div><div class="l">Erreurs</div></div></div>
-<div class="ib"><span class="pr">›_</span><input id="inp" placeholder="username cible..." autocomplete="off" spellcheck="false"><button class="go" id="goB">SCAN</button></div>
-<div class="fl" id="flt"></div>
-<div class="pg" id="pg"><div class="nf"><span id="pT"></span><span id="pP">0%</span></div><div class="br"><div class="fl2" id="pF"></div></div><div class="sn" id="pS"></div></div>
-<div class="sm" id="sm"><div class="bg" id="smB">0</div><div class="dt" id="smD"></div></div>
-<div><div class="rh" id="rh"><div class="ct" id="rC"></div><button class="ex" id="exB">EXPORT</button></div>
-<div class="vt"><button class="on" data-v="found">TROUVÉS</button><button data-v="all">TOUS</button><button data-v="log">LOG</button></div>
-<div class="gr" id="gr"></div><div class="lg" id="lg"></div></div>
-<div class="em" id="emp"><div class="ic">⬡</div><div class="mg">Entrez un username — 958 sites scannés en temps réel</div></div>
+  <div class="sts">
+    <div class="s"><div class="v" id="sTot">—</div><div class="l">Sites</div></div>
+    <div class="s"><div class="v" id="sCat">—</div><div class="l">Catégories</div></div>
+    <div class="s"><div class="v" id="sScn">0</div><div class="l">Scannés</div></div>
+    <div class="s"><div class="v gd" id="sFnd">0</div><div class="l">Trouvés</div></div>
+    <div class="s"><div class="v rd" id="sErr">0</div><div class="l">Erreurs</div></div>
+  </div>
+  <div class="ib"><span class="pr">›_</span><input id="inp" placeholder="pseudo à rechercher..." autocomplete="off" spellcheck="false"><button class="go" id="goB" data-tip="Lance le scan sur 958 sites simultanément.">SCAN</button></div>
+  <div class="fl" id="flt"></div>
+  <div class="pg" id="pg">
+    <div class="nf"><span id="pT"></span><span id="pP">0%</span></div>
+    <div class="br"><div class="fl2" id="pF"></div></div>
+    <div class="sn" id="pS"></div>
+  </div>
+  <div class="sm" id="sm"><div class="bg" id="smB">0</div><div class="dt" id="smD"></div></div>
+  <div>
+    <div class="rh" id="rh">
+      <div class="ct" id="rC"></div>
+      <button class="ex" id="exB" data-tip="Télécharge la liste des comptes trouvés au format CSV (fichier Excel).">EXPORTER CSV</button>
+    </div>
+    <div class="vt">
+      <button class="on" data-v="found" data-tip="Affiche uniquement les comptes trouvés.">TROUVÉS</button>
+      <button data-v="all" data-tip="Affiche tous les sites scannés (trouvés et non trouvés).">TOUS</button>
+      <button data-v="log" data-tip="Affiche le journal brut du scan en temps réel.">LOG</button>
+    </div>
+    <div class="gr" id="gr"></div>
+    <div class="lg" id="lg"></div>
+  </div>
+  <div class="em" id="emp"><div class="ic">⬡</div><div class="mg">Entrez un pseudo — 958 sites scannés en temps réel</div></div>
 </div>
 
+<!-- VISAGE -->
 <div class="P z" id="Pf">
-<div class="dz" id="dz"><div class="ic">◉</div><div class="mg">DÉPOSER UNE PHOTO</div><div class="mg2">JPG/PNG — Détection IA</div><input type="file" id="fI" accept="image/*"></div>
-<div class="fp" id="fp"><canvas id="fC"></canvas></div><div class="fi" id="fN"></div>
-<div class="ds" id="dS"><h3>BASE SEARCH4FACES</h3><div class="db">
-  <button class="on" data-s="vkok_avatar">VK+OK<span class="dc">280M</span></button>
-  <button data-s="vk_wall">VK Mur<span class="dc">1.1B</span></button>
-  <button data-s="vkokn_avatar">Récent<span class="dc">312M</span></button>
-  <button data-s="tt_avatar">TikTok<span class="dc">125M</span></button>
-  <button data-s="ch_avatar">Club<span class="dc">13M</span></button>
-</div></div>
-<div class="sfb" id="sfB"><button id="fG">RECHERCHER CE VISAGE</button></div>
-<div class="fst" id="fSt"></div><div class="fr" id="fR"><h3 id="fRT"></h3><div class="fg" id="fGr"></div></div>
-<div class="ee" id="fE"><h3>AUSSI ESSAYER</h3><div class="eg"><a href="https://pimeyes.com/en" target="_blank">PimEyes</a><a href="https://facecheck.id/" target="_blank">FaceCheck</a><a href="https://search4faces.com/en/" target="_blank">Search4faces</a><a href="https://yandex.com/images/" target="_blank">Yandex</a><a href="https://tineye.com/" target="_blank">TinEye</a></div></div>
+  <div class="dz" id="dz">
+    <div class="ic">◉</div>
+    <div class="mg">DÉPOSER UNE PHOTO ICI</div>
+    <div class="mg2">JPG / PNG — L'IA détecte le visage, estime l'âge et le genre automatiquement</div>
+    <input type="file" id="fI" accept="image/*">
+  </div>
+  <div class="fp" id="fp"><canvas id="fC"></canvas></div>
+  <div class="fi" id="fN"></div>
+  <div class="ds" id="dS">
+    <h3>CHOISIR LA BASE DE RECHERCHE</h3>
+    <div class="db">
+      <button class="on" data-s="vkok_avatar" data-tip="Recherche dans les photos de profil VK et Odnoklassniki — 280 millions de profils russes indexés.">VK + OK<span class="dc">280 millions de profils</span></button>
+      <button data-s="vk_wall" data-tip="Recherche dans les photos publiées sur les murs VK — 1,1 milliard de photos analysées.">VK Mur<span class="dc">1,1 milliard de photos</span></button>
+      <button data-s="vkokn_avatar" data-tip="Recherche dans les profils VK et OK ajoutés récemment — 312 millions de profils.">Récents<span class="dc">312 millions de profils</span></button>
+      <button data-s="tt_avatar" data-tip="Recherche dans les avatars TikTok — 125 millions de profils.">TikTok<span class="dc">125 millions de profils</span></button>
+      <button data-s="ch_avatar" data-tip="Recherche dans les avatars Clubhouse — 13 millions de profils.">Clubhouse<span class="dc">13 millions de profils</span></button>
+    </div>
+  </div>
+  <div class="sfb" id="sfB"><button id="fG" data-tip="Lance la recherche du visage détecté dans la base sélectionnée ci-dessus.">RECHERCHER CE VISAGE</button></div>
+  <div class="fst" id="fSt"></div>
+  <div class="fr" id="fR"><h3 id="fRT"></h3><div class="fg" id="fGr"></div></div>
+  <div class="ee" id="fE">
+    <h3>AUTRES OUTILS DE RECHERCHE PAR VISAGE</h3>
+    <div class="eg">
+      <a href="https://pimeyes.com/en" target="_blank" data-tip="PimEyes — Moteur de recherche par visage très puissant. Trouve des photos sur tout le web. Gratuit limité, payant pour les détails.">PimEyes</a>
+      <a href="https://facecheck.id/" target="_blank" data-tip="FaceCheck — Recherche par visage sur internet. Gratuit et sans compte requis.">FaceCheck</a>
+      <a href="https://search4faces.com/en/" target="_blank" data-tip="Search4Faces — Le même moteur utilisé ici. Recherche dans des millions de profils russes (VK, TikTok...).">Search4Faces</a>
+      <a href="https://yandex.com/images/" target="_blank" data-tip="Yandex Images — Recherche inversée d'image. Très efficace pour trouver l'origine d'une photo ou des photos similaires.">Yandex Images</a>
+      <a href="https://tineye.com/" target="_blank" data-tip="TinEye — Recherche inversée d'image. Trouve tous les sites où cette photo a déjà été publiée sur internet.">TinEye</a>
+    </div>
+  </div>
 </div>
 
+<!-- TÉLÉPHONE -->
 <div class="P z" id="Pp">
-<div class="ib"><span class="pr">☎</span><input id="phI" placeholder="+33612345678" autocomplete="off"><button class="go" id="phB">SCAN</button></div>
-<div class="rb" id="phR"></div>
-<div class="em" id="phE"><div class="ic">☎</div><div class="mg">Numéro au format international (+33, +1, +44...)<br><span style="color:var(--mx3);font-size:.5rem">Résultats web embarqués — plus besoin d'aller sur Google</span></div></div>
+  <div class="ib"><span class="pr">☎</span><input id="phI" placeholder="+33612345678" autocomplete="off"><button class="go" id="phB" data-tip="Lance l'analyse du numéro et la recherche de ses mentions publiques sur le web.">ANALYSER</button></div>
+  <div class="rb" id="phR"></div>
+  <div class="em" id="phE">
+    <div class="ic">☎</div>
+    <div class="mg">
+      Format international requis : +33 (France), +1 (USA), +44 (UK)...<br>
+      <span style="color:var(--mx3);font-size:.5rem">Identifie le pays, l'opérateur et le type de ligne — recherche aussi les mentions publiques du numéro sur internet</span>
+    </div>
+  </div>
 </div>
 
+<!-- EMAIL -->
 <div class="P z" id="Pe">
-<div class="ib"><span class="pr">@</span><input id="emI" placeholder="cible@example.com" autocomplete="off"><button class="go" id="emB">SCAN</button></div>
-<div class="rb" id="emR"></div>
-<div class="em" id="emE"><div class="ic">@</div><div class="mg">Gravatar, fuites, recherche web — tout embarqué</div></div>
+  <div class="ib"><span class="pr">@</span><input id="emI" placeholder="cible@example.com" autocomplete="off"><button class="go" id="emB" data-tip="Lance l'analyse complète de l'adresse email.">ANALYSER</button></div>
+  <div class="rb" id="emR"></div>
+  <div class="em" id="emE">
+    <div class="ic">@</div>
+    <div class="mg">
+      Analyse complète d'une adresse email<br>
+      <span style="color:var(--mx3);font-size:.5rem">Vérifie si l'email a un avatar public • Détecte les fuites dans des bases de données hackées • Cherche ses mentions sur le web</span>
+    </div>
+  </div>
 </div>
 
+<!-- IP / DOMAINE -->
 <div class="P z" id="Pi">
-<div class="ib"><span class="pr">⟐</span><input id="ipI" placeholder="8.8.8.8 ou example.com" autocomplete="off"><button class="go" id="ipB">SCAN</button></div>
-<div class="rb" id="ipR"></div>
-<div id="nmapWrap" style="display:none;max-width:650px;margin:0 auto">
-  <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-top:1px solid var(--mx3);margin-top:8px">
-    <span style="font-family:'Orbitron',sans-serif;font-size:.55rem;color:var(--mx2);letter-spacing:.1em">PORT SCAN — NMAP</span>
-    <button id="nmapB" style="background:var(--mx3);border:1px solid var(--mx2);color:var(--mx);padding:5px 14px;font-family:'Share Tech Mono',monospace;font-size:.55rem;cursor:pointer;letter-spacing:.1em;text-transform:uppercase;transition:.2s">LANCER NMAP</button>
+  <div class="ib">
+    <span class="pr">⟐</span>
+    <input id="ipI" placeholder="8.8.8.8 ou example.com" autocomplete="off">
+    <button class="go" id="ipB" data-tip="Lance la géolocalisation et l'analyse réseau de l'IP ou du domaine.">ANALYSER</button>
   </div>
-  <div id="nmapR" style="display:none"></div>
-  <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-top:1px solid var(--mx3);margin-top:8px">
-    <span style="font-family:'Orbitron',sans-serif;font-size:.55rem;color:var(--red);letter-spacing:.1em">⚠ SCAN FAILLES — NIKTO</span>
-    <button id="niktoB" style="background:#1a0000;border:1px solid var(--red);color:var(--red);padding:5px 14px;font-family:'Share Tech Mono',monospace;font-size:.55rem;cursor:pointer;letter-spacing:.1em;text-transform:uppercase;transition:.2s">SCANNER LES FAILLES</button>
+
+  <div class="sub-nav" id="subNav">
+    <button class="on" data-sp="geo" data-tip="Géolocalisation — Affiche le pays, la ville, le fournisseur internet (FAI), les coordonnées GPS, et indique si c'est un VPN ou un proxy.">
+      <span class="sn-icon">🌍</span>LOCALISATION
+    </button>
+    <button data-sp="ports" data-tip="Scan de ports (Nmap) — Liste les ports réseau ouverts sur cette IP. Un port ouvert = un service actif (ex: port 80 = site web, port 22 = SSH, port 21 = FTP). Permet de savoir ce qui tourne sur la machine.">
+      <span class="sn-icon">🔌</span>PORTS OUVERTS
+    </button>
+    <button data-sp="vulns" data-tip="Scan de failles web (Nikto) — Analyse le serveur web pour détecter des vulnérabilités connues : fichiers sensibles exposés, mauvaises configurations, logiciels obsolètes avec des failles de sécurité.">
+      <span class="sn-icon">⚠️</span>FAILLES WEB
+    </button>
   </div>
-  <div id="niktoR" style="display:none"></div>
-</div>
-<div class="em" id="ipE"><div class="ic">⟐</div><div class="mg">Géolocalisation, FAI, reverse DNS, proxy/VPN, carte</div></div>
+
+  <div class="sub-panel on" id="spGeo"></div>
+  <div class="sub-panel" id="spPorts"></div>
+  <div class="sub-panel" id="spVulns"></div>
+
+  <div class="em" id="ipE">
+    <div class="ic">⟐</div>
+    <div class="mg">
+      Entrez une adresse IP ou un nom de domaine<br>
+      <span style="color:var(--mx3);font-size:.5rem">Géolocalisation • Ports ouverts (Nmap) • Scan de failles web (Nikto)</span>
+    </div>
+  </div>
 </div>
 
 <div class="ft z"><p>THIS YOU? // OSINT PLATFORM // MATRIX:RELOADED // DATA © MICAH HOFFMAN (CC BY-SA 4.0)</p></div>
@@ -155,17 +265,26 @@ const ch='アイウエオTHISYOU01';const fz=14,co=()=>Math.floor(cv.width/fz);l
 addEventListener('resize',()=>{dr=Array(co()).fill(1)});
 setInterval(()=>{cx.fillStyle='rgba(0,0,0,0.05)';cx.fillRect(0,0,cv.width,cv.height);cx.fillStyle='#00ff41';cx.font=fz+'px monospace';for(let i=0;i<dr.length;i++){cx.fillText(ch[Math.random()*ch.length|0],i*fz,dr[i]*fz);if(dr[i]*fz>cv.height&&Math.random()>.975)dr[i]=0;dr[i]++;}},35);
 
+// NAV
 const ps=['u','f','p','e','i'];
-function sw(n){
-  document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('on',b.dataset.p===n));
-  ps.forEach(p=>{const e=document.getElementById('P'+p);e&&e.classList.toggle('on',p===n)});
-}
+function sw(n){document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('on',b.dataset.p===n));ps.forEach(p=>{const e=document.getElementById('P'+p);e&&e.classList.toggle('on',p===n)})}
 document.querySelectorAll('.nav button').forEach(b=>b.addEventListener('click',()=>sw(b.dataset.p)));
+
+// SOUS-ONGLETS IP
+function swSub(n){
+  document.querySelectorAll('.sub-nav button').forEach(b=>b.classList.toggle('on',b.dataset.sp===n));
+  document.getElementById('spGeo').classList.toggle('on',n==='geo');
+  document.getElementById('spPorts').classList.toggle('on',n==='ports');
+  document.getElementById('spVulns').classList.toggle('on',n==='vulns');
+}
+document.querySelector('[data-sp="ports"]').addEventListener('click',()=>{swSub('ports');if(!document.getElementById('spPorts').innerHTML&&lastIpTarget)nmapScan()});
+document.querySelector('[data-sp="vulns"]').addEventListener('click',()=>{swSub('vulns');if(!document.getElementById('spVulns').innerHTML&&lastIpTarget)niktoScan()});
+document.querySelector('[data-sp="geo"]').addEventListener('click',()=>swSub('geo'));
 
 function E(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
 function rw(l,v,c){return'<div class="rw"><span class="rl">'+E(l)+'</span><span class="rv'+(c?' '+c:'')+'">'+E(v||'—')+'</span></div>'}
 
-// ═══ USERNAME ═══
+// USERNAME
 let aC='all',aR=[],cV='found',sc=false,es=null;
 fetch('/api/stats').then(r=>r.json()).then(d=>{
   document.getElementById('sTot').textContent=d.totalSites;
@@ -180,7 +299,6 @@ document.getElementById('inp').addEventListener('keydown',e=>{if(e.key==='Enter'
 document.getElementById('goB').addEventListener('click',scan);
 document.getElementById('exB').addEventListener('click',xCSV);
 document.querySelectorAll('.vt button').forEach(b=>b.addEventListener('click',()=>sv(b.dataset.v)));
-
 function scan(){
   const u=document.getElementById('inp').value.trim();if(!u||u.length<2||sc)return;
   sc=true;aR=[];
@@ -197,30 +315,21 @@ function scan(){
     const d=JSON.parse(ev.data);
     if(d.type==='init'){tot=d.total;return}
     if(d.type==='result'){
-      aR.push(d);dn=d.progress;fd=d.found;
-      if(d.status==='error')er++;
+      aR.push(d);dn=d.progress;fd=d.found;if(d.status==='error')er++;
       document.getElementById('pF').style.width=Math.round(dn/tot*100)+'%';
       document.getElementById('pP').textContent=Math.round(dn/tot*100)+'%';
       document.getElementById('pT').textContent=dn+'/'+tot;
       document.getElementById('pS').textContent=d.name;
-      document.getElementById('sScn').textContent=dn;
-      document.getElementById('sFnd').textContent=fd;
-      document.getElementById('sErr').textContent=er;
+      document.getElementById('sScn').textContent=dn;document.getElementById('sFnd').textContent=fd;document.getElementById('sErr').textContent=er;
       document.getElementById('rC').textContent=fd+'/'+aR.length;
       const l=document.getElementById('lg'),ln=document.createElement('div');
       ln.className='ln '+(d.status==='found'?'found':d.status==='error'?'err':'');
       ln.textContent=(d.status==='found'?'[+]':d.status==='error'?'[!]':'[-]')+' '+d.name+' — '+d.url;
       l.appendChild(ln);l.scrollTop=l.scrollHeight;
       if(cV==='found'&&d.status==='found')document.getElementById('gr').appendChild(mc(d));
-      else if(cV==='all')document.getElementById('gr').appendChild(mc(d));
-      return;
+      else if(cV==='all')document.getElementById('gr').appendChild(mc(d));return;
     }
-    if(d.type==='done'){
-      sc=false;document.getElementById('goB').disabled=false;document.getElementById('goB').textContent='SCAN';
-      document.getElementById('pg').classList.remove('on');document.getElementById('sm').classList.add('on');
-      document.getElementById('smB').textContent=d.found;document.getElementById('smD').textContent='sur '+d.total+' sites';
-      es.close();
-    }
+    if(d.type==='done'){sc=false;document.getElementById('goB').disabled=false;document.getElementById('goB').textContent='SCAN';document.getElementById('pg').classList.remove('on');document.getElementById('sm').classList.add('on');document.getElementById('smB').textContent=d.found;document.getElementById('smD').textContent='sur '+d.total+' sites';es.close()}
   };
   es.onerror=function(){es.close();sc=false;document.getElementById('goB').disabled=false;document.getElementById('goB').textContent='SCAN';document.getElementById('pg').classList.remove('on')};
 }
@@ -228,139 +337,158 @@ function mc(r){const c=document.createElement('div');c.className='cd '+r.status;
 function sv(v){cV=v;document.querySelectorAll('.vt button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));document.getElementById('gr').style.display=v==='log'?'none':'grid';document.getElementById('lg').classList.toggle('on',v==='log');if(v!=='log'){const g=document.getElementById('gr');g.innerHTML='';(v==='found'?aR.filter(r=>r.status==='found'):aR).forEach(r=>g.appendChild(mc(r)))}}
 function xCSV(){const f=aR.filter(r=>r.status==='found');if(!f.length)return;let c='Site,URL,Cat\n';f.forEach(r=>c+='"'+r.name+'","'+r.url+'","'+r.cat+'"\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([c],{type:'text/csv'}));a.download='thisyou_'+Date.now()+'.csv';a.click()}
 
-// ═══ FACE ═══
+// VISAGE
 let iB=null,sS='vkok_avatar';
 function sdb(b){document.querySelectorAll('.db button').forEach(x=>x.classList.remove('on'));b.classList.add('on');sS=b.dataset.s}
 document.querySelectorAll('.db button').forEach(b=>b.addEventListener('click',()=>sdb(b)));
 document.getElementById('fG').addEventListener('click',fSrch);
-
 const dz=document.getElementById('dz');
 ['dragenter','dragover'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.add('drag')}));
 ['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.remove('drag')}));
 dz.addEventListener('drop',e=>{if(e.dataTransfer.files.length)hf(e.dataTransfer.files[0])});
 document.getElementById('fI').addEventListener('change',e=>{if(e.target.files.length)hf(e.target.files[0])});
-
 async function hf(file){if(!file.type.startsWith('image/'))return;const reader=new FileReader();reader.onload=async e=>{const du=e.target.result;iB=du.split(',')[1];const img=new Image();img.onload=async()=>{const cv=document.getElementById('fC'),ctx=cv.getContext('2d');let w=img.width,h=img.height;if(w>400){h*=400/w;w=400}if(h>400){w*=400/h;h=400}cv.width=w;cv.height=h;ctx.drawImage(img,0,0,w,h);document.getElementById('fp').style.display='block';document.getElementById('dS').style.display='block';document.getElementById('sfB').style.display='block';document.getElementById('fE').classList.add('on');await dl(cv)};img.src=du};reader.readAsDataURL(file)}
-async function dl(cv){const n=document.getElementById('fN');n.innerHTML='<div class="at">IA...</div>';n.classList.add('on');try{if(typeof faceapi==='undefined')return;if(!faceapi.nets.tinyFaceDetector.isLoaded){const M='https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights/';await faceapi.nets.tinyFaceDetector.loadFromUri(M);await faceapi.nets.ageGenderNet.loadFromUri(M);await faceapi.nets.faceExpressionNet.loadFromUri(M)}const ds=await faceapi.detectAllFaces(cv,new faceapi.TinyFaceDetectorOptions({inputSize:416,scoreThreshold:.4})).withAgeAndGender().withFaceExpressions();const ctx=cv.getContext('2d');if(!ds.length){n.innerHTML='<div class="at" style="color:var(--amb)">AUCUN VISAGE</div>';return}ds.forEach(d=>{const b=d.detection.box;ctx.strokeStyle='#00ff41';ctx.lineWidth=2;ctx.strokeRect(b.x,b.y,b.width,b.height)});let h='<div class="at" style="border-color:var(--mx);color:var(--mx)">'+ds.length+' VISAGE(S)</div>';ds.forEach(d=>{h+='<div class="at">~'+Math.round(d.age)+'</div><div class="at">'+(d.gender==='male'?'H':'F')+' '+Math.round(d.genderProbability*100)+'%</div>'});n.innerHTML=h}catch(e){n.innerHTML='<div class="at" style="color:var(--amb)">'+e.message+'</div>'}}
-async function fSrch(){if(!iB)return;const btn=document.getElementById('fG');btn.disabled=true;btn.textContent='...';const st=document.getElementById('fSt');st.innerHTML='<div style="animation:pu 1.5s infinite">Recherche en cours...</div>';st.classList.add('on');document.getElementById('fR').classList.remove('on');try{const r=await fetch('/api/face-search',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:iB,source:sS,results:'50'})});const d=await r.json();if(d.success&&d.profiles?.length){st.innerHTML='<div style="color:var(--mx)">'+d.profiles.length+' profils</div>';document.getElementById('fR').classList.add('on');document.getElementById('fRT').textContent=d.profiles.length+' PROFILS';const g=document.getElementById('fGr');g.innerHTML='';d.profiles.forEach(p=>{const c=document.createElement('div');c.className='fc';c.innerHTML='<img src="'+(p.face||'')+'" onerror="this.style.display=\'none\'"><div class="fn">'+E((p.first_name||'')+' '+(p.last_name||''))+'</div><div class="fm">'+(p.city||'')+'</div><div class="fs">'+p.score+'%</div>';c.addEventListener('click',()=>window.open(p.profile,'_blank'));g.appendChild(c)})}else st.innerHTML='<div style="color:var(--amb)">'+(d.message||'Aucun résultat')+'</div>'}catch(e){st.innerHTML='<div style="color:var(--amb)">'+e.message+'</div>'}btn.disabled=false;btn.textContent='RECHERCHER'}
+async function dl(cv){const n=document.getElementById('fN');n.innerHTML='<div class="at">Analyse IA...</div>';n.classList.add('on');try{if(typeof faceapi==='undefined')return;if(!faceapi.nets.tinyFaceDetector.isLoaded){const M='https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights/';await faceapi.nets.tinyFaceDetector.loadFromUri(M);await faceapi.nets.ageGenderNet.loadFromUri(M);await faceapi.nets.faceExpressionNet.loadFromUri(M)}const ds=await faceapi.detectAllFaces(cv,new faceapi.TinyFaceDetectorOptions({inputSize:416,scoreThreshold:.4})).withAgeAndGender().withFaceExpressions();const ctx=cv.getContext('2d');if(!ds.length){n.innerHTML='<div class="at" style="color:var(--amb)">AUCUN VISAGE DÉTECTÉ</div>';return}ds.forEach(d=>{const b=d.detection.box;ctx.strokeStyle='#00ff41';ctx.lineWidth=2;ctx.strokeRect(b.x,b.y,b.width,b.height)});let h='<div class="at" style="border-color:var(--mx);color:var(--mx)">'+ds.length+' VISAGE(S)</div>';ds.forEach(d=>{h+='<div class="at">~'+Math.round(d.age)+' ans</div><div class="at">'+(d.gender==='male'?'Homme':'Femme')+' '+Math.round(d.genderProbability*100)+'%</div>'});n.innerHTML=h}catch(e){n.innerHTML='<div class="at" style="color:var(--amb)">'+e.message+'</div>'}}
+async function fSrch(){if(!iB)return;const btn=document.getElementById('fG');btn.disabled=true;btn.textContent='...';const st=document.getElementById('fSt');st.innerHTML='<div style="animation:pu 1.5s infinite">Recherche en cours...</div>';st.classList.add('on');document.getElementById('fR').classList.remove('on');try{const r=await fetch('/api/face-search',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:iB,source:sS,results:'50'})});const d=await r.json();if(d.success&&d.profiles?.length){st.innerHTML='<div style="color:var(--mx)">'+d.profiles.length+' profils trouvés</div>';document.getElementById('fR').classList.add('on');document.getElementById('fRT').textContent=d.profiles.length+' PROFILS';const g=document.getElementById('fGr');g.innerHTML='';d.profiles.forEach(p=>{const c=document.createElement('div');c.className='fc';c.innerHTML='<img src="'+(p.face||'')+'" onerror="this.style.display=\'none\'"><div class="fn">'+E((p.first_name||'')+' '+(p.last_name||''))+'</div><div class="fm">'+(p.city||'')+'</div><div class="fs">'+p.score+'%</div>';c.addEventListener('click',()=>window.open(p.profile,'_blank'));g.appendChild(c)})}else st.innerHTML='<div style="color:var(--amb)">'+(d.message||'Aucun résultat')+'</div>'}catch(e){st.innerHTML='<div style="color:var(--amb)">'+e.message+'</div>'}btn.disabled=false;btn.textContent='RECHERCHER CE VISAGE'}
 
-// ═══ PHONE ═══
+// TÉLÉPHONE
 document.getElementById('phI').addEventListener('keydown',e=>{if(e.key==='Enter')phL()});
 document.getElementById('phB').addEventListener('click',phL);
-async function phL(){const n=document.getElementById('phI').value.trim();if(!n)return;document.getElementById('phE').style.display='none';const el=document.getElementById('phR');el.innerHTML='<div style="text-align:center;padding:20px;animation:pu 1.5s infinite;color:var(--mx2)">Analyse + recherche web en cours...</div>';el.classList.add('on');
-try{const r=await fetch('/api/phone/'+encodeURIComponent(n));const d=await r.json();if(!d.success){el.innerHTML='<div class="rs"><h4>ERREUR</h4><p style="color:var(--red);font-size:.55rem">'+E(d.error)+'</p></div>';return}
-const p=d.data;let h='<div class="rs"><h4>ANALYSE DU NUMÉRO</h4>';
-h+=rw('International',p.international);h+=rw('National',p.national);h+=rw('E.164',p.e164);h+=rw('Pays',p.country);h+=rw('Type',p.type);h+=rw('Valide',p.valid?'✓ OUI':'✗ NON',p.valid?'ok':'bad');h+='</div>';
-if(p.searches.length){h+='<div class="rs"><h4>RÉSULTATS WEB ('+p.searches.length+')</h4>';p.searches.forEach(s=>{h+='<div class="sr" onclick="window.open(\''+E(s.url)+'\',\'_blank\')"><div class="st2">'+E(s.title)+'</div><div class="su">'+E(s.url)+'</div><div class="ss">via '+E(s.source||'web')+'</div></div>'});h+='</div>'}
-else h+='<div class="rs"><h4>RÉSULTATS WEB</h4><p style="font-size:.55rem;color:var(--mx2)">Aucun résultat trouvé sur le web pour ce numéro</p></div>';
-h+='<div class="rs"><h4>OUTILS SPÉCIALISÉS</h4><div style="display:flex;flex-wrap:wrap;gap:4px">';
-[['Truecaller','https://www.truecaller.com/search/'+encodeURIComponent(p.international.replace(/\s/g,''))],['Sync.me','https://sync.me/search/?number='+encodeURIComponent(p.e164)],['NumLookup','https://www.numlookup.com/'],['SpyDialer','https://www.spydialer.com/'],['Infobel','https://www.infobel.com/']].forEach(([name,url])=>{h+='<a href="'+E(url)+'" target="_blank" style="display:inline-block;padding:5px 10px;border:1px solid var(--mx3);color:var(--mx2);font-size:.48rem;text-decoration:none;transition:.2s">'+name+'</a>'});
-h+='</div></div>';el.innerHTML=h}catch(e){el.innerHTML='<div class="rs"><p style="color:var(--red);font-size:.55rem">'+e.message+'</p></div>'}}
+async function phL(){
+  const n=document.getElementById('phI').value.trim();if(!n)return;
+  document.getElementById('phE').style.display='none';
+  const el=document.getElementById('phR');
+  el.innerHTML='<div style="text-align:center;padding:20px;animation:pu 1.5s infinite;color:var(--mx2)">Analyse en cours...</div>';el.classList.add('on');
+  try{
+    const r=await fetch('/api/phone/'+encodeURIComponent(n));const d=await r.json();
+    if(!d.success){el.innerHTML='<div class="rs"><h4>ERREUR</h4><p style="color:var(--red);font-size:.55rem">'+E(d.error)+'</p></div>';return}
+    const p=d.data;let h='<div class="rs"><h4>ANALYSE DU NUMÉRO</h4>';
+    h+=rw('Format international',p.international);h+=rw('Format national',p.national);h+=rw('Pays',p.country);h+=rw('Type de ligne',p.type);h+=rw('Valide',p.valid?'✓ OUI':'✗ NON',p.valid?'ok':'bad');h+='</div>';
+    if(p.searches.length){h+='<div class="rs"><h4>MENTIONS PUBLIQUES SUR LE WEB ('+p.searches.length+')</h4>';p.searches.forEach(s=>{h+='<div class="sr" onclick="window.open(\''+E(s.url)+'\',\'_blank\')"><div class="st2">'+E(s.title)+'</div><div class="su">'+E(s.url)+'</div></div>'});h+='</div>'}
+    else h+='<div class="rs"><h4>MENTIONS WEB</h4><p style="font-size:.55rem;color:var(--mx2)">Aucune mention publique trouvée pour ce numéro</p></div>';
+    h+='<div class="rs"><h4>OUTILS SPÉCIALISÉS</h4><div style="display:flex;flex-wrap:wrap;gap:4px">';
+    [['Truecaller','https://www.truecaller.com/search/'+encodeURIComponent(p.international.replace(/\s/g,'')),'Truecaller — Identifie le propriétaire du numéro grâce aux carnets d\'adresses partagés par des millions d\'utilisateurs.'],
+     ['Sync.me','https://sync.me/search/?number='+encodeURIComponent(p.e164),'Sync.me — Recherche le nom et le profil associés à ce numéro dans les contacts partagés.'],
+     ['NumLookup','https://www.numlookup.com/','NumLookup — Recherche gratuite d\'informations sur un numéro de téléphone (nom, opérateur, localisation).'],
+     ['SpyDialer','https://www.spydialer.com/','SpyDialer — Recherche le nom et l\'adresse associés à un numéro, surtout efficace pour les numéros américains.'],
+    ].forEach(([name,url,tip])=>{h+='<a href="'+E(url)+'" target="_blank" class="tool-link" data-tip="'+E(tip)+'">'+name+'</a>'});
+    h+='</div></div>';el.innerHTML=h;
+  }catch(e){el.innerHTML='<div class="rs"><p style="color:var(--red);font-size:.55rem">'+e.message+'</p></div>'}
+}
 
-// ═══ EMAIL ═══
+// EMAIL
 document.getElementById('emI').addEventListener('keydown',e=>{if(e.key==='Enter')emL()});
 document.getElementById('emB').addEventListener('click',emL);
-async function emL(){const em=document.getElementById('emI').value.trim();if(!em)return;document.getElementById('emE').style.display='none';const el=document.getElementById('emR');el.innerHTML='<div style="text-align:center;padding:20px;animation:pu 1.5s infinite;color:var(--mx2)">Gravatar + breaches + recherche web...</div>';el.classList.add('on');
-try{const r=await fetch('/api/email/'+encodeURIComponent(em));const d=await r.json();if(!d.success){el.innerHTML='<div class="rs"><p style="color:var(--red);font-size:.55rem">'+E(d.error)+'</p></div>';return}
-const e=d.data;let h='';
-if(e.hasGravatar)h+='<img src="'+E(e.gravatarUrl)+'" class="gi">';
-h+='<div class="rs"><h4>ANALYSE EMAIL</h4>';h+=rw('Email',e.email);h+=rw('Utilisateur',e.user);h+=rw('Domaine',e.domain);h+=rw('Gravatar',e.hasGravatar?'✓ TROUVÉ':'✗ Non','');
-if(e.gravatarProfile){const gp=e.gravatarProfile;if(gp.displayName)h+=rw('Nom Gravatar',gp.displayName);if(gp.aboutMe)h+=rw('Bio',gp.aboutMe);if(gp.currentLocation)h+=rw('Localisation',gp.currentLocation)}
-h+=rw('Fuites (HIBP)',e.breachCount>0?e.breachCount+' BREACH(ES)':'Aucune détectée',e.breachCount>0?'bad':'ok');h+='</div>';
-if(e.breachCount>0){h+='<div class="rs"><h4>FUITES DE DONNÉES</h4><div class="bl">';e.breaches.forEach(b=>{h+='<span>'+E(b.name)+(b.date?' ('+b.date+')':'')+'</span>'});h+='</div></div>'}
-if(e.searches.length){h+='<div class="rs"><h4>RÉSULTATS WEB ('+e.searches.length+')</h4>';e.searches.forEach(s=>{h+='<div class="sr" onclick="window.open(\''+E(s.url)+'\',\'_blank\')"><div class="st2">'+E(s.title)+'</div><div class="su">'+E(s.url)+'</div></div>'});h+='</div>'}
-h+='<div class="rs"><h4>OUTILS</h4><div style="display:flex;flex-wrap:wrap;gap:4px">';
-[['Epieos','https://epieos.com/?q='+encodeURIComponent(em)],['BreachDirectory','https://breachdirectory.org/'],['LeakCheck','https://leakcheck.io/']].forEach(([n,u])=>{h+='<a href="'+E(u)+'" target="_blank" style="display:inline-block;padding:5px 10px;border:1px solid var(--mx3);color:var(--mx2);font-size:.48rem;text-decoration:none;transition:.2s">'+n+'</a>'});
-h+='</div></div>';el.innerHTML=h}catch(e){el.innerHTML='<div class="rs"><p style="color:var(--red);font-size:.55rem">'+e.message+'</p></div>'}}
+async function emL(){
+  const em=document.getElementById('emI').value.trim();if(!em)return;
+  document.getElementById('emE').style.display='none';
+  const el=document.getElementById('emR');
+  el.innerHTML='<div style="text-align:center;padding:20px;animation:pu 1.5s infinite;color:var(--mx2)">Analyse en cours...</div>';el.classList.add('on');
+  try{
+    const r=await fetch('/api/email/'+encodeURIComponent(em));const d=await r.json();
+    if(!d.success){el.innerHTML='<div class="rs"><p style="color:var(--red);font-size:.55rem">'+E(d.error)+'</p></div>';return}
+    const e=d.data;let h='';
+    if(e.hasGravatar)h+='<img src="'+E(e.gravatarUrl)+'" class="gi">';
+    h+='<div class="rs"><h4>ANALYSE EMAIL</h4>';
+    h+=rw('Email',e.email);h+=rw('Nom d\'utilisateur',e.user);h+=rw('Domaine',e.domain);
+    h+=rw('Avatar public (Gravatar)',e.hasGravatar?'✓ OUI — photo de profil trouvée':'✗ Aucun avatar');
+    if(e.gravatarProfile){const gp=e.gravatarProfile;if(gp.displayName)h+=rw('Nom affiché',gp.displayName);if(gp.aboutMe)h+=rw('Bio',gp.aboutMe);if(gp.currentLocation)h+=rw('Localisation',gp.currentLocation)}
+    h+=rw('Fuites de données',e.breachCount>0?e.breachCount+' fuite(s) — email compromis':'Aucune fuite détectée',e.breachCount>0?'bad':'ok');
+    h+='</div>';
+    if(e.breachCount>0){
+      h+='<div class="rs"><h4>⚠ FUITES DE DONNÉES — CET EMAIL A ÉTÉ EXPOSÉ</h4>';
+      h+='<p style="font-size:.5rem;color:var(--mx2);margin-bottom:6px">Cet email apparaît dans des bases de données volées lors de piratages de sites web.</p>';
+      h+='<div class="bl">';
+      e.breaches.forEach(b=>{h+='<span>'+E(b.name)+(b.date?' ('+b.date+')':'')+'</span>'});
+      h+='</div></div>';
+    }
+    if(e.searches.length){h+='<div class="rs"><h4>MENTIONS PUBLIQUES SUR LE WEB ('+e.searches.length+')</h4>';e.searches.forEach(s=>{h+='<div class="sr" onclick="window.open(\''+E(s.url)+'\',\'_blank\')"><div class="st2">'+E(s.title)+'</div><div class="su">'+E(s.url)+'</div></div>'});h+='</div>'}
+    h+='<div class="rs"><h4>OUTILS COMPLÉMENTAIRES</h4><div style="display:flex;flex-wrap:wrap;gap:4px">';
+    [['Epieos','https://epieos.com/?q='+encodeURIComponent(em),'Epieos — Recherche les comptes Google et réseaux sociaux liés à cet email. Très puissant pour retrouver des profils associés.'],
+     ['LeakCheck','https://leakcheck.io/','LeakCheck — Vérifie si l\'email et ses mots de passe ont été exposés dans des bases de données volées.'],
+     ['BreachDirectory','https://breachdirectory.org/','BreachDirectory — Recherche dans des millions de données volées lors de piratages de sites.'],
+    ].forEach(([name,url,tip])=>{h+='<a href="'+E(url)+'" target="_blank" class="tool-link" data-tip="'+E(tip)+'">'+name+'</a>'});
+    h+='</div></div>';el.innerHTML=h;
+  }catch(e){el.innerHTML='<div class="rs"><p style="color:var(--red);font-size:.55rem">'+e.message+'</p></div>'}
+}
 
-// ═══ IP ═══
+// IP
 document.getElementById('ipI').addEventListener('keydown',e=>{if(e.key==='Enter')ipL()});
 document.getElementById('ipB').addEventListener('click',ipL);
-document.getElementById('nmapB').addEventListener('click',nmapScan);
-document.getElementById('niktoB').addEventListener('click',niktoScan);
-
-let lastIpTarget = '';
-async function nmapScan() {
-  const target = lastIpTarget || document.getElementById('ipI').value.trim();
-  if (!target) return;
-  const btn = document.getElementById('nmapB');
-  const el = document.getElementById('nmapR');
-  btn.textContent = '...'; btn.disabled = true;
-  el.style.display = 'block';
-  el.innerHTML = '<div style="text-align:center;padding:16px;animation:pu 1.5s infinite;color:var(--mx2)">Scan en cours (~30s)...</div>';
-  try {
-    const r = await fetch('/api/nmap/' + encodeURIComponent(target));
-    const d = await r.json();
-    if (!d.success) { el.innerHTML = '<div class="rs"><p style="color:var(--red);font-size:.55rem">' + E(d.error) + '</p></div>'; return; }
-    const g = d.data;
-    let h = '<div class="rs"><h4>PORTS OUVERTS (' + g.portCount + ')</h4>';
-    if (g.os) h += '<div class="rw"><span class="rl">OS détecté</span><span class="rv">' + E(g.os.name) + ' (' + g.os.accuracy + '%)</span></div>';
-    if (g.latency) h += '<div class="rw"><span class="rl">Latence</span><span class="rv">' + E(g.latency) + '</span></div>';
-    h += '</div>';
-    if (g.ports.length) {
-      h += '<div class="rs"><h4>SERVICES</h4>';
-      h += '<div style="display:grid;grid-template-columns:60px 60px 1fr 1fr;gap:3px;font-size:.45rem;color:var(--mx2);padding:4px 0;border-bottom:1px solid var(--mx3)"><span>PORT</span><span>PROTO</span><span>SERVICE</span><span>VERSION</span></div>';
-      g.ports.forEach(p => {
-        h += '<div style="display:grid;grid-template-columns:60px 60px 1fr 1fr;gap:3px;font-size:.48rem;padding:3px 0;border-bottom:1px solid rgba(0,255,65,.04)">';
-        h += '<span style="color:var(--mx)">' + E(p.port) + '</span>';
-        h += '<span>' + E(p.protocol) + '</span>';
-        h += '<span style="color:var(--gold)">' + E(p.service) + '</span>';
-        h += '<span>' + E((p.product + ' ' + p.version).trim() || '—') + '</span>';
-        h += '</div>';
-      });
-      h += '</div>';
-    } else {
-      h += '<div class="rs"><p style="font-size:.55rem;color:var(--mx2)">Aucun port ouvert détecté</p></div>';
-    }
-    el.innerHTML = h;
-  } catch(e) {
-    el.innerHTML = '<div class="rs"><p style="color:var(--red);font-size:.55rem">' + e.message + '</p></div>';
-  }
-  btn.textContent = 'RELANCER'; btn.disabled = false;
+let lastIpTarget='';
+async function ipL(){
+  const ip=document.getElementById('ipI').value.trim();if(!ip)return;
+  lastIpTarget=ip;
+  document.getElementById('ipE').style.display='none';
+  document.getElementById('subNav').classList.add('on');
+  document.getElementById('spPorts').innerHTML='';
+  document.getElementById('spVulns').innerHTML='';
+  swSub('geo');
+  const el=document.getElementById('spGeo');
+  el.innerHTML='<div style="text-align:center;padding:20px;animation:pu 1.5s infinite;color:var(--mx2)">Géolocalisation en cours...</div>';
+  try{
+    const r=await fetch('/api/ip/'+encodeURIComponent(ip));const d=await r.json();
+    if(!d.success){el.innerHTML='<div class="rs"><p style="color:var(--red);font-size:.55rem">'+E(d.error||'Erreur')+'</p></div>';return}
+    const g=d.data;let h='<div class="rs"><h4>📍 LOCALISATION GÉOGRAPHIQUE</h4>';
+    h+=rw('IP / Domaine',g.query||ip);h+=rw('Pays',(g.country||'?')+' ('+(g.countryCode||'?')+')');h+=rw('Région',g.regionName);h+=rw('Ville',g.city);h+=rw('Code postal',g.zip);h+=rw('Coordonnées GPS',g.lat+', '+g.lon);h+=rw('Fuseau horaire',g.timezone);
+    if(g.lat&&g.lon)h+='<a class="ml" href="'+E(g.mapUrl)+'" target="_blank">↗ VOIR SUR LA CARTE</a>';
+    h+='</div>';
+    h+='<div class="rs"><h4>🌐 INFORMATIONS RÉSEAU</h4>';
+    h+=rw('Fournisseur internet (FAI)',g.isp);h+=rw('Organisation',g.org);h+=rw('Numéro AS',g.as);
+    h+=rw('Connexion mobile',g.mobile?'OUI':'NON',g.mobile?'bad':'');
+    h+=rw('VPN / Proxy détecté',g.proxy?'⚠ OUI — IP masquée':'NON',g.proxy?'bad':'ok');
+    h+=rw('Serveur d\'hébergement',g.hosting?'OUI':'NON');
+    if(g.reverseDns?.length)h+=rw('DNS inversé',g.reverseDns.join(', '));
+    if(g.ipinfo?.hostname)h+=rw('Nom d\'hôte',g.ipinfo.hostname);
+    h+='</div>';
+    if(g.searches?.length){h+='<div class="rs"><h4>🔍 MENTIONS PUBLIQUES SUR LE WEB</h4>';g.searches.forEach(s=>{h+='<div class="sr" onclick="window.open(\''+E(s.url)+'\',\'_blank\')"><div class="st2">'+E(s.title)+'</div><div class="su">'+E(s.url)+'</div></div>'});h+='</div>'}
+    h+='<div class="rs"><h4>🛠 OUTILS SPÉCIALISÉS</h4><div style="display:flex;flex-wrap:wrap;gap:4px">';
+    [['Shodan',    'https://www.shodan.io/host/'+encodeURIComponent(g.query||ip),    'Shodan — Moteur de recherche pour appareils connectés. Montre les services actifs, ports ouverts et vulnérabilités connues de cette IP.'],
+     ['Censys',    'https://search.censys.io/hosts/'+encodeURIComponent(g.query||ip),'Censys — Scan complet de l\'IP : certificats SSL, ports ouverts, logiciels détectés.'],
+     ['VirusTotal','https://www.virustotal.com/gui/ip-address/'+encodeURIComponent(g.query||ip),'VirusTotal — Vérifie si cette IP est blacklistée ou associée à des malwares et des attaques.'],
+     ['AbuseIPDB', 'https://www.abuseipdb.com/check/'+encodeURIComponent(g.query||ip),'AbuseIPDB — Vérifie si cette IP a été signalée pour spam, attaques DDoS ou activités malveillantes.'],
+     ['WHOIS',     'https://who.is/whois/'+encodeURIComponent(ip),                   'WHOIS — Affiche les informations d\'enregistrement du domaine : propriétaire, dates d\'enregistrement, serveurs DNS.'],
+     ['crt.sh',    'https://crt.sh/?q='+encodeURIComponent(ip),                      'crt.sh — Liste tous les certificats SSL émis pour ce domaine. Très utile pour découvrir des sous-domaines cachés.'],
+    ].forEach(([name,url,tip])=>{h+='<a href="'+E(url)+'" target="_blank" class="tool-link" data-tip="'+E(tip)+'">'+name+'</a>'});
+    h+='</div></div>';el.innerHTML=h;
+  }catch(e){el.innerHTML='<div class="rs"><p style="color:var(--red);font-size:.55rem">'+e.message+'</p></div>'}
 }
-async function niktoScan() {
-  const target = lastIpTarget || document.getElementById('ipI').value.trim();
-  if (!target) return;
-  const btn = document.getElementById('niktoB');
-  const el = document.getElementById('niktoR');
-  btn.textContent = '...'; btn.disabled = true;
-  el.style.display = 'block';
-  el.innerHTML = '<div style="text-align:center;padding:16px;animation:pu 1.5s infinite;color:var(--red)">Scan des failles en cours (~30s)...</div>';
-  try {
-    const r = await fetch('/api/nikto/' + encodeURIComponent(target));
-    const d = await r.json();
-    if (!d.success) { el.innerHTML = '<div class="rs"><p style="color:var(--red);font-size:.55rem">' + E(d.error) + '</p></div>'; return; }
-    const g = d.data;
-    let h = '<div class="rs" style="border-color:var(--red)"><h4 style="color:var(--red)">FAILLES DÉTECTÉES (' + g.vulnCount + ')</h4>';
-    if (!g.vulns.length) {
-      h += '<p style="font-size:.55rem;color:var(--mx2)">Aucune faille détectée</p>';
-    } else {
-      g.vulns.forEach(v => {
-        h += '<div style="padding:6px 0;border-bottom:1px solid rgba(255,23,68,.15)">';
-        h += '<div style="font-size:.5rem;color:var(--red);margin-bottom:2px">[' + E(v.id) + '] ' + E(v.method) + ' ' + E(v.uri) + '</div>';
-        h += '<div style="font-size:.52rem;color:var(--mx)">' + E(v.msg) + '</div>';
-        if (v.references) h += '<div style="font-size:.42rem;color:var(--mx2);margin-top:2px">Réf: ' + E(v.references) + '</div>';
-        h += '</div>';
-      });
-    }
-    h += '</div>';
-    el.innerHTML = h;
-  } catch(e) {
-    el.innerHTML = '<div class="rs"><p style="color:var(--red);font-size:.55rem">' + e.message + '</p></div>';
-  }
-  btn.textContent = 'RELANCER'; btn.disabled = false;
-}const ip=document.getElementById('ipI').value.trim();if(!ip)return;lastIpTarget=ip;document.getElementById('ipE').style.display='none';document.getElementById('nmapWrap').style.display='none';document.getElementById('nmapR').style.display='none';const el=document.getElementById('ipR');el.innerHTML='<div style="text-align:center;padding:20px;animation:pu 1.5s infinite;color:var(--mx2)">Géolocalisation + DNS + recherche web...</div>';el.classList.add('on');
-try{const r=await fetch('/api/ip/'+encodeURIComponent(ip));const d=await r.json();if(!d.success){el.innerHTML='<div class="rs"><p style="color:var(--red);font-size:.55rem">'+E(d.error||d.data?.message||'Erreur')+'</p></div>';return}
-const g=d.data;let h='<div class="rs"><h4>GÉOLOCALISATION</h4>';
-h+=rw('IP/Domaine',g.query||ip);h+=rw('Pays',(g.country||'?')+' ('+(g.countryCode||'?')+')');h+=rw('Région',g.regionName);h+=rw('Ville',g.city);h+=rw('Code postal',g.zip);h+=rw('Coordonnées',g.lat+', '+g.lon);h+=rw('Timezone',g.timezone);
-if(g.lat&&g.lon)h+='<a class="ml" href="'+E(g.mapUrl)+'" target="_blank">↗ VOIR SUR LA CARTE</a>';
-h+='</div>';
-h+='<div class="rs"><h4>RÉSEAU</h4>';h+=rw('FAI',g.isp);h+=rw('Organisation',g.org);h+=rw('AS',g.as);h+=rw('Mobile',g.mobile?'OUI':'NON',g.mobile?'bad':'');h+=rw('Proxy/VPN',g.proxy?'⚠ OUI':'NON',g.proxy?'bad':'ok');h+=rw('Hébergement',g.hosting?'OUI':'NON');
-if(g.reverseDns?.length)h+=rw('Reverse DNS',g.reverseDns.join(', '));
-if(g.ipinfo){const ii=g.ipinfo;if(ii.hostname)h+=rw('Hostname',ii.hostname);if(ii.org)h+=rw('Org (ipinfo)',ii.org)}
-h+='</div>';
-if(g.searches?.length){h+='<div class="rs"><h4>RÉSULTATS WEB ('+g.searches.length+')</h4>';g.searches.forEach(s=>{h+='<div class="sr" onclick="window.open(\''+E(s.url)+'\',\'_blank\')"><div class="st2">'+E(s.title)+'</div><div class="su">'+E(s.url)+'</div></div>'});h+='</div>'}
-h+='<div class="rs"><h4>OUTILS</h4><div style="display:flex;flex-wrap:wrap;gap:4px">';
-[['Shodan','https://www.shodan.io/host/'+encodeURIComponent(g.query||ip)],['Censys','https://search.censys.io/hosts/'+encodeURIComponent(g.query||ip)],['VirusTotal','https://www.virustotal.com/gui/ip-address/'+encodeURIComponent(g.query||ip)],['AbuseIPDB','https://www.abuseipdb.com/check/'+encodeURIComponent(g.query||ip)],['WHOIS','https://who.is/whois/'+encodeURIComponent(ip)],['crt.sh','https://crt.sh/?q='+encodeURIComponent(ip)]].forEach(([n,u])=>{h+='<a href="'+E(u)+'" target="_blank" style="display:inline-block;padding:5px 10px;border:1px solid var(--mx3);color:var(--mx2);font-size:.48rem;text-decoration:none;transition:.2s">'+n+'</a>'});
-h+='</div></div>';el.innerHTML=h;document.getElementById('nmapWrap').style.display='block';}catch(e){el.innerHTML='<div class="rs"><p style="color:var(--red);font-size:.55rem">'+e.message+'</p></div>'}}
-</script></body></html>
+
+// NMAP
+async function nmapScan(){
+  const el=document.getElementById('spPorts');
+  el.innerHTML='<div style="text-align:center;padding:20px;animation:pu 1.5s infinite;color:var(--mx2)">Scan des ports en cours (~30s)...<br><span style="font-size:.45rem;color:var(--mx3)">Nmap analyse quels services réseau sont actifs sur cette machine</span></div>';
+  try{
+    const r=await fetch('/api/nmap/'+encodeURIComponent(lastIpTarget));const d=await r.json();
+    if(!d.success){el.innerHTML='<div class="rs"><p style="color:var(--red);font-size:.55rem">'+E(d.error)+'</p></div>';return}
+    const g=d.data;let h='<div class="rs"><h4>🔌 PORTS RÉSEAU OUVERTS ('+g.portCount+')</h4>';
+    h+='<p style="font-size:.48rem;color:var(--mx2);margin-bottom:8px">Chaque port ouvert correspond à un service accessible depuis internet. Ex : port 80 = site web, port 22 = accès SSH (administration à distance), port 21 = FTP (transfert de fichiers).</p>';
+    if(g.os)h+=rw('Système d\'exploitation détecté',g.os.name+' (confiance '+g.os.accuracy+'%)');
+    if(g.latency)h+=rw('Latence réseau',g.latency);
+    h+='</div>';
+    if(g.ports.length){
+      h+='<div class="rs"><h4>LISTE DES PORTS</h4>';
+      h+='<div style="display:grid;grid-template-columns:70px 60px 1fr 1fr;gap:3px;font-size:.44rem;color:var(--mx2);padding:4px 0;border-bottom:1px solid var(--mx3)"><span>PORT</span><span>PROTO</span><span>SERVICE</span><span>VERSION</span></div>';
+      g.ports.forEach(p=>{h+='<div style="display:grid;grid-template-columns:70px 60px 1fr 1fr;gap:3px;font-size:.48rem;padding:4px 0;border-bottom:1px solid rgba(0,255,65,.04)"><span style="color:var(--mx);font-family:\'Orbitron\',sans-serif">'+E(p.port)+'</span><span style="color:var(--mx2)">'+E(p.protocol)+'</span><span style="color:var(--gold)">'+E(p.service)+'</span><span>'+E((p.product+' '+p.version).trim()||'—')+'</span></div>'});
+      h+='</div>';
+    }else{h+='<div class="rs"><p style="font-size:.55rem;color:var(--mx2)">Aucun port ouvert détecté — la cible est probablement protégée par un pare-feu.</p></div>'}
+    el.innerHTML=h;
+  }catch(e){el.innerHTML='<div class="rs"><p style="color:var(--red);font-size:.55rem">'+e.message+'</p></div>'}
+}
+
+// NIKTO
+async function niktoScan(){
+  const el=document.getElementById('spVulns');
+  el.innerHTML='<div style="text-align:center;padding:20px;animation:pu 1.5s infinite;color:var(--red)">Scan de failles en cours (~30s)...<br><span style="font-size:.45rem;color:var(--mx3)">Nikto analyse le serveur web à la recherche de failles de sécurité connues</span></div>';
+  try{
+    const r=await fetch('/api/nikto/'+encodeURIComponent(lastIpTarget));const d=await r.json();
+    if(!d.success){el.innerHTML='<div class="rs"><p style="color:var(--red);font-size:.55rem">'+E(d.error)+'</p></div>';return}
+    const g=d.data;let h='<div class="rs" style="border-color:var(--red)"><h4 style="color:var(--red)">⚠ FAILLES WEB DÉTECTÉES ('+g.vulnCount+')</h4>';
+    h+='<p style="font-size:.48rem;color:var(--mx2);margin-bottom:8px">Nikto cherche les fichiers sensibles exposés (admin, config, backup), les mauvaises configurations et les logiciels obsolètes avec des failles de sécurité connues.</p>';
+    if(!g.vulns.length){h+='<p style="font-size:.55rem;color:var(--mx)">✓ Aucune faille web détectée — le serveur semble correctement configuré.</p>'}
+    else{g.vulns.forEach(v=>{h+='<div style="padding:7px 0;border-bottom:1px solid rgba(255,23,68,.15)"><div style="font-size:.48rem;color:var(--red);margin-bottom:3px">['+E(v.id)+'] '+E(v.method)+' '+E(v.uri)+'</div><div style="font-size:.52rem;color:var(--mx)">'+E(v.msg)+'</div>'+(v.references?'<div style="font-size:.42rem;color:var(--mx2);margin-top:2px">Référence: '+E(v.references)+'</div>':'')+'</div>'})}
+    h+='</div>';el.innerHTML=h;
+  }catch(e){el.innerHTML='<div class="rs"><p style="color:var(--red);font-size:.55rem">'+e.message+'</p></div>'}
+}
+</script>
+</body></html>
