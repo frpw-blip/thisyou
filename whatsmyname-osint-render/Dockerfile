@@ -1,4 +1,5 @@
 FROM node:20-alpine
+RUN apk add --no-cache nmap nikto perl
 WORKDIR /app
 COPY package.json ./
 RUN npm install --production
