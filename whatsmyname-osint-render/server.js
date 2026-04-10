@@ -288,13 +288,8 @@ app.get('/api/nikto/:target', niktoLimiter, async (req, res) => {
   const target = sanitize(req.params.target, 253);
   if (!isValidIP(target)) return res.json({ success: false, error: 'Cible invalide' });
   const url = target.startsWith('http') ? target : 'http://' + target;
-  if (!NIKTO_CMD) return res.json({ success: false, error: 'Nikto non disponible sur ce serveur' });
-  const isScript = NIKTO_CMD.endsWith('.pl');
-  const cmd = isScript ? 'perl' : NIKTO_CMD;
-  const args = isScript
-    ? [NIKTO_CMD, '-h', url, '-maxtime', '30', '-nointeractive', '-Format', 'csv', '-output', '-']
-    : ['-h', url, '-maxtime', '30', '-nointeractive', '-Format', 'csv', '-output', '-'];
-  execFile(cmd, args, { timeout: 35000, maxBuffer: 1024 * 512 }, (err, stdout, stderr) => {
+  const args = ['-h', url, '-maxtime', '30', '-nointeractive', '-Format', 'csv', '-output', '-'];
+  execFile('nikto', args, { timeout: 35000, maxBuffer: 1024 * 512 }, (err, stdout, stderr) => {
     const output = stdout || '';
     if (!output && err) return res.json({ success: false, error: 'Nikto injoignable — ' + (err.message || '') });
     try {
