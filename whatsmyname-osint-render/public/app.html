@@ -242,11 +242,15 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
     <button data-sp="vulns" data-tip="Scan de failles web (Nikto) — Analyse le serveur web pour détecter des vulnérabilités connues : fichiers sensibles exposés, mauvaises configurations, logiciels obsolètes avec des failles de sécurité.">
       <span class="sn-icon">⚠️</span>FAILLES WEB
     </button>
+    <button data-sp="sqli" data-tip="Injection SQL (SQLMap) — Teste si le site est vulnérable aux injections SQL. Une injection SQL permet de lire ou modifier la base de données d'un site. Nécessite une URL avec paramètres (ex: site.com/page?id=1).">
+      <span class="sn-icon">💉</span>INJECTION SQL
+    </button>
   </div>
 
   <div class="sub-panel on" id="spGeo"></div>
   <div class="sub-panel" id="spPorts"></div>
   <div class="sub-panel" id="spVulns"></div>
+  <div class="sub-panel" id="spSqli"></div>
 
   <div class="em" id="ipE">
     <div class="ic">⟐</div>
@@ -308,9 +312,11 @@ function swSub(n){
   document.getElementById('spGeo').classList.toggle('on',n==='geo');
   document.getElementById('spPorts').classList.toggle('on',n==='ports');
   document.getElementById('spVulns').classList.toggle('on',n==='vulns');
+  document.getElementById('spSqli').classList.toggle('on',n==='sqli');
 }
 document.querySelector('[data-sp="ports"]').addEventListener('click',()=>{swSub('ports');if(!document.getElementById('spPorts').innerHTML&&lastIpTarget)nmapScan()});
 document.querySelector('[data-sp="vulns"]').addEventListener('click',()=>{swSub('vulns');if(!document.getElementById('spVulns').innerHTML&&lastIpTarget)niktoScan()});
+document.querySelector('[data-sp="sqli"]').addEventListener('click',()=>{swSub('sqli');if(!document.getElementById('spSqli').innerHTML&&lastIpTarget)sqlmapScan()});
 document.querySelector('[data-sp="geo"]').addEventListener('click',()=>swSub('geo'));
 
 function E(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
@@ -523,7 +529,51 @@ async function niktoScan(){
   }catch(e){el.innerHTML='<div class="rs"><p style="color:var(--red);font-size:.55rem">'+e.message+'</p></div>'}
 }
 
-// HASH / URL ANALYSER
+// SQLMAP
+async function sqlmapScan(){
+  const el=document.getElementById('spSqli');
+  const target=lastIpTarget;
+  const url=target.startsWith('http')?target:'http://'+target;
+  el.innerHTML='<div style="text-align:center;padding:20px;animation:pu 1.5s infinite;color:var(--cyan)">Scan SQLMap en cours (~60s)...<br><span style="font-size:.45rem;color:var(--mx3)">SQLMap teste les injections SQL sur l\'URL cible</span></div>';
+  // Champ URL personnalisé pour SQLMap
+  const urlBox=document.createElement('div');
+  urlBox.style.cssText='max-width:650px;margin:0 auto;padding:8px 0';
+  urlBox.innerHTML='<div style="font-size:.48rem;color:var(--mx2);margin-bottom:6px">URL à tester (avec paramètres, ex: http://site.com/page?id=1)</div>'
+    +'<div style="display:flex;gap:6px"><input id="sqliUrl" value="'+E(url)+'" style="flex:1;background:#000;border:1px solid var(--mx3);color:var(--mx);font-family:\'Share Tech Mono\',monospace;font-size:.6rem;padding:7px;outline:0">'
+    +'<button id="sqliGo" style="background:var(--cyan);color:#000;border:none;padding:7px 14px;font-family:\'Share Tech Mono\',monospace;font-size:.55rem;cursor:pointer;text-transform:uppercase">LANCER</button></div>';
+  el.innerHTML='';
+  el.appendChild(urlBox);
+  const resultDiv=document.createElement('div');
+  el.appendChild(resultDiv);
+  document.getElementById('sqliGo').addEventListener('click',async()=>{
+    const scanUrl=document.getElementById('sqliUrl').value.trim();
+    if(!scanUrl)return;
+    document.getElementById('sqliGo').disabled=true;document.getElementById('sqliGo').textContent='...';
+    resultDiv.innerHTML='<div style="text-align:center;padding:20px;animation:pu 1.5s infinite;color:var(--cyan)">SQLMap en cours (~60s)...<br><span style="font-size:.45rem;color:var(--mx3)">Teste les injections SQL sur l\'URL</span></div>';
+    try{
+      const r=await fetch('/api/sqlmap',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:scanUrl})});
+      const d=await r.json();
+      if(!d.success){resultDiv.innerHTML='<div class="rs"><p style="color:var(--red);font-size:.55rem">'+E(d.error)+'</p></div>';return}
+      const g=d.data;
+      let h='<div class="rs" style="border-color:'+(g.injectable?'var(--red)':'var(--mx)')+'"><h4 style="color:'+(g.injectable?'var(--red)':'var(--mx)')+'">'+(g.injectable?'💉 INJECTION SQL DÉTECTÉE':'✓ AUCUNE INJECTION SQL DÉTECTÉE')+'</h4>';
+      h+='<p style="font-size:.48rem;color:var(--mx2);margin-bottom:8px">SQLMap teste si la base de données est accessible via des paramètres mal sécurisés dans l\'URL.</p>';
+      h+=rw('URL testée',g.url);
+      if(g.dbms)h+=rw('Base de données détectée',g.dbms,'bad');
+      if(g.injTypes.length)h+=rw('Types d\'injection',g.injTypes.join(', '),'bad');
+      h+='</div>';
+      if(g.vulns.length){
+        h+='<div class="rs" style="border-color:var(--red)"><h4 style="color:var(--red)">PARAMÈTRES VULNÉRABLES</h4>';
+        g.vulns.forEach(v=>{h+='<div style="padding:5px 0;border-bottom:1px solid rgba(255,23,68,.15)"><span style="color:var(--red)">'+E(v.param)+'</span> <span style="color:var(--mx2);font-size:.45rem">— '+E(v.type)+'</span></div>'});
+        h+='</div>';
+      }
+      if(!g.injectable){
+        h+='<div class="rs"><p style="font-size:.5rem;color:var(--mx2);line-height:1.6">⚠️ SQLMap nécessite une URL avec des paramètres pour tester les injections.<br>Exemple : <span style="color:var(--mx)">https://site.com/article?id=1</span><br>Sans paramètre dans l\'URL, aucun test possible.</p></div>';
+      }
+      resultDiv.innerHTML=h;
+    }catch(e){resultDiv.innerHTML='<div class="rs"><p style="color:var(--red);font-size:.55rem">'+e.message+'</p></div>'}
+    document.getElementById('sqliGo').disabled=false;document.getElementById('sqliGo').textContent='LANCER';
+  });
+}
 const fmtStyle='background:transparent;border:1px solid var(--mx3);color:var(--mx2);padding:3px 8px;font-family:\'Share Tech Mono\',monospace;font-size:.48rem;cursor:pointer;transition:.2s;text-transform:uppercase';
 const fmtStyleOn='background:var(--mx);border:1px solid var(--mx);color:#000;padding:3px 8px;font-family:\'Share Tech Mono\',monospace;font-size:.48rem;cursor:pointer;transition:.2s;text-transform:uppercase';
 let selectedFmt='raw-md5';
