@@ -7,6 +7,7 @@ const crypto = require('crypto');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const { parsePhoneNumberFromString } = require('libphonenumber-js');
+const { execFile } = require('child_process');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -252,6 +253,31 @@ app.get('/api/scan/:username', heavyLimiter, (req, res) => {
 app.get('/api/stats', (req, res) => {
   const cats = [...new Set(SITES.map(s => s.cat))].sort();
   res.json({ totalSites: SITES.length, categories: cats });
+});
+
+// ═══ NMAP ═══
+const nmapLimiter = rateLimit({ windowMs: 60 * 1000, max: 3, message: { error: 'Maximum 3 scans nmap par minute.' }, validate: false });
+app.get('/api/nmap/:target', nmapLimiter, async (req, res) => {
+  const target = sanitize(req.params.target, 253);
+  if (!isValidIP(target)) return res.json({ success: false, error: 'Cible invalide' });
+  const args = ['-Pn', '--open', '-T3', '--host-timeout', '30s', '-oX', '-', target];
+  execFile('nmap', args, { timeout: 35000, maxBuffer: 1024 * 512 }, (err, stdout, stderr) => {
+    if (err && !stdout) return res.json({ success: false, error: 'Nmap indisponible ou cible injoignable' });
+    try {
+      const ports = [];
+      const portMatches = [...stdout.matchAll(/<port protocol="([^"]+)" portid="([^"]+)">.*?<state state="([^"]+)".*?<service name="([^"]*)"[^/]*(?:product="([^"]*)")?[^/]*(?:version="([^"]*)")?/gs)];
+      for (const m of portMatches) {
+        ports.push({ protocol: m[1], port: m[2], state: m[3], service: m[4] || '?', product: m[5] || '', version: m[6] || '' });
+      }
+      const osMatch = stdout.match(/<osmatch name="([^"]+)" accuracy="([^"]+)"/);
+      const os = osMatch ? { name: osMatch[1], accuracy: osMatch[2] } : null;
+      const latencyMatch = stdout.match(/rttvar=([0-9.]+)ms/);
+      const latency = latencyMatch ? latencyMatch[1] + 'ms' : null;
+      res.json({ success: true, data: { target, ports, os, latency, portCount: ports.length } });
+    } catch (e) {
+      res.json({ success: false, error: 'Erreur parsing résultats' });
+    }
+  });
 });
 
 app.use((req, res) => { res.status(404).json({ error: 'Not found' }) });
