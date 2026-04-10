@@ -287,8 +287,8 @@ app.get('/api/nikto/:target', niktoLimiter, async (req, res) => {
   if (!isValidIP(target)) return res.json({ success: false, error: 'Cible invalide' });
   const url = target.startsWith('http') ? target : 'http://' + target;
   const args = ['-h', url, '-maxtime', '30s', '-nointeractive', '-Format', 'json', '-output', '-'];
-  execFile('nikto', args, { timeout: 35000, maxBuffer: 1024 * 512 }, (err, stdout, stderr) => {
-    if (!stdout && err) return res.json({ success: false, error: 'Nikto indisponible ou cible injoignable' });
+execFile('perl', ['/usr/bin/nikto', ...args], { timeout: 35000, maxBuffer: 1024 * 512 }, (err, stdout, stderr) => {
+  if (!stdout && err) return res.json({ success: false, error: 'Nikto indisponible ou cible injoignable — ' + (err.message||'') });
     try {
       const lines = stdout.split('\n').filter(l => l.trim().startsWith('{'));
       const vulns = [];
