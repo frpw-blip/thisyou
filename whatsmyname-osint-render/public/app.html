@@ -111,6 +111,19 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .sub-nav button .sn-icon{display:block;font-size:1rem;margin-bottom:2px}
 .sub-panel{display:none;max-width:650px;margin:0 auto;padding-top:8px}.sub-panel.on{display:block;animation:si .3s}
 .ft{text-align:center;padding:18px;border-top:1px solid var(--mx3);margin-top:20px}.ft p{font-size:.42rem;color:var(--mx3);letter-spacing:.1em}
+.dork-engine{background:transparent;border:1px solid var(--mx3);color:var(--mx2);padding:5px 10px;font-family:'Share Tech Mono',monospace;font-size:.48rem;cursor:pointer;text-transform:uppercase;transition:.2s;letter-spacing:.05em}
+.dork-engine.on{background:var(--mx3);border-color:var(--mx);color:var(--mx)}
+.dork-engine:hover{border-color:var(--mx2);color:var(--mx)}
+.dcat{background:transparent;border:1px solid var(--mx3);color:var(--mx2);padding:4px 8px;font-family:'Share Tech Mono',monospace;font-size:.45rem;cursor:pointer;text-transform:uppercase;transition:.2s;letter-spacing:.05em}
+.dcat.on{background:var(--mx);color:#000;border-color:var(--mx)}
+.dcat:hover{border-color:var(--mx2);color:var(--mx)}
+.dork-card{background:linear-gradient(135deg,#070d07,#0a130a);border:1px solid var(--mx3);padding:10px 12px;cursor:pointer;transition:.2s;position:relative}
+.dork-card:hover{border-color:var(--mx);box-shadow:0 2px 12px rgba(0,255,65,.08)}
+.dork-card.selected{border-color:var(--mx);background:rgba(0,255,65,.05)}
+.dork-card .dk-title{font-family:'Orbitron',sans-serif;font-size:.55rem;color:var(--mx);margin-bottom:4px}
+.dork-card .dk-query{font-size:.48rem;color:var(--mx2);font-family:'Share Tech Mono',monospace;word-break:break-all;line-height:1.4}
+.dork-card .dk-desc{font-size:.42rem;color:var(--mx3);margin-top:4px;line-height:1.4}
+.dork-card .dk-badge{position:absolute;top:6px;right:6px;font-size:.38rem;padding:1px 5px;border:1px solid var(--mx3);color:var(--mx3);text-transform:uppercase}
 @media(max-width:600px){.hdr h1{letter-spacing:.05em;font-size:1.8rem}.nav button{font-size:.42rem;padding:7px 5px;flex:0 1 auto}.gr,.fg{grid-template-columns:1fr}[data-tip]::after{width:180px;font-size:.44rem}}
 </style>
 </head><body>
@@ -129,6 +142,7 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
   <button data-p="i" data-tip="Analyse une IP ou un domaine : localisation géographique, fournisseur internet, ports réseau ouverts (Nmap), et scan de failles web (Nikto).">IP / DOMAINE</button>
   <button data-p="h" data-tip="Cassage de hash — Colle un hash MD5, SHA1, SHA256... et John the Ripper essaie de retrouver le mot de passe original en testant 14 millions de mots de passe courants (rockyou.txt).">HASH</button>
   <button data-p="x" data-tip="ExifTool — Analyse les métadonnées cachées dans vos photos : GPS, appareil photo, date, auteur, logiciel... Détecte les données récurrentes sur plusieurs photos et permet de les modifier.">EXIF</button>
+  <button data-p="d" data-tip="Google Dorking — Recherches avancées sur Google, Bing, Shodan, GitHub et Exploit-DB. Accès aux caméras publiques, fichiers sensibles, panneaux admin, bases de données exposées. Filtrage par pays/ville.">DORK</button>
 </div>
 
 <!-- USERNAME -->
@@ -162,6 +176,7 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
     <div class="lg" id="lg"></div>
   </div>
   <div class="em" id="emp"><div class="ic">⬡</div><div class="mg">Entrez un pseudo — 958 sites scannés en temps réel</div></div>
+  <div id="deepScanU" style="display:none;max-width:650px;margin:16px auto"></div>
 </div>
 
 <!-- VISAGE -->
@@ -223,6 +238,7 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
       <span style="color:var(--mx3);font-size:.5rem">Vérifie si l'email a un avatar public • Détecte les fuites dans des bases de données hackées • Cherche ses mentions sur le web</span>
     </div>
   </div>
+  <div id="deepScanE" style="display:none;max-width:650px;margin:16px auto"></div>
 </div>
 
 <!-- IP / DOMAINE -->
@@ -322,6 +338,58 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
   </div>
 </div>
 
+<!-- DORK -->
+<div class="P z" id="Pd">
+  <div style="max-width:1100px;margin:0 auto;padding:16px">
+
+    <!-- Champ principal + variable cible -->
+    <div style="max-width:700px;margin:0 auto 16px">
+      <div class="rs" style="margin-bottom:10px">
+        <h4>🔍 GOOGLE DORKING — RECHERCHE AVANCÉE</h4>
+        <p style="font-size:.48rem;color:var(--mx2);line-height:1.6">Construis des requêtes avancées pour trouver des informations cachées sur internet. Remplace <span style="color:var(--mx)">{cible}</span> par ton terme de recherche, sélectionne un dork, et lance la recherche sur le moteur de ton choix.</p>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <div style="flex:1;position:relative">
+          <input id="dorkTarget" placeholder="Cible : ex: webcam, admin, France, .gov..." style="width:100%;background:#000;border:1px solid var(--mx3);color:var(--mx);font-family:'Share Tech Mono',monospace;font-size:.75rem;padding:10px 12px;outline:0;transition:.3s">
+        </div>
+        <button id="dorkClear" style="padding:10px 14px;background:transparent;border:1px solid var(--mx3);color:var(--mx2);font-family:'Share Tech Mono',monospace;font-size:.55rem;cursor:pointer;text-transform:uppercase">EFFACER</button>
+      </div>
+      <div style="background:#000;border:1px solid var(--mx3);padding:10px 12px;margin-bottom:10px;min-height:40px">
+        <div style="font-size:.42rem;color:var(--mx3);margin-bottom:4px">REQUÊTE GÉNÉRÉE</div>
+        <div id="dorkQuery" style="font-size:.65rem;color:var(--mx);word-break:break-all;font-family:'Share Tech Mono',monospace">Sélectionne un dork ci-dessous...</div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px" id="dorkEngines">
+        <button data-engine="google" class="dork-engine on" data-tip="Google — Le plus puissant pour les dorks. Supporte tous les opérateurs avancés.">🔍 Google</button>
+        <button data-engine="bing" class="dork-engine" data-tip="Bing — Supporte les opérateurs avancés. Parfois moins censuré que Google.">🔍 Bing</button>
+        <button data-engine="duckduckgo" class="dork-engine" data-tip="DuckDuckGo — Pas de personnalisation, résultats plus neutres.">🦆 DuckDuckGo</button>
+        <button data-engine="shodan" class="dork-engine" data-tip="Shodan — Moteur de recherche pour appareils connectés. Idéal pour caméras, serveurs, IoT.">📡 Shodan</button>
+        <button data-engine="github" class="dork-engine" data-tip="GitHub — Recherche dans le code source public. Trouve des clés API, mots de passe, configs exposés.">💻 GitHub</button>
+        <button data-engine="exploitdb" class="dork-engine" data-tip="Exploit-DB — Base de données d'exploits. Trouve des failles connues pour un logiciel ou service.">💣 Exploit-DB</button>
+        <button data-engine="censys" class="dork-engine" data-tip="Censys — Scan de certificats SSL et services. Trouve des sous-domaines et services exposés.">🔭 Censys</button>
+      </div>
+      <button id="dorkLaunch" style="width:100%;margin-top:10px;padding:12px;background:var(--mx);color:#000;border:none;font-family:'Orbitron',sans-serif;font-size:.65rem;letter-spacing:.15em;cursor:pointer;text-transform:uppercase;transition:.2s">LANCER LA RECHERCHE</button>
+    </div>
+
+    <!-- Sous-onglets catégories -->
+    <div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:12px;border-bottom:1px solid var(--mx3);padding-bottom:8px" id="dorkCats">
+      <button class="dcat on" data-cat="cameras" data-tip="Caméras IP publiques accessibles sans mot de passe — webcams, caméras de surveillance, flux RTSP">📷 CAMÉRAS</button>
+      <button class="dcat" data-cat="admin" data-tip="Panneaux d'administration exposés — phpMyAdmin, WordPress admin, cPanels, routeurs">🔐 ADMIN</button>
+      <button class="dcat" data-cat="files" data-tip="Fichiers sensibles indexés — PDF, Excel, configs, logs, backups, bases de données">📄 FICHIERS</button>
+      <button class="dcat" data-cat="databases" data-tip="Bases de données exposées — MySQL, MongoDB, ElasticSearch, Redis accessibles publiquement">🗄 BASES DE DONNÉES</button>
+      <button class="dcat" data-cat="passwords" data-tip="Mots de passe et credentials exposés — fichiers htpasswd, configs avec mots de passe, clés API">🔑 MOTS DE PASSE</button>
+      <button class="dcat" data-cat="vulnerabilities" data-tip="Serveurs vulnérables — versions obsolètes, erreurs exposées, CVE connus">⚠ VULNÉRABILITÉS</button>
+      <button class="dcat" data-cat="network" data-tip="Équipements réseau exposés — routeurs, switches, firewalls, VPN">🌐 RÉSEAU</button>
+      <button class="dcat" data-cat="iot" data-tip="Objets connectés — imprimantes, thermostats, systèmes de contrôle industriels">📡 IoT</button>
+      <button class="dcat" data-cat="osint" data-tip="OSINT général — emails, téléphones, noms, réseaux sociaux, documents personnels">🕵 OSINT</button>
+      <button class="dcat" data-cat="exploitdb" data-tip="Exploit-DB — Recherche rapide d'exploits et CVE par logiciel, version ou type">💣 EXPLOIT-DB</button>
+    </div>
+
+    <!-- Grille de dorks -->
+    <div id="dorkGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:6px"></div>
+
+  </div>
+</div>
+
 <div class="ft z"><p>THIS YOU? // OSINT PLATFORM // MATRIX:RELOADED // DATA © MICAH HOFFMAN (CC BY-SA 4.0)</p></div>
 
 <script>
@@ -332,7 +400,7 @@ addEventListener('resize',()=>{dr=Array(co()).fill(1)});
 setInterval(()=>{cx.fillStyle='rgba(0,0,0,0.05)';cx.fillRect(0,0,cv.width,cv.height);cx.fillStyle='#00ff41';cx.font=fz+'px monospace';for(let i=0;i<dr.length;i++){cx.fillText(ch[Math.random()*ch.length|0],i*fz,dr[i]*fz);if(dr[i]*fz>cv.height&&Math.random()>.975)dr[i]=0;dr[i]++;}},35);
 
 // NAV
-const ps=['u','f','p','e','i','h','x'];
+const ps=['u','f','p','e','i','h','x','d'];
 function sw(n){document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('on',b.dataset.p===n));ps.forEach(p=>{const e=document.getElementById('P'+p);e&&e.classList.toggle('on',p===n)})}
 document.querySelectorAll('.nav button').forEach(b=>b.addEventListener('click',()=>sw(b.dataset.p)));
 
@@ -399,7 +467,10 @@ function scan(){
       if(cV==='found'&&d.status==='found')document.getElementById('gr').appendChild(mc(d));
       else if(cV==='all')document.getElementById('gr').appendChild(mc(d));return;
     }
-    if(d.type==='done'){sc=false;document.getElementById('goB').disabled=false;document.getElementById('goB').textContent='SCAN';document.getElementById('pg').classList.remove('on');document.getElementById('sm').classList.add('on');document.getElementById('smB').textContent=d.found;document.getElementById('smD').textContent='sur '+d.total+' sites';es.close()}
+    if(d.type==='done'){sc=false;document.getElementById('goB').disabled=false;document.getElementById('goB').textContent='SCAN';document.getElementById('pg').classList.remove('on');document.getElementById('sm').classList.add('on');document.getElementById('smB').textContent=d.found;document.getElementById('smD').textContent='sur '+d.total+' sites';
+      const sm=document.getElementById('sm');
+      if(!sm.querySelector('.deepBtn')){const dsBtn=document.createElement('button');dsBtn.className='deepBtn';dsBtn.textContent='🕷 SCAN APPROFONDI';dsBtn.style.cssText='margin-top:10px;padding:8px 20px;background:transparent;color:var(--cyan);border:1px solid var(--cyan);font-family:\'Orbitron\',sans-serif;font-size:.5rem;letter-spacing:.1em;cursor:pointer;text-transform:uppercase';dsBtn.addEventListener('click',()=>deepScanUsername(document.getElementById('inp').value.trim()));sm.appendChild(dsBtn);}
+      es.close()}
   };
   es.onerror=function(){es.close();sc=false;document.getElementById('goB').disabled=false;document.getElementById('goB').textContent='SCAN';document.getElementById('pg').classList.remove('on')};
 }
@@ -479,10 +550,36 @@ async function emL(){
      ['BreachDirectory','https://breachdirectory.org/','BreachDirectory — Recherche dans des millions de données volées lors de piratages de sites.'],
     ].forEach(([name,url,tip])=>{h+='<a href="'+E(url)+'" target="_blank" class="tool-link" data-tip="'+E(tip)+'">'+name+'</a>'});
     h+='</div></div>';el.innerHTML=h;
+    const dsBtn=document.createElement('button');dsBtn.textContent='🕷 SCAN APPROFONDI SPIDERFOOT';dsBtn.style.cssText='margin-top:10px;width:100%;padding:10px;background:transparent;color:var(--cyan);border:1px solid var(--cyan);font-family:\'Orbitron\',sans-serif;font-size:.55rem;letter-spacing:.1em;cursor:pointer;text-transform:uppercase';dsBtn.addEventListener('click',()=>deepScanEmail(em));el.appendChild(dsBtn);
   }catch(e){el.innerHTML='<div class="rs"><p style="color:var(--red);font-size:.55rem">'+e.message+'</p></div>'}
 }
-
-// IP
+// ═══ DEEP SCAN ═══
+function renderDeepResult(r){
+  const c=document.createElement('div');
+  c.style.cssText='border:1px solid '+(r.found?'var(--mx)':'var(--mx3)')+';padding:8px 10px;margin-bottom:6px;animation:si .3s;display:flex;gap:10px;align-items:flex-start';
+  let h='<div style="width:8px;height:8px;border-radius:50%;background:'+(r.found?'var(--mx)':'#333')+';margin-top:4px;flex-shrink:0"></div><div style="flex:1">';
+  h+='<div style="font-family:\'Orbitron\',sans-serif;font-size:.5rem;color:'+(r.found?'var(--mx)':'var(--mx3)')+'">'+E(r.source)+'</div>';
+  if(r.found&&r.data){Object.entries(r.data).forEach(([k,v])=>{if(!v)return;h+='<div style="font-size:.45rem;margin-top:2px"><span style="color:var(--mx2)">'+E(k)+' : </span><span style="color:var(--mx)">'+E(String(v).slice(0,200))+'</span></div>';});if(r.url)h+='<a href="'+E(r.url)+'" target="_blank" style="font-size:.42rem;color:var(--cyan);text-decoration:none;display:inline-block;margin-top:3px">↗ Voir le profil</a>';}
+  h+='</div>';c.innerHTML=h;return c;
+}
+async function deepScanUsername(username){
+  if(!username)return;
+  const el=document.getElementById('deepScanU');el.style.display='block';
+  el.innerHTML='<div class="rs" style="border-color:var(--cyan)"><h4 style="color:var(--cyan)">🕷 SCAN APPROFONDI — '+E(username)+'</h4><p style="font-size:.45rem;color:var(--mx2);margin-bottom:8px">GitHub • Reddit • Keybase • DEV.to • HackerNews • Gravatar • GitLab • Pastebin • crt.sh • Web</p><div id="deepUResults"></div><div id="deepUStatus" style="font-size:.45rem;color:var(--mx3);margin-top:6px;animation:pu 1.5s infinite">En cours...</div></div>';
+  const container=document.getElementById('deepUResults');let found=0,total=0;
+  const es2=new EventSource('/api/deepscan/username/'+encodeURIComponent(username));
+  es2.onmessage=ev=>{const d=JSON.parse(ev.data);if(d.type==='result'){total++;if(d.found)found++;container.appendChild(renderDeepResult(d));}if(d.type==='done'){const s=document.getElementById('deepUStatus');if(s){s.style.animation='none';s.style.color='var(--mx)';s.textContent='✓ Terminé — '+found+'/'+total+' sources trouvées';}es2.close();}};
+  es2.onerror=()=>{es2.close();const s=document.getElementById('deepUStatus');if(s){s.textContent='Scan terminé';s.style.animation='none';}};
+}
+async function deepScanEmail(email){
+  if(!email)return;
+  const el=document.getElementById('deepScanE');el.style.display='block';
+  el.innerHTML='<div class="rs" style="border-color:var(--cyan)"><h4 style="color:var(--cyan)">🕷 SCAN APPROFONDI — '+E(email)+'</h4><p style="font-size:.45rem;color:var(--mx2);margin-bottom:8px">Gravatar • GitHub • LeakCheck • crt.sh • Pastebin • WHOIS • Web</p><div id="deepEResults"></div><div id="deepEStatus" style="font-size:.45rem;color:var(--mx3);margin-top:6px;animation:pu 1.5s infinite">En cours...</div></div>';
+  const container=document.getElementById('deepEResults');let found=0,total=0;
+  const es3=new EventSource('/api/deepscan/email/'+encodeURIComponent(email));
+  es3.onmessage=ev=>{const d=JSON.parse(ev.data);if(d.type==='result'){total++;if(d.found)found++;container.appendChild(renderDeepResult(d));}if(d.type==='done'){const s=document.getElementById('deepEStatus');if(s){s.style.animation='none';s.style.color='var(--mx)';s.textContent='✓ Terminé — '+found+'/'+total+' sources trouvées';}es3.close();}};
+  es3.onerror=()=>{es3.close();const s=document.getElementById('deepEStatus');if(s){s.textContent='Scan terminé';s.style.animation='none';}};
+}
 document.getElementById('ipI').addEventListener('keydown',e=>{if(e.key==='Enter')ipL()});
 document.getElementById('ipB').addEventListener('click',ipL);
 let lastIpTarget='';
@@ -905,5 +1002,188 @@ function openExifEdit(fi){
   document.getElementById('saveExifBtn').addEventListener('click',()=>doSave(false));
   document.getElementById('stripAllBtn').addEventListener('click',()=>doSave(true));
 }
+
+// ═══ DORK ═══
+const DORKS = {
+  cameras: [
+    { title: 'Webcams publiques', query: 'intitle:"webcamXP 5" | intitle:"webcam 7"', desc: 'Trouve les serveurs WebcamXP et Webcam 7 exposés publiquement sur internet', tip: 'intitle: cherche dans le titre de la page — webcamXP est un logiciel populaire de streaming webcam souvent mal sécurisé' },
+    { title: 'Caméras Axis', query: 'intitle:"Live View / - AXIS" | inurl:"/view/index.shtml"', desc: 'Caméras réseau Axis sans authentification', tip: 'Axis est un fabricant de caméras IP. Ces URLs sont les interfaces de visualisation par défaut souvent laissées accessibles' },
+    { title: 'Caméras par pays', query: 'intitle:"Live View" inurl:"{cible}" -password', desc: 'Remplace {cible} par le code pays (fr, us, de...) ou ville', tip: 'inurl: cherche dans l\'URL — combiner avec un code pays/ville permet de filtrer géographiquement les caméras' },
+    { title: 'Caméras Sony', query: 'inurl:"/en/camera.html" "Sony Network Camera"', desc: 'Caméras Sony Network Camera accessibles', tip: 'Les caméras Sony ont une interface web standard — cette requête trouve les instances non sécurisées' },
+    { title: 'Flux RTSP ouverts', query: 'inurl:rtsp "live" | inurl:"video.cgi"', desc: 'Flux vidéo RTSP et CGI accessibles publiquement', tip: 'RTSP = Real Time Streaming Protocol — protocole de streaming vidéo souvent sur port 554' },
+    { title: 'Caméras Hikvision', query: 'intitle:"Hikvision" inurl:"/doc/page/login.asp"', desc: 'Panneaux de connexion Hikvision (caméras de surveillance)', tip: 'Hikvision est le leader mondial des caméras de surveillance — beaucoup ont des credentials par défaut' },
+    { title: 'Caméras Dahua', query: 'intitle:"Dahua" inurl:"/RPC2_Login"', desc: 'Caméras de surveillance Dahua exposées', tip: 'Dahua est un fabricant chinois de caméras — credentials par défaut souvent admin/admin' },
+    { title: 'Caméras par ville Shodan', query: 'city:"{cible}" webcam port:80', desc: 'Cherche des caméras dans une ville spécifique via Shodan', tip: 'Sur Shodan : city: filtre par ville, country: par pays (country:FR), port:80 = interface web — très précis pour la géolocalisation', engine: 'shodan' },
+    { title: 'Caméras par pays Shodan', query: 'country:"{cible}" has_screenshot:true', desc: 'Appareils avec capture d\'écran dans un pays (FR, US, DE...)', tip: 'has_screenshot:true sur Shodan affiche uniquement les appareils dont Shodan a capturé l\'interface graphique — très pratique pour les caméras', engine: 'shodan' },
+    { title: 'Caméras RTSP Shodan', query: 'port:554 "RTSP" country:"{cible}"', desc: 'Flux RTSP ouverts dans un pays', tip: 'Port 554 = RTSP standard. Shodan indexe les bannières de ces flux — combiné avec country: permet de cibler géographiquement', engine: 'shodan' },
+    { title: 'Caméras traffic', query: 'intitle:"traffic" inurl:"camera" | inurl:"cam"', desc: 'Caméras de surveillance du trafic routier', tip: 'Les caméras de trafic municipales sont souvent publiques par conception mais pas toujours sécurisées' },
+    { title: 'Panneaux NVR/DVR', query: 'intitle:"DVR_H264 | DVRDVS-Webs" | inurl:"/DVR.htm"', desc: 'Enregistreurs vidéo numériques (DVR/NVR) accessibles', tip: 'Un DVR/NVR gère plusieurs caméras à la fois — y accéder donne souvent accès à des dizaines de flux simultanément' },
+  ],
+  admin: [
+    { title: 'phpMyAdmin exposé', query: 'inurl:"/phpmyadmin" intitle:"phpMyAdmin"', desc: 'Interfaces phpMyAdmin accessibles publiquement', tip: 'phpMyAdmin est une interface web pour MySQL/MariaDB — exposé publiquement, il donne accès direct aux bases de données' },
+    { title: 'WordPress admin', query: 'inurl:"/wp-admin" intitle:"Log In" site:{cible}', desc: 'Panneaux WordPress d\'un domaine spécifique', tip: 'site: limite la recherche à un domaine précis — combine avec inurl:wp-admin pour trouver les sites WordPress d\'une organisation' },
+    { title: 'cPanel exposé', query: 'intitle:"cPanel" inurl:":2082" | inurl:":2083"', desc: 'Panneaux cPanel d\'hébergement web', tip: 'cPanel tourne sur les ports 2082 (HTTP) et 2083 (HTTPS) — donne accès à la gestion complète d\'un hébergement' },
+    { title: 'Cisco admin', query: 'intitle:"Cisco" inurl:"/exec/show" | inurl:"/level/15/exec"', desc: 'Interfaces d\'administration Cisco exposées', tip: 'Level 15 est le niveau d\'accès maximal sur un routeur Cisco — son exposition est une faille critique' },
+    { title: 'Panneau Joomla', query: 'inurl:"/administrator" intitle:"Administration - Joomla"', desc: 'Interfaces d\'administration Joomla', tip: 'Joomla est un CMS populaire — l\'interface admin est standardisée et souvent laissée accessible' },
+    { title: 'Routeurs par défaut', query: 'intitle:"Router" inurl:"admin" "Default Password"', desc: 'Routeurs avec pages de mot de passe par défaut', tip: '"Default Password" dans la page = routeur jamais configuré — souvent admin/admin ou imprimé sur l\'étiquette' },
+    { title: 'Jenkins exposé', query: 'intitle:"Dashboard [Jenkins]" inurl:"/job"', desc: 'Serveurs Jenkins CI/CD accessibles', tip: 'Jenkins est un outil DevOps — exposé, il permet d\'exécuter du code arbitraire sur le serveur cible' },
+    { title: 'Grafana dashboard', query: 'intitle:"Grafana" inurl:"/login" | inurl:"/d/"', desc: 'Tableaux de bord Grafana accessibles', tip: 'Grafana est un outil de monitoring — ses dashboards exposent souvent des métriques internes sensibles' },
+  ],
+  files: [
+    { title: 'Fichiers Excel sensibles', query: 'site:{cible} filetype:xlsx "password" | "credentials" | "login"', desc: 'Fichiers Excel contenant des mots de passe sur un domaine', tip: 'filetype: cherche par extension — xlsx combiné à des mots-clés sensibles trouve des fichiers de gestion d\'accès exposés' },
+    { title: 'Configs exposées', query: 'filetype:env | filetype:config "DB_PASSWORD" | "API_KEY" | "SECRET"', desc: 'Fichiers .env et config avec clés API et mots de passe', tip: 'Les fichiers .env contiennent les variables d\'environnement — souvent uploadés par erreur avec les credentials de production' },
+    { title: 'Logs serveur', query: 'filetype:log "username" | "password" | "error" site:{cible}', desc: 'Fichiers de log exposés contenant des informations sensibles', tip: 'Les logs peuvent contenir des tentatives de connexion avec mots de passe, des traces d\'erreurs avec données internes' },
+    { title: 'Fichiers SQL', query: 'filetype:sql "INSERT INTO" "password" | "email"', desc: 'Dumps SQL avec données utilisateurs indexés', tip: 'Les dumps SQL (.sql) contiennent toute la structure et les données d\'une base — extrêmement sensibles si exposés' },
+    { title: 'Documents RH', query: 'site:{cible} filetype:pdf | filetype:docx "salary" | "payroll" | "employee"', desc: 'Documents RH internes exposés', tip: 'Combine site: avec filetype: et mots-clés RH pour trouver des documents confidentiels d\'une organisation' },
+    { title: 'Clés SSH exposées', query: 'filetype:pem "PRIVATE KEY" | filetype:ppk "private" site:{cible}', desc: 'Clés SSH privées indexées par Google', tip: 'Les fichiers .pem et .ppk contiennent des clés SSH privées — leur indexation est une faille critique permettant l\'accès aux serveurs' },
+    { title: 'Fichiers de backup', query: 'intitle:"index of" "backup" filetype:sql | filetype:gz | filetype:zip site:{cible}', desc: 'Sauvegardes de bases de données exposées', tip: 'intitle:"index of" trouve les répertoires ouverts — combiné avec filetype:sql trouve des backups de bases de données' },
+    { title: 'GitHub secrets', query: 'filename:.env DB_PASSWORD | API_KEY | SECRET_KEY', desc: 'Fichiers .env pushés par erreur sur GitHub', tip: 'Sur GitHub : filename: cherche par nom de fichier — des milliers de .env avec credentials sont exposés par erreur', engine: 'github' },
+    { title: 'Clés API GitHub', query: 'filename:config.js API_KEY | SECRET | PASSWORD', desc: 'Fichiers de configuration JavaScript avec clés API', tip: 'Les développeurs pushent parfois des configs JS avec leurs clés API en dur — GitHub les indexe tous', engine: 'github' },
+  ],
+  databases: [
+    { title: 'MongoDB exposé', query: 'port:27017 "MongoDB" country:"{cible}"', desc: 'Bases MongoDB sans authentification (Shodan)', tip: 'Port 27017 = MongoDB par défaut. Sans auth activée, n\'importe qui peut lire/écrire — Shodan indexe des milliers de cas', engine: 'shodan' },
+    { title: 'ElasticSearch ouvert', query: 'port:9200 "elasticsearch" country:"{cible}"', desc: 'Instances ElasticSearch accessibles publiquement', tip: 'Port 9200 = ElasticSearch. Sans auth, l\'API REST est accessible — peut contenir des millions d\'entrées de données', engine: 'shodan' },
+    { title: 'Redis exposé', query: 'port:6379 "redis" country:"{cible}"', desc: 'Serveurs Redis sans authentification', tip: 'Redis sur port 6379 sans mot de passe = accès complet à la base en mémoire — souvent utilisé pour les sessions utilisateurs', engine: 'shodan' },
+    { title: 'MySQL ouvert', query: 'port:3306 "MySQL" country:"{cible}"', desc: 'Serveurs MySQL directement accessibles', tip: 'MySQL sur port 3306 exposé = tentatives de brute force possibles directement sur le port', engine: 'shodan' },
+    { title: 'phpMyAdmin no auth', query: 'intitle:"phpMyAdmin" "Welcome to phpMyAdmin" -"Enter password"', desc: 'phpMyAdmin accessible sans mot de passe', tip: 'L\'absence de "Enter password" dans la page indique que phpMyAdmin accepte les connexions sans authentification' },
+    { title: 'CouchDB exposé', query: 'port:5984 "couchdb" country:"{cible}"', desc: 'CouchDB sans authentification (Shodan)', tip: 'CouchDB sur port 5984 — son interface web Futon/Fauxton est accessible sans auth par défaut dans les anciennes versions', engine: 'shodan' },
+  ],
+  passwords: [
+    { title: 'Fichiers htpasswd', query: 'filetype:htpasswd htpasswd', desc: 'Fichiers d\'authentification Apache exposés', tip: 'htpasswd contient des couples login:hash de mot de passe pour l\'authentification basique Apache — cassables avec John ou Hashcat' },
+    { title: 'Configs avec passwords', query: 'inurl:wp-config.php filetype:txt "DB_PASSWORD"', desc: 'Fichiers WordPress config avec mots de passe BDD', tip: 'wp-config.php contient les credentials de la base de données WordPress — exposé = accès complet au site' },
+    { title: 'Credentials GitHub', query: '"password" OR "passwd" OR "pwd" filename:credentials', desc: 'Fichiers credentials sur GitHub', tip: 'Sur GitHub, filename:credentials avec mots-clés cherche dans les fichiers de configuration pushés par erreur', engine: 'github' },
+    { title: 'Variables .env GitHub', query: '"DB_PASS" OR "MYSQL_PASSWORD" OR "REDIS_PASSWORD" filename:.env', desc: 'Mots de passe de bases de données dans .env GitHub', tip: 'Des milliers de développeurs pushent leurs .env avec des credentials réels — GitHub les indexe dans les 24h', engine: 'github' },
+    { title: 'Clés AWS exposées', query: '"AKIA" filename:credentials | filename:.aws', desc: 'Clés d\'accès AWS sur GitHub', tip: 'Les clés AWS commencent par AKIA — leur exposition peut générer des factures de milliers d\'euros en quelques heures', engine: 'github' },
+  ],
+  vulnerabilities: [
+    { title: 'Serveurs IIS vulnérables', query: 'intitle:"IIS Windows Server" "Version 6" | "Version 7"', desc: 'Serveurs Microsoft IIS en versions obsolètes', tip: 'IIS 6 et 7 ont des vulnérabilités critiques non patchées — leur présence en production est un signe de mauvaise maintenance' },
+    { title: 'Apache version exposée', query: 'intitle:"Apache Status" "Apache Server Status for"', desc: 'Pages de statut Apache avec infos de version', tip: 'Apache Status révèle la version exacte, les virtual hosts, et les connexions actives — informations utiles pour cibler des CVE' },
+    { title: 'Erreurs PHP exposées', query: 'intitle:"PHP error" | "PHP Warning" | "PHP Notice" site:{cible}', desc: 'Pages d\'erreur PHP avec chemins et infos internes', tip: 'Les erreurs PHP révèlent les chemins absolus du serveur, les noms de fichiers, et parfois les versions de bibliothèques' },
+    { title: 'Struts vulnérable', query: 'intitle:"Struts Problem Report" intext:"development mode is enabled"', desc: 'Serveurs Apache Struts en mode développement', tip: 'Struts en mode dev expose une console d\'erreur — Apache Struts a eu des CVE critiques (CVE-2017-5638 utilisé pour hacker Equifax)' },
+    { title: 'Shellshock vulnérable', query: 'inurl:"/cgi-bin/" filetype:sh | filetype:cgi', desc: 'Scripts CGI potentiellement vulnérables à Shellshock', tip: 'Shellshock (CVE-2014-6271) affecte bash via CGI — les scripts .sh et .cgi dans /cgi-bin/ peuvent être des vecteurs d\'attaque' },
+    { title: 'Heartbleed (Shodan)', query: 'vuln:CVE-2014-0160 country:"{cible}"', desc: 'Serveurs encore vulnérables à Heartbleed via Shodan', tip: 'Shodan détecte les CVE connus — vuln:CVE-XXXX-YYYY filtre les serveurs vulnérables à une faille spécifique', engine: 'shodan' },
+  ],
+  network: [
+    { title: 'Routeurs Cisco exposés', query: 'intitle:"Cisco" "show running-config" | inurl:"/exec/show/version"', desc: 'Interfaces de gestion Cisco accessibles', tip: '"show running-config" est une commande Cisco qui affiche la configuration complète — son exposition est critique' },
+    { title: 'Firewalls pfSense', query: 'intitle:"pfSense" inurl:"/index.php" | inurl:"/diag_"', desc: 'Interfaces web pfSense exposées', tip: 'pfSense est un pare-feu open source — son interface web exposée permet de voir et modifier toutes les règles réseau' },
+    { title: 'VPN non sécurisés', query: 'intitle:"SSL VPN" | "Cisco AnyConnect" inurl:"/+CSCOE+/"', desc: 'Portails VPN Cisco exposés publiquement', tip: 'Les portails VPN Cisco AnyConnect ont eu des vulnérabilités critiques — les versions obsolètes sont des cibles privilégiées' },
+    { title: 'NAS Synology', query: 'intitle:"Synology DiskStation" port:5000 country:"{cible}"', desc: 'NAS Synology accessibles via internet', tip: 'Port 5000 = interface DSM de Synology — les NAS connectés à internet sans VPN sont vulnérables aux attaques directes', engine: 'shodan' },
+    { title: 'Printers exposées', query: 'intitle:"HP LaserJet" | "Ricoh" inurl:"/web" port:80 country:"{cible}"', desc: 'Imprimantes réseau accessibles publiquement', tip: 'Les imprimantes réseau exposées permettent d\'imprimer à distance, accéder aux documents scannés, et souvent pivoter sur le réseau', engine: 'shodan' },
+  ],
+  iot: [
+    { title: 'Thermostats Nest', query: 'intitle:"Nest" inurl:"/login" | port:9543 "Nest"', desc: 'Thermostats connectés Nest exposés', tip: 'Les thermostats connectés révèlent des patterns d\'occupation (quand les gens sont à la maison) en plus des risques de contrôle à distance' },
+    { title: 'SCADA industriels', query: 'intitle:"SCADA" | "HMI" inurl:"/main.htm" | port:102', desc: 'Systèmes de contrôle industriels (ICS/SCADA)', tip: 'Port 102 = protocole Siemens S7 pour automates industriels. SCADA exposé sur internet = risque de sabotage d\'infrastructure critique' },
+    { title: 'Panneaux solaires', query: 'intitle:"SolarEdge" | "SMA Sunny" inurl:"/status"', desc: 'Systèmes de monitoring solaire exposés', tip: 'Les onduleurs solaires connectés révèlent la consommation électrique — indicateur d\'occupation et de valeur des installations' },
+    { title: 'Smart home Shodan', query: 'port:8123 "Home Assistant" country:"{cible}"', desc: 'Instances Home Assistant sans authentification', tip: 'Port 8123 = Home Assistant (domotique) — exposé sans auth, permet de contrôler toute la maison connectée', engine: 'shodan' },
+    { title: 'Imprimantes 3D', query: 'intitle:"OctoPrint" | "Repetier-Server" inurl:"/login"', desc: 'Imprimantes 3D accessibles à distance', tip: 'OctoPrint et Repetier sont des interfaces web pour imprimantes 3D — souvent laissées ouvertes sur le réseau local puis exposées' },
+  ],
+  osint: [
+    { title: 'Emails d\'une orga', query: 'site:{cible} "@{cible}"', desc: 'Trouve les adresses email publiées sur un domaine', tip: 'Cherche les patterns d\'email sur le domaine officiel — révèle le format des adresses (prenom.nom@, p.nom@, etc.)' },
+    { title: 'Documents internes', query: 'site:{cible} filetype:pdf | filetype:pptx "confidential" | "internal"', desc: 'Documents marqués confidentiels indexés par Google', tip: 'Les mentions "confidential" ou "internal use only" dans des PDF publics révèlent des documents qui ne devraient pas l\'être' },
+    { title: 'Réseaux sociaux liés', query: '"{cible}" site:linkedin.com | site:twitter.com | site:facebook.com', desc: 'Profils sur les réseaux sociaux pour une personne/organisation', tip: 'Combine le nom avec site: pour chaque réseau social — très efficace pour l\'OSINT sur des personnes ou entreprises' },
+    { title: 'Sous-domaines', query: 'site:*.{cible}', desc: 'Trouve tous les sous-domaines d\'un domaine indexés par Google', tip: 'site:*.domaine.com trouve tous les sous-domaines — révèle des portails internes, environnements de dev, services cachés' },
+    { title: 'Cache Google', query: 'cache:{cible}', desc: 'Version en cache d\'une page (même si supprimée)', tip: 'cache: affiche la dernière version indexée par Google — permet de voir des pages supprimées ou modifiées' },
+    { title: 'Mentions web', query: '"{cible}" -site:{cible}', desc: 'Toutes les mentions d\'une entité hors de son propre site', tip: 'Le signe - exclut un domaine — permet de trouver ce que les autres disent d\'une organisation ou personne' },
+    { title: 'LinkedIn employés', query: 'site:linkedin.com/in "{cible}"', desc: 'Profils LinkedIn d\'employés d\'une organisation', tip: 'site:linkedin.com/in limite aux profils — révèle les employés, leur rôle, et potentiellement leur email via leur profil' },
+    { title: 'Numéros de téléphone', query: '"{cible}" "tel:" | "phone:" | "+33"', desc: 'Numéros de téléphone associés à une entité', tip: 'Les balises tel: et les formats de numéros dans les pages web permettent de trouver des contacts téléphoniques' },
+  ],
+  exploitdb: [
+    { title: 'Exploits par logiciel', query: '{cible}', desc: 'Recherche tous les exploits connus pour un logiciel', tip: 'Exploit-DB répertorie des milliers de preuves de concept — recherche par nom de logiciel, version, ou type de vulnérabilité', engine: 'exploitdb' },
+    { title: 'RCE (Remote Code Exec)', query: '{cible} remote code execution', desc: 'Exploits permettant l\'exécution de code à distance', tip: 'RCE = faille la plus critique — permet d\'exécuter des commandes sur le serveur cible sans accès préalable', engine: 'exploitdb' },
+    { title: 'SQL Injection exploits', query: '{cible} sql injection', desc: 'Exploits d\'injection SQL pour un logiciel', tip: 'Les exploits SQLi sur Exploit-DB incluent souvent des preuves de concept complètes avec les payloads', engine: 'exploitdb' },
+    { title: 'CVE par numéro', query: 'CVE-{cible}', desc: 'Recherche un CVE spécifique sur Exploit-DB', tip: 'CVE-XXXX-YYYY = identifiant officiel d\'une vulnérabilité — Exploit-DB lie les CVE aux exploits correspondants', engine: 'exploitdb' },
+    { title: 'Buffer overflow', query: '{cible} buffer overflow', desc: 'Exploits de dépassement de tampon', tip: 'Buffer overflow = écriture au-delà d\'un tampon mémoire — peut permettre l\'exécution de code arbitraire', engine: 'exploitdb' },
+    { title: 'XSS exploits', query: '{cible} cross site scripting', desc: 'Exploits XSS pour un CMS ou application', tip: 'XSS = injection de script dans une page web — permet le vol de cookies, tokens, ou redirections malveillantes', engine: 'exploitdb' },
+    { title: 'Privilege escalation', query: '{cible} privilege escalation', desc: 'Exploits d\'élévation de privilèges', tip: 'Permet à un utilisateur non-root d\'obtenir les droits administrateur — étape clé après une intrusion initiale', engine: 'exploitdb' },
+    { title: 'Metasploit modules', query: '{cible}', desc: 'Modules Metasploit disponibles pour une cible', tip: 'Rapid7 DB référence tous les modules Metasploit — recherche par service, version, ou type d\'attaque', engine: 'exploitdb' },
+  ],
+};
+
+const ENGINE_URLS = {
+  google: q => `https://www.google.com/search?q=${encodeURIComponent(q)}`,
+  bing: q => `https://www.bing.com/search?q=${encodeURIComponent(q)}`,
+  duckduckgo: q => `https://duckduckgo.com/?q=${encodeURIComponent(q)}`,
+  shodan: q => `https://www.shodan.io/search?query=${encodeURIComponent(q)}`,
+  github: q => `https://github.com/search?q=${encodeURIComponent(q)}&type=code`,
+  exploitdb: q => `https://www.exploit-db.com/search?q=${encodeURIComponent(q)}`,
+  censys: q => `https://search.censys.io/search?resource=hosts&q=${encodeURIComponent(q)}`,
+};
+
+let currentDork = null;
+let currentEngine = 'google';
+let currentCat = 'cameras';
+
+function buildQuery(dork) {
+  const target = document.getElementById('dorkTarget').value.trim();
+  return target ? dork.query.replace(/\{cible\}/g, target) : dork.query;
+}
+
+function renderDorks(cat) {
+  const grid = document.getElementById('dorkGrid');
+  grid.innerHTML = '';
+  (DORKS[cat] || []).forEach((dork, i) => {
+    const card = document.createElement('div');
+    card.className = 'dork-card' + (currentDork === dork ? ' selected' : '');
+    card.setAttribute('data-tip', dork.tip);
+    card.innerHTML = '<div class="dk-title">'+E(dork.title)+'</div>'
+      +'<div class="dk-query">'+E(dork.query)+'</div>'
+      +'<div class="dk-desc">'+E(dork.desc)+'</div>'
+      +(dork.engine ? '<div class="dk-badge">'+E(dork.engine)+'</div>' : '');
+    card.addEventListener('click', () => {
+      document.querySelectorAll('.dork-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      currentDork = dork;
+      // Changer engine si le dork a un engine préféré
+      if (dork.engine && dork.engine !== currentEngine) {
+        currentEngine = dork.engine;
+        document.querySelectorAll('.dork-engine').forEach(b => b.classList.toggle('on', b.dataset.engine === currentEngine));
+      }
+      document.getElementById('dorkQuery').textContent = buildQuery(dork);
+    });
+    grid.appendChild(card);
+  });
+}
+
+// Init
+renderDorks('cameras');
+
+// Catégories
+document.querySelectorAll('.dcat').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.dcat').forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
+    currentCat = btn.dataset.cat;
+    currentDork = null;
+    document.getElementById('dorkQuery').textContent = 'Sélectionne un dork ci-dessous...';
+    renderDorks(currentCat);
+  });
+});
+
+// Engines
+document.querySelectorAll('.dork-engine').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.dork-engine').forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
+    currentEngine = btn.dataset.engine;
+    if (currentDork) document.getElementById('dorkQuery').textContent = buildQuery(currentDork);
+  });
+});
+
+// Mise à jour query quand on tape la cible
+document.getElementById('dorkTarget').addEventListener('input', () => {
+  if (currentDork) document.getElementById('dorkQuery').textContent = buildQuery(currentDork);
+});
+
+document.getElementById('dorkClear').addEventListener('click', () => {
+  document.getElementById('dorkTarget').value = '';
+  if (currentDork) document.getElementById('dorkQuery').textContent = buildQuery(currentDork);
+});
+
+document.getElementById('dorkLaunch').addEventListener('click', () => {
+  if (!currentDork) { alert('Sélectionne d\'abord un dork'); return; }
+  const q = buildQuery(currentDork);
+  const eng = currentDork.engine || currentEngine;
+  window.open(ENGINE_URLS[eng](q), '_blank');
+});
 </script>
 </body></html>
