@@ -7,7 +7,7 @@ const crypto = require('crypto');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const { parsePhoneNumberFromString } = require('libphonenumber-js');
-const { execFile, exec } = require('child_process');
+const { execFile } = require('child_process');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -108,14 +108,6 @@ async function searchDDG(query, max = 6) {
   } catch (e) { }
   return results;
 }
-
-// Trouver nikto au démarrage
-let NIKTO_CMD = null;
-exec('which nikto 2>/dev/null || find /usr -name "nikto.pl" 2>/dev/null | head -1', (err, stdout) => {
-  const p = (stdout || '').trim().split('\n')[0];
-  if (p) NIKTO_CMD = p;
-  console.log('Nikto:', NIKTO_CMD || 'non trouvé');
-});
 
 // ═══ PHONE ═══
 app.get('/api/phone/:number', heavyLimiter, async (req, res) => {
@@ -288,13 +280,8 @@ app.get('/api/nikto/:target', niktoLimiter, async (req, res) => {
   const target = sanitize(req.params.target, 253);
   if (!isValidIP(target)) return res.json({ success: false, error: 'Cible invalide' });
   const url = target.startsWith('http') ? target : 'http://' + target;
-  if (!NIKTO_CMD) return res.json({ success: false, error: 'Nikto non disponible sur ce serveur' });
-  const isScript = NIKTO_CMD.endsWith('.pl');
-  const cmd = isScript ? 'perl' : NIKTO_CMD;
-  const args = isScript
-    ? [NIKTO_CMD, '-h', url, '-maxtime', '30', '-nointeractive', '-Format', 'csv', '-output', '-']
-    : ['-h', url, '-maxtime', '30', '-nointeractive', '-Format', 'csv', '-output', '-'];
-  execFile(cmd, args, { timeout: 35000, maxBuffer: 1024 * 512 }, (err, stdout, stderr) => {
+  const args = ['-h', url, '-maxtime', '30', '-nointeractive', '-nossl', '-Format', 'csv', '-output', '-'];
+  execFile('nikto', args, { timeout: 35000, maxBuffer: 1024 * 512 }, (err, stdout, stderr) => {
     const output = stdout || '';
     if (!output && err) return res.json({ success: false, error: 'Nikto injoignable — ' + (err.message || '') });
     try {
