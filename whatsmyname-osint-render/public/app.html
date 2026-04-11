@@ -119,11 +119,16 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .dcat:hover{border-color:var(--mx2);color:var(--mx)}
 .dork-card{background:linear-gradient(135deg,#070d07,#0a130a);border:1px solid var(--mx3);padding:10px 12px;cursor:pointer;transition:.2s;position:relative}
 .dork-card:hover{border-color:var(--mx);box-shadow:0 2px 12px rgba(0,255,65,.08)}
-.dork-card.selected{border-color:var(--mx);background:rgba(0,255,65,.05)}
+.dork-card.selected{border-color:var(--gold);background:rgba(255,215,64,.04);box-shadow:0 0 14px rgba(255,215,64,.1)}
 .dork-card .dk-title{font-family:'Orbitron',sans-serif;font-size:.55rem;color:var(--mx);margin-bottom:4px}
+.dork-card.selected .dk-title{color:var(--gold)}
 .dork-card .dk-query{font-size:.48rem;color:var(--mx2);font-family:'Share Tech Mono',monospace;word-break:break-all;line-height:1.4}
 .dork-card .dk-desc{font-size:.42rem;color:var(--mx3);margin-top:4px;line-height:1.4}
-.dork-card .dk-badge{position:absolute;top:6px;right:6px;font-size:.38rem;padding:1px 5px;border:1px solid var(--mx3);color:var(--mx3);text-transform:uppercase}
+.dork-card .dk-badge{position:absolute;top:6px;right:6px;font-size:.38rem;padding:1px 5px;border:1px solid var(--cyan);color:var(--cyan);text-transform:uppercase}
+.dork-card .dk-sel{position:absolute;bottom:6px;right:6px;font-size:.38rem;color:var(--gold);display:none}
+.dork-card.selected .dk-sel{display:block}
+.op-badge{display:inline-block;padding:3px 8px;border:1px solid var(--mx3);color:var(--cyan);font-family:'Share Tech Mono',monospace;font-size:.5rem;cursor:help;transition:.2s;margin:2px}
+.op-badge:hover{border-color:var(--cyan);background:rgba(0,229,255,.06)}
 @media(max-width:600px){.hdr h1{letter-spacing:.05em;font-size:1.8rem}.nav button{font-size:.42rem;padding:7px 5px;flex:0 1 auto}.gr,.fg{grid-template-columns:1fr}[data-tip]::after{width:180px;font-size:.44rem}}
 </style>
 </head><body>
@@ -342,50 +347,94 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 <div class="P z" id="Pd">
   <div style="max-width:1100px;margin:0 auto;padding:16px">
 
-    <!-- Champ principal + variable cible -->
-    <div style="max-width:700px;margin:0 auto 16px">
-      <div class="rs" style="margin-bottom:10px">
-        <h4>🔍 GOOGLE DORKING — RECHERCHE AVANCÉE</h4>
-        <p style="font-size:.48rem;color:var(--mx2);line-height:1.6">Construis des requêtes avancées pour trouver des informations cachées sur internet. Remplace <span style="color:var(--mx)">{cible}</span> par ton terme de recherche, sélectionne un dork, et lance la recherche sur le moteur de ton choix.</p>
-      </div>
-      <div style="display:flex;gap:8px;margin-bottom:10px">
-        <div style="flex:1;position:relative">
-          <input id="dorkTarget" placeholder="Cible : ex: webcam, admin, France, .gov..." style="width:100%;background:#000;border:1px solid var(--mx3);color:var(--mx);font-family:'Share Tech Mono',monospace;font-size:.75rem;padding:10px 12px;outline:0;transition:.3s">
+    <!-- GUIDE DÉBUTANT -->
+    <div class="rs" style="margin-bottom:14px;border-color:var(--cyan)">
+      <h4 style="color:var(--cyan)">🎓 GUIDE RAPIDE — COMMENT ÇA MARCHE ?</h4>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-top:8px">
+        <div style="padding:6px;border:1px solid var(--mx3)">
+          <div style="font-size:.48rem;color:var(--mx);margin-bottom:3px">① TAPE TA CIBLE</div>
+          <div style="font-size:.43rem;color:var(--mx2)">Ex: <span style="color:var(--mx)">France</span>, <span style="color:var(--mx)">webcam</span>, <span style="color:var(--mx)">google.com</span></div>
         </div>
-        <button id="dorkClear" style="padding:10px 14px;background:transparent;border:1px solid var(--mx3);color:var(--mx2);font-family:'Share Tech Mono',monospace;font-size:.55rem;cursor:pointer;text-transform:uppercase">EFFACER</button>
+        <div style="padding:6px;border:1px solid var(--mx3)">
+          <div style="font-size:.48rem;color:var(--mx);margin-bottom:3px">② CHOISIS UNE CATÉGORIE</div>
+          <div style="font-size:.43rem;color:var(--mx2)">Caméras, fichiers secrets, failles web...</div>
+        </div>
+        <div style="padding:6px;border:1px solid var(--mx3)">
+          <div style="font-size:.48rem;color:var(--mx);margin-bottom:3px">③ CLIQUE UN DORK</div>
+          <div style="font-size:.43rem;color:var(--mx2)">La requête se génère automatiquement</div>
+        </div>
+        <div style="padding:6px;border:1px solid var(--mx3)">
+          <div style="font-size:.48rem;color:var(--mx);margin-bottom:3px">④ LANCE LA RECHERCHE</div>
+          <div style="font-size:.43rem;color:var(--mx2)">Google/Shodan/GitHub s'ouvre avec ta requête</div>
+        </div>
       </div>
-      <div style="background:#000;border:1px solid var(--mx3);padding:10px 12px;margin-bottom:10px;min-height:40px">
-        <div style="font-size:.42rem;color:var(--mx3);margin-bottom:4px">REQUÊTE GÉNÉRÉE</div>
-        <div id="dorkQuery" style="font-size:.65rem;color:var(--mx);word-break:break-all;font-family:'Share Tech Mono',monospace">Sélectionne un dork ci-dessous...</div>
+      <!-- Explication des opérateurs -->
+      <div style="margin-top:10px;border-top:1px solid var(--mx3);padding-top:8px">
+        <div style="font-size:.45rem;color:var(--mx2);margin-bottom:6px;letter-spacing:.08em">📖 LES OPÉRATEURS — SURVOLE POUR COMPRENDRE</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px">
+          <span class="op-badge" data-tip="site:google.com — Limite la recherche à un seul site web. Ex: site:facebook.com 'email' cherche le mot email uniquement sur Facebook">site:</span>
+          <span class="op-badge" data-tip="intitle:&quot;webcam&quot; — Cherche ce mot dans le TITRE de la page web (ce qui apparaît dans l'onglet du navigateur). Plus précis que la recherche normale">intitle:</span>
+          <span class="op-badge" data-tip="inurl:admin — Cherche ce mot dans l'URL de la page. Ex: inurl:admin trouve toutes les pages dont l'adresse contient 'admin'">inurl:</span>
+          <span class="op-badge" data-tip="filetype:pdf — Cherche uniquement ce type de fichier. Ex: filetype:xls trouve des fichiers Excel, filetype:sql des bases de données">filetype:</span>
+          <span class="op-badge" data-tip="intext:password — Cherche ce mot dans le CONTENU de la page (pas juste le titre). Utile pour trouver des mots de passe dans des pages">intext:</span>
+          <span class="op-badge" data-tip="&quot;mot exact&quot; — Les guillemets forcent la recherche d'une expression exacte. Ex: &quot;default password&quot; trouve cette phrase précise et non les mots séparément">&quot;exact&quot;</span>
+          <span class="op-badge" data-tip="-mot — Le tiret EXCLUT un mot des résultats. Ex: webcam -amazon exclut tous les résultats Amazon pour ne garder que les vraies webcams">-exclure</span>
+          <span class="op-badge" data-tip="mot1 | mot2 — Le pipe signifie OU. Ex: intitle:&quot;webcam&quot; | intitle:&quot;camera&quot; cherche les pages avec webcam OU camera dans le titre">A | B</span>
+          <span class="op-badge" data-tip="cache:site.com — Affiche la version sauvegardée par Google d'une page, même si elle a été supprimée ou modifiée depuis">cache:</span>
+          <span class="op-badge" data-tip="port:22 — Opérateur SHODAN uniquement. Cherche les appareils avec ce port ouvert. Port 22=SSH, 80=web, 443=HTTPS, 3389=bureau distant">port: (Shodan)</span>
+          <span class="op-badge" data-tip="country:FR — Opérateur SHODAN uniquement. Filtre par code pays ISO. FR=France, US=États-Unis, DE=Allemagne, CN=Chine, RU=Russie">country: (Shodan)</span>
+          <span class="op-badge" data-tip="city:Paris — Opérateur SHODAN uniquement. Filtre par ville. Très précis pour trouver des appareils dans une zone géographique spécifique">city: (Shodan)</span>
+          <span class="op-badge" data-tip="filename:.env — Opérateur GITHUB uniquement. Cherche les fichiers par leur nom exact dans tout le code source public de GitHub">filename: (GitHub)</span>
+          <span class="op-badge" data-tip="vuln:CVE-2021-44228 — Opérateur SHODAN uniquement. Filtre les appareils vulnérables à une CVE spécifique (faille de sécurité connue et répertoriée)">vuln: (Shodan)</span>
+        </div>
       </div>
-      <div style="display:flex;flex-wrap:wrap;gap:6px" id="dorkEngines">
-        <button data-engine="google" class="dork-engine on" data-tip="Google — Le plus puissant pour les dorks. Supporte tous les opérateurs avancés.">🔍 Google</button>
-        <button data-engine="bing" class="dork-engine" data-tip="Bing — Supporte les opérateurs avancés. Parfois moins censuré que Google.">🔍 Bing</button>
-        <button data-engine="duckduckgo" class="dork-engine" data-tip="DuckDuckGo — Pas de personnalisation, résultats plus neutres.">🦆 DuckDuckGo</button>
-        <button data-engine="shodan" class="dork-engine" data-tip="Shodan — Moteur de recherche pour appareils connectés. Idéal pour caméras, serveurs, IoT.">📡 Shodan</button>
-        <button data-engine="github" class="dork-engine" data-tip="GitHub — Recherche dans le code source public. Trouve des clés API, mots de passe, configs exposés.">💻 GitHub</button>
-        <button data-engine="exploitdb" class="dork-engine" data-tip="Exploit-DB — Base de données d'exploits. Trouve des failles connues pour un logiciel ou service.">💣 Exploit-DB</button>
-        <button data-engine="censys" class="dork-engine" data-tip="Censys — Scan de certificats SSL et services. Trouve des sous-domaines et services exposés.">🔭 Censys</button>
-      </div>
-      <button id="dorkLaunch" style="width:100%;margin-top:10px;padding:12px;background:var(--mx);color:#000;border:none;font-family:'Orbitron',sans-serif;font-size:.65rem;letter-spacing:.15em;cursor:pointer;text-transform:uppercase;transition:.2s">LANCER LA RECHERCHE</button>
     </div>
 
-    <!-- Sous-onglets catégories -->
+    <!-- Zone principale -->
+    <div style="max-width:750px;margin:0 auto 16px">
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <input id="dorkTarget" placeholder="Ta cible : ex: France, webcam, monsite.com, apache 2.4..." style="flex:1;background:#000;border:1px solid var(--mx3);color:var(--mx);font-family:'Share Tech Mono',monospace;font-size:.75rem;padding:10px 12px;outline:0;transition:.3s">
+        <button id="dorkClear" style="padding:10px 14px;background:transparent;border:1px solid var(--mx3);color:var(--mx2);font-family:'Share Tech Mono',monospace;font-size:.55rem;cursor:pointer;text-transform:uppercase">✕</button>
+      </div>
+
+      <!-- Requête générée -->
+      <div style="background:#000;border:1px solid var(--mx2);padding:10px 12px;margin-bottom:8px;min-height:44px;position:relative">
+        <div style="font-size:.4rem;color:var(--mx3);margin-bottom:3px;letter-spacing:.08em">REQUÊTE GÉNÉRÉE — CLIC POUR COPIER</div>
+        <div id="dorkQuery" style="font-size:.62rem;color:var(--mx);word-break:break-all;font-family:'Share Tech Mono',monospace;cursor:pointer" title="Cliquer pour copier">Sélectionne un dork ci-dessous...</div>
+        <div id="dorkCopied" style="display:none;position:absolute;right:8px;top:8px;font-size:.4rem;color:var(--mx);border:1px solid var(--mx);padding:1px 5px">COPIÉ ✓</div>
+      </div>
+
+      <!-- Moteurs -->
+      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px" id="dorkEngines">
+        <button data-engine="google" class="dork-engine on" data-tip="Google — Le plus puissant. Supporte tous les opérateurs : site:, intitle:, inurl:, filetype:, cache:">🔍 Google</button>
+        <button data-engine="bing" class="dork-engine" data-tip="Bing — Moins censuré que Google pour certaines recherches. Supporte site:, intitle:, filetype:">🔍 Bing</button>
+        <button data-engine="duckduckgo" class="dork-engine" data-tip="DuckDuckGo — Résultats non personnalisés, plus anonyme. Supporte site: et quelques opérateurs basiques">🦆 DDG</button>
+        <button data-engine="shodan" class="dork-engine" data-tip="Shodan — Moteur pour APPAREILS CONNECTÉS (caméras, serveurs, IoT). Opérateurs : port:, country:, city:, vuln:">📡 Shodan</button>
+        <button data-engine="github" class="dork-engine" data-tip="GitHub — Recherche dans tout le CODE SOURCE public. Opérateurs : filename:, language:, user:. Trouve des mots de passe, clés API...">💻 GitHub</button>
+        <button data-engine="exploitdb" class="dork-engine" data-tip="Exploit-DB — Base mondiale d'exploits de sécurité. Tape le nom d'un logiciel ou CVE pour trouver ses failles connues">💣 Exploit-DB</button>
+        <button data-engine="censys" class="dork-engine" data-tip="Censys — Scan de certificats SSL et services internet. Trouve des sous-domaines cachés et services exposés">🔭 Censys</button>
+      </div>
+
+      <button id="dorkLaunch" style="width:100%;padding:12px;background:var(--mx);color:#000;border:none;font-family:'Orbitron',sans-serif;font-size:.65rem;letter-spacing:.15em;cursor:pointer;text-transform:uppercase;transition:.2s">🚀 LANCER LA RECHERCHE</button>
+    </div>
+
+    <!-- Catégories -->
     <div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:12px;border-bottom:1px solid var(--mx3);padding-bottom:8px" id="dorkCats">
-      <button class="dcat on" data-cat="cameras" data-tip="Caméras IP publiques accessibles sans mot de passe — webcams, caméras de surveillance, flux RTSP">📷 CAMÉRAS</button>
-      <button class="dcat" data-cat="admin" data-tip="Panneaux d'administration exposés — phpMyAdmin, WordPress admin, cPanels, routeurs">🔐 ADMIN</button>
-      <button class="dcat" data-cat="files" data-tip="Fichiers sensibles indexés — PDF, Excel, configs, logs, backups, bases de données">📄 FICHIERS</button>
-      <button class="dcat" data-cat="databases" data-tip="Bases de données exposées — MySQL, MongoDB, ElasticSearch, Redis accessibles publiquement">🗄 BASES DE DONNÉES</button>
-      <button class="dcat" data-cat="passwords" data-tip="Mots de passe et credentials exposés — fichiers htpasswd, configs avec mots de passe, clés API">🔑 MOTS DE PASSE</button>
-      <button class="dcat" data-cat="vulnerabilities" data-tip="Serveurs vulnérables — versions obsolètes, erreurs exposées, CVE connus">⚠ VULNÉRABILITÉS</button>
-      <button class="dcat" data-cat="network" data-tip="Équipements réseau exposés — routeurs, switches, firewalls, VPN">🌐 RÉSEAU</button>
-      <button class="dcat" data-cat="iot" data-tip="Objets connectés — imprimantes, thermostats, systèmes de contrôle industriels">📡 IoT</button>
-      <button class="dcat" data-cat="osint" data-tip="OSINT général — emails, téléphones, noms, réseaux sociaux, documents personnels">🕵 OSINT</button>
-      <button class="dcat" data-cat="exploitdb" data-tip="Exploit-DB — Recherche rapide d'exploits et CVE par logiciel, version ou type">💣 EXPLOIT-DB</button>
+      <button class="dcat on" data-cat="cameras" data-tip="📷 Trouve des caméras IP publiques accessibles sans mot de passe. Webcams, caméras de surveillance, flux RTSP. Utilise Shodan pour filtrer par ville/pays">📷 CAMÉRAS</button>
+      <button class="dcat" data-cat="admin" data-tip="🔐 Panneaux d'administration mal sécurisés : phpMyAdmin (bases de données), WordPress admin, cPanel (hébergement), routeurs, Jenkins (DevOps)">🔐 PANNEAUX ADMIN</button>
+      <button class="dcat" data-cat="files" data-tip="📄 Fichiers sensibles indexés par erreur : .env avec mots de passe, dumps SQL, logs serveur, clés SSH, backups. Aussi secrets exposés sur GitHub">📄 FICHIERS SECRETS</button>
+      <button class="dcat" data-cat="databases" data-tip="🗄 Bases de données sans authentification : MongoDB, ElasticSearch, Redis, MySQL directement accessibles depuis internet. Via Shodan">🗄 BASES DE DONNÉES</button>
+      <button class="dcat" data-cat="passwords" data-tip="🔑 Mots de passe et clés exposés : fichiers htpasswd Apache, wp-config.php WordPress, clés AWS commençant par AKIA, variables d'environnement">🔑 MOTS DE PASSE</button>
+      <button class="dcat" data-cat="vulnerabilities" data-tip="⚠ Serveurs vulnérables : IIS obsolète, Apache en mode debug, erreurs PHP qui révèlent des infos internes, Shellshock, Heartbleed via Shodan">⚠ FAILLES</button>
+      <button class="dcat" data-cat="network" data-tip="🌐 Équipements réseau exposés : routeurs Cisco, firewalls pfSense, portails VPN, NAS Synology, imprimantes réseau accessibles depuis internet">🌐 RÉSEAU</button>
+      <button class="dcat" data-cat="iot" data-tip="📡 Objets connectés mal sécurisés : systèmes SCADA industriels, Home Assistant (domotique), thermostats, imprimantes 3D, panneaux solaires">📡 IoT OBJETS</button>
+      <button class="dcat" data-cat="osint" data-tip="🕵 Recherches OSINT : emails d'une organisation, sous-domaines cachés, profils LinkedIn d'employés, documents internes exposés, mentions web">🕵 OSINT</button>
+      <button class="dcat" data-cat="reconng" data-tip="🕸 Modules inspirés de Recon-ng : découverte de sous-domaines, reverse IP, WHOIS en masse, recherche de profils liés à un domaine">🕸 RECON-NG</button>
+      <button class="dcat" data-cat="exploitdb" data-tip="💣 Exploit-DB : recherche d'exploits par logiciel, RCE (exécution de code), injection SQL, CVE par numéro, escalade de privilèges">💣 EXPLOIT-DB</button>
     </div>
 
     <!-- Grille de dorks -->
-    <div id="dorkGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:6px"></div>
+    <div id="dorkGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:6px"></div>
 
   </div>
 </div>
@@ -1113,6 +1162,20 @@ let currentDork = null;
 let currentEngine = 'google';
 let currentCat = 'cameras';
 
+// Ajouter dorks Recon-ng
+DORKS.reconng = [
+  { title: 'Sous-domaines (crt.sh)', query: 'site:*.{cible}', desc: 'Découvre tous les sous-domaines d\'un domaine indexés par Google — inspiré du module recon-ng brute_hosts', tip: 'site:*.domaine.com trouve tous les sous-domaines indexés. Recon-ng fait pareil avec des wordlists brute-force. Résultats : portails internes, envs de dev, APIs cachées' },
+  { title: 'Sous-domaines Shodan', query: 'hostname:"{cible}"', desc: 'Tous les sous-domaines d\'un domaine via Shodan (module recon-ng shodan_hostname)', tip: 'Shodan indexe les bannières HTTP de tous les sous-domaines — révèle des services non documentés même sans réponse DNS publique', engine: 'shodan' },
+  { title: 'Reverse IP Google', query: 'ip:"{cible}" | site:"{cible}"', desc: 'Trouve tous les domaines hébergés sur la même IP (recon-ng reverse_resolve)', tip: 'Plusieurs sites peuvent partager la même IP chez un hébergeur — révèle des sites liés à la même organisation ou personne' },
+  { title: 'Employés LinkedIn', query: 'site:linkedin.com/in "{cible}"', desc: 'Liste les employés d\'une organisation sur LinkedIn (module recon-ng linkedin_auth)', tip: 'Recon-ng a un module dédié LinkedIn. Manuellement : site:linkedin.com/in + nom org. Révèle noms, postes, et structure interne' },
+  { title: 'Emails d\'une orga', query: 'site:{cible} "@{cible}"', desc: 'Trouve les adresses email publiées sur le site officiel (module recon-ng pgp_search)', tip: 'Recon-ng cherche dans les clés PGP publiques pour trouver les emails. Google cherche dans les pages web — complémentaire' },
+  { title: 'Documents publics', query: 'site:{cible} filetype:pdf | filetype:docx | filetype:xlsx', desc: 'Tous les documents indexés d\'une organisation (module recon-ng google_site_web)', tip: 'Les métadonnées des documents Word/Excel/PDF révèlent souvent les noms d\'auteurs, paths réseau, logiciels utilisés — OSINT précieux' },
+  { title: 'Profils sociaux', query: '"{cible}" site:twitter.com | site:instagram.com | site:facebook.com', desc: 'Présence sur les réseaux sociaux (module recon-ng bing_linkedin_contacts)', tip: 'Recon-ng agrège automatiquement les profils sociaux. Manuellement : chercher le nom/email sur chaque réseau révèle des connexions inattendues' },
+  { title: 'IPs d\'une org (WHOIS)', query: 'org:"{cible}"', desc: 'Plages d\'adresses IP appartenant à une organisation via Shodan', tip: 'Sur Shodan, org: filtre par organisation WHOIS — révèle toute l\'infrastructure réseau publique : serveurs, équipements, services', engine: 'shodan' },
+  { title: 'Mentions Pastebin', query: 'site:pastebin.com "{cible}"', desc: 'Données leakées sur Pastebin liées à une cible (module recon-ng pastebin_google)', tip: 'Recon-ng a un module dédié Pastebin. Les pastes contiennent souvent des credentials, codes sources, données internes leakées par erreur' },
+  { title: 'DNS History', query: 'site:securitytrails.com "{cible}"', desc: 'Historique DNS d\'un domaine — révèle les anciennes IPs et hébergeurs', tip: 'L\'historique DNS révèle les anciennes infrastructures — utile pour trouver l\'IP réelle derrière un Cloudflare ou anciens serveurs' },
+];
+
 function buildQuery(dork) {
   const target = document.getElementById('dorkTarget').value.trim();
   return target ? dork.query.replace(/\{cible\}/g, target) : dork.query;
@@ -1121,19 +1184,25 @@ function buildQuery(dork) {
 function renderDorks(cat) {
   const grid = document.getElementById('dorkGrid');
   grid.innerHTML = '';
-  (DORKS[cat] || []).forEach((dork, i) => {
+  (DORKS[cat] || []).forEach((dork) => {
     const card = document.createElement('div');
     card.className = 'dork-card' + (currentDork === dork ? ' selected' : '');
     card.setAttribute('data-tip', dork.tip);
-    card.innerHTML = '<div class="dk-title">'+E(dork.title)+'</div>'
+    card.innerHTML = '<div class="dk-title">'+E(dork.title)+(currentDork===dork?' ✓':'')+'</div>'
       +'<div class="dk-query">'+E(dork.query)+'</div>'
       +'<div class="dk-desc">'+E(dork.desc)+'</div>'
       +(dork.engine ? '<div class="dk-badge">'+E(dork.engine)+'</div>' : '');
     card.addEventListener('click', () => {
+      if (currentDork === dork) {
+        // DÉSELECTIONNER si déjà sélectionné
+        currentDork = null;
+        card.classList.remove('selected');
+        document.getElementById('dorkQuery').textContent = 'Sélectionne un dork ci-dessous...';
+        return;
+      }
       document.querySelectorAll('.dork-card').forEach(c => c.classList.remove('selected'));
       card.classList.add('selected');
       currentDork = dork;
-      // Changer engine si le dork a un engine préféré
       if (dork.engine && dork.engine !== currentEngine) {
         currentEngine = dork.engine;
         document.querySelectorAll('.dork-engine').forEach(b => b.classList.toggle('on', b.dataset.engine === currentEngine));
@@ -1143,6 +1212,17 @@ function renderDorks(cat) {
     grid.appendChild(card);
   });
 }
+
+// Copier la requête au clic
+document.getElementById('dorkQuery').addEventListener('click', () => {
+  const q = document.getElementById('dorkQuery').textContent;
+  if (q === 'Sélectionne un dork ci-dessous...') return;
+  navigator.clipboard.writeText(q).then(() => {
+    const c = document.getElementById('dorkCopied');
+    c.style.display = 'block';
+    setTimeout(() => c.style.display = 'none', 1500);
+  });
+});
 
 // Init
 renderDorks('cameras');
@@ -1169,7 +1249,6 @@ document.querySelectorAll('.dork-engine').forEach(btn => {
   });
 });
 
-// Mise à jour query quand on tape la cible
 document.getElementById('dorkTarget').addEventListener('input', () => {
   if (currentDork) document.getElementById('dorkQuery').textContent = buildQuery(currentDork);
 });
@@ -1180,7 +1259,12 @@ document.getElementById('dorkClear').addEventListener('click', () => {
 });
 
 document.getElementById('dorkLaunch').addEventListener('click', () => {
-  if (!currentDork) { alert('Sélectionne d\'abord un dork'); return; }
+  if (!currentDork) {
+    document.getElementById('dorkQuery').style.color='var(--red)';
+    document.getElementById('dorkQuery').textContent = '⚠ Clique d\'abord sur un dork dans la liste ci-dessous';
+    setTimeout(() => { document.getElementById('dorkQuery').style.color='var(--mx)'; document.getElementById('dorkQuery').textContent='Sélectionne un dork ci-dessous...'; }, 2000);
+    return;
+  }
   const q = buildQuery(currentDork);
   const eng = currentDork.engine || currentEngine;
   window.open(ENGINE_URLS[eng](q), '_blank');
