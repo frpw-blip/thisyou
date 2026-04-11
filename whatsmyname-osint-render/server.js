@@ -462,25 +462,36 @@ app.post('/api/exif/read', upload.array('photos', 20), async (req, res) => {
 // ═══ EXIFTOOL — ÉDITION ═══
 app.post('/api/exif/edit', upload.single('photo'), async (req, res) => {
   if (!req.file) return res.json({ success: false, error: 'Aucun fichier reçu' });
-  const { tags } = req.body;
-  if (!tags) return res.json({ success: false, error: 'Tags manquants' });
-  let parsedTags;
-  try { parsedTags = JSON.parse(tags); } catch(e) { return res.json({ success: false, error: 'Tags invalides' }); }
+  const stripAll = req.body.stripAll === '1';
   const os2 = require('os');
+  const ext = path.extname(req.file.originalname);
   const tmpIn = path.join(os2.tmpdir(), 'exif_in_' + Date.now() + '_' + req.file.originalname.replace(/[^a-zA-Z0-9.]/g, '_'));
-  const tmpOut = tmpIn + '_edited' + path.extname(req.file.originalname);
+  const tmpOut = tmpIn + '_out' + ext;
   try {
     fs.writeFileSync(tmpIn, req.file.buffer);
-    const tagArgs = Object.entries(parsedTags).map(([k, v]) => `-${k}=${v}`);
+    let tagArgs;
+    if (stripAll) {
+      // Supprimer toutes les métadonnées
+      tagArgs = ['-all=', '-tagsfromfile', '@', '-ICC_Profile', '-o', tmpOut, tmpIn];
+    } else {
+      const { tags } = req.body;
+      if (!tags) return res.json({ success: false, error: 'Tags manquants' });
+      let parsedTags;
+      try { parsedTags = JSON.parse(tags); } catch(e) { return res.json({ success: false, error: 'Tags invalides' }); }
+      // Valeur vide = supprimer le tag, valeur non vide = modifier
+      tagArgs = Object.entries(parsedTags).map(([k, v]) => v === '' ? `-${k}=` : `-${k}=${v}`);
+      tagArgs.push('-o', tmpOut, tmpIn);
+    }
     await new Promise((resolve, reject) => {
-      execFile('exiftool', [...tagArgs, '-o', tmpOut, tmpIn], { timeout: 15000 }, (err, stdout, stderr) => {
+      execFile('exiftool', tagArgs, { timeout: 15000 }, (err, stdout, stderr) => {
         if (err && !fs.existsSync(tmpOut)) reject(new Error(stderr || err.message));
         else resolve();
       });
     });
+    if (!fs.existsSync(tmpOut)) return res.json({ success: false, error: 'ExifTool n\'a pas produit de fichier de sortie' });
     const editedBuffer = fs.readFileSync(tmpOut);
-    res.setHeader('Content-Disposition', `attachment; filename="edited_${req.file.originalname}"`);
-    res.setHeader('Content-Type', req.file.mimetype);
+    res.setHeader('Content-Disposition', `attachment; filename="clean_${req.file.originalname}"`);
+    res.setHeader('Content-Type', req.file.mimetype || 'application/octet-stream');
     res.send(editedBuffer);
   } catch(e) {
     res.json({ success: false, error: 'Erreur édition : ' + e.message });
