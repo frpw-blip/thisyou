@@ -233,7 +233,7 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
     <button class="go" id="ipB" data-tip="Lance la géolocalisation et l'analyse réseau de l'IP ou du domaine.">ANALYSER</button>
   </div>
 
-  <div class="sub-nav" id="subNav">
+  <div class="sub-nav" id="subNav" style="display:flex">
     <button class="on" data-sp="geo" data-tip="Géolocalisation — Affiche le pays, la ville, le fournisseur internet (FAI), les coordonnées GPS, et indique si c'est un VPN ou un proxy.">
       <span class="sn-icon">🌍</span>LOCALISATION
     </button>
@@ -345,9 +345,9 @@ function swSub(n){
   document.getElementById('spSqli').classList.toggle('on',n==='sqli');
   document.getElementById('spExploits').classList.toggle('on',n==='exploits');
 }
-document.querySelector('[data-sp="ports"]').addEventListener('click',()=>{swSub('ports');if(!document.getElementById('spPorts').innerHTML&&lastIpTarget)nmapScan()});
-document.querySelector('[data-sp="vulns"]').addEventListener('click',()=>{swSub('vulns');if(!document.getElementById('spVulns').innerHTML&&lastIpTarget)niktoScan()});
-document.querySelector('[data-sp="sqli"]').addEventListener('click',()=>{swSub('sqli');if(!document.getElementById('spSqli').innerHTML&&lastIpTarget)sqlmapScan()});
+document.querySelector('[data-sp="ports"]').addEventListener('click',()=>{swSub('ports');const t=lastIpTarget||document.getElementById('ipI').value.trim();if(t&&!document.getElementById('spPorts').innerHTML){lastIpTarget=t;nmapScan()}});
+document.querySelector('[data-sp="vulns"]').addEventListener('click',()=>{swSub('vulns');const t=lastIpTarget||document.getElementById('ipI').value.trim();if(t&&!document.getElementById('spVulns').innerHTML){lastIpTarget=t;niktoScan()}});
+document.querySelector('[data-sp="sqli"]').addEventListener('click',()=>{swSub('sqli');const t=lastIpTarget||document.getElementById('ipI').value.trim();if(t&&!document.getElementById('spSqli').innerHTML){lastIpTarget=t;sqlmapScan()}});
 document.querySelector('[data-sp="exploits"]').addEventListener('click',()=>{swSub('exploits');if(!document.getElementById('spExploits').innerHTML&&lastIpTarget)exploitScan()});
 document.querySelector('[data-sp="geo"]').addEventListener('click',()=>swSub('geo'));
 
@@ -490,9 +490,19 @@ async function ipL(){
   const ip=document.getElementById('ipI').value.trim();if(!ip)return;
   lastIpTarget=ip;
   document.getElementById('ipE').style.display='none';
-  document.getElementById('subNav').classList.add('on');
   document.getElementById('spPorts').innerHTML='';
   document.getElementById('spVulns').innerHTML='';
+  document.getElementById('spSqli').innerHTML='';
+  document.getElementById('spExploits').innerHTML='';
+  // Si c'est une URL complète, aller directement sur injection SQL
+  const isUrl=ip.startsWith('http://') || ip.startsWith('https://');
+  if(isUrl){
+    swSub('sqli');
+    sqlmapScan();
+    // Afficher message dans géo
+    document.getElementById('spGeo').innerHTML='<div class="rs"><p style="font-size:.55rem;color:var(--mx2)">URL détectée — la géolocalisation fonctionne avec des IPs ou domaines (ex: 8.8.8.8 ou google.com).</p></div>';
+    return;
+  }
   swSub('geo');
   const el=document.getElementById('spGeo');
   el.innerHTML='<div style="text-align:center;padding:20px;animation:pu 1.5s infinite;color:var(--mx2)">Géolocalisation en cours...</div>';
@@ -567,7 +577,7 @@ async function niktoScan(){
 // SQLMAP
 async function sqlmapScan(){
   const el=document.getElementById('spSqli');
-  const target=lastIpTarget;
+  const target=lastIpTarget||document.getElementById('ipI').value.trim();
   const url=target.startsWith('http')?target:'http://'+target;
   el.innerHTML='<div style="text-align:center;padding:20px;animation:pu 1.5s infinite;color:var(--cyan)">Scan SQLMap en cours (~60s)...<br><span style="font-size:.45rem;color:var(--mx3)">SQLMap teste les injections SQL sur l\'URL cible</span></div>';
   // Champ URL personnalisé pour SQLMap
@@ -593,8 +603,8 @@ async function sqlmapScan(){
       let h='<div class="rs" style="border-color:'+(g.injectable?'var(--red)':'var(--mx)')+'"><h4 style="color:'+(g.injectable?'var(--red)':'var(--mx)')+'">'+(g.injectable?'💉 INJECTION SQL DÉTECTÉE':'✓ AUCUNE INJECTION SQL DÉTECTÉE')+'</h4>';
       h+='<p style="font-size:.48rem;color:var(--mx2);margin-bottom:8px">SQLMap teste si la base de données est accessible via des paramètres mal sécurisés dans l\'URL.</p>';
       h+=rw('URL testée',g.url);
-      if(g.dbms)h+=rw('Base de données détectée',g.dbms,'bad');
-      if(g.injTypes.length)h+=rw('Types d\'injection',g.injTypes.join(', '),'bad');
+      if(g.injectable&&g.dbms)h+=rw('Base de données détectée',g.dbms,'bad');
+      if(g.injectable&&g.injTypes.length)h+=rw('Types d\'injection',g.injTypes.join(', '),'bad');
       h+='</div>';
       if(g.vulns.length){
         h+='<div class="rs" style="border-color:var(--red)"><h4 style="color:var(--red)">PARAMÈTRES VULNÉRABLES</h4>';
