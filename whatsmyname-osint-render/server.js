@@ -280,22 +280,16 @@ app.get('/api/nikto/:target', niktoLimiter, async (req, res) => {
   const target = sanitize(req.params.target, 253);
   if (!isValidIP(target)) return res.json({ success: false, error: 'Cible invalide' });
   const url = target.startsWith('http') ? target : 'http://' + target;
-  const args = ['-h', url, '-maxtime', '30', '-nointeractive', '-nossl', '-Format', 'csv', '-output', '-'];
+  const args = ['-h', url, '-Cgidirs', 'all', '-nointeractive', '-timeout', '10', '-maxtime', '30'];
   execFile('nikto', args, { timeout: 35000, maxBuffer: 1024 * 512 }, (err, stdout, stderr) => {
-    const output = stdout || '';
+    const output = (stdout || '') + (stderr || '');
     if (!output && err) return res.json({ success: false, error: 'Nikto injoignable — ' + (err.message || '') });
     try {
       const vulns = [];
-      const lines = output.split('\n').filter(l => l && !l.startsWith('#') && !l.startsWith('"Nikto'));
+      const lines = output.split('\n');
       for (const line of lines) {
-        const parts = line.split(',');
-        if (parts.length >= 7) {
-          vulns.push({
-            id: (parts[3] || '').replace(/"/g, '').trim(),
-            uri: (parts[4] || '').replace(/"/g, '').trim(),
-            method: (parts[5] || 'GET').replace(/"/g, '').trim(),
-            msg: (parts[6] || '').replace(/"/g, '').trim(),
-          });
+        if (line.startsWith('+ ') && !line.includes('Target IP') && !line.includes('Target Port') && !line.includes('Start Time') && !line.includes('Server:')) {
+          vulns.push({ id: '?', uri: '', method: 'GET', msg: line.replace(/^\+ /, '').trim() });
         }
       }
       res.json({ success: true, data: { target, vulnCount: vulns.length, vulns } });
