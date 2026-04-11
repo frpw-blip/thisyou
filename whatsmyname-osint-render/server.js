@@ -386,6 +386,249 @@ app.post('/api/sqlmap', sqlmapLimiter, async (req, res) => {
   });
 });
 
+// ═══ SCAN APPROFONDI PSEUDO ═══
+app.get('/api/deepscan/username/:username', heavyLimiter, async (req, res) => {
+  const username = sanitize(req.params.username, 64);
+  if (!isValidUsername(username)) return res.json({ success: false, error: 'Username invalide' });
+
+  res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive', 'X-Accel-Buffering': 'no' });
+  const send = (type, data) => res.write(`data: ${JSON.stringify({ type, ...data })}\n\n`);
+
+  send('start', { username });
+
+  const checks = [
+    // GitHub
+    async () => {
+      try {
+        const r = await httpGet(`https://api.github.com/users/${encodeURIComponent(username)}`, 6000);
+        if (r.statusCode === 200) {
+          const d = JSON.parse(r.body);
+          return { source: 'GitHub', found: true, url: d.html_url, data: {
+            nom: d.name, bio: d.bio, localisation: d.location, email: d.email,
+            repos: d.public_repos, followers: d.followers, créé: d.created_at?.split('T')[0],
+            blog: d.blog, entreprise: d.company, twitter: d.twitter_username
+          }};
+        }
+      } catch(e) {}
+      return { source: 'GitHub', found: false };
+    },
+    // Reddit
+    async () => {
+      try {
+        const r = await httpGet(`https://www.reddit.com/user/${encodeURIComponent(username)}/about.json`, 6000);
+        if (r.statusCode === 200) {
+          const d = JSON.parse(r.body).data;
+          return { source: 'Reddit', found: true, url: `https://reddit.com/u/${username}`, data: {
+            karma: d.link_karma + d.comment_karma, créé: new Date(d.created_utc*1000).toISOString().split('T')[0],
+            vérifié: d.verified, premium: d.is_gold
+          }};
+        }
+      } catch(e) {}
+      return { source: 'Reddit', found: false };
+    },
+    // Keybase
+    async () => {
+      try {
+        const r = await httpGet(`https://keybase.io/_/api/1.0/user/lookup.json?username=${encodeURIComponent(username)}`, 6000);
+        if (r.statusCode === 200) {
+          const d = JSON.parse(r.body);
+          if (d.them && d.them.length > 0) {
+            const u = d.them[0];
+            const proofs = u.proofs_summary?.all || [];
+            return { source: 'Keybase', found: true, url: `https://keybase.io/${username}`, data: {
+              nom: u.profile?.full_name, bio: u.profile?.bio, localisation: u.profile?.location,
+              preuves: proofs.map(p => `${p.proof_type}: ${p.nametag}`).join(', ')
+            }};
+          }
+        }
+      } catch(e) {}
+      return { source: 'Keybase', found: false };
+    },
+    // DEV.to
+    async () => {
+      try {
+        const r = await httpGet(`https://dev.to/api/users/by_username?url=${encodeURIComponent(username)}`, 6000);
+        if (r.statusCode === 200) {
+          const d = JSON.parse(r.body);
+          return { source: 'DEV.to', found: true, url: `https://dev.to/${username}`, data: {
+            nom: d.name, bio: d.summary, twitter: d.twitter_username, github: d.github_username,
+            articles: d.articles_count
+          }};
+        }
+      } catch(e) {}
+      return { source: 'DEV.to', found: false };
+    },
+    // HackerNews
+    async () => {
+      try {
+        const r = await httpGet(`https://hacker-news.firebaseio.com/v0/user/${encodeURIComponent(username)}.json`, 6000);
+        if (r.statusCode === 200 && r.body !== 'null') {
+          const d = JSON.parse(r.body);
+          return { source: 'HackerNews', found: true, url: `https://news.ycombinator.com/user?id=${username}`, data: {
+            karma: d.karma, créé: new Date(d.created*1000).toISOString().split('T')[0], about: d.about?.replace(/<[^>]+>/g,'').slice(0,150)
+          }};
+        }
+      } catch(e) {}
+      return { source: 'HackerNews', found: false };
+    },
+    // Gravatar
+    async () => {
+      try {
+        const crypto2 = require('crypto');
+        const md5 = crypto2.createHash('md5').update(username.toLowerCase()).digest('hex');
+        const r = await httpGet(`https://www.gravatar.com/${md5}.json`, 5000);
+        if (r.statusCode === 200) {
+          const d = JSON.parse(r.body).entry?.[0];
+          if (d) return { source: 'Gravatar', found: true, url: `https://gravatar.com/${username}`, data: {
+            nom: d.displayName, email: d.emails?.[0]?.value, bio: d.aboutMe, localisation: d.currentLocation
+          }};
+        }
+      } catch(e) {}
+      return { source: 'Gravatar', found: false };
+    },
+    // GitLab
+    async () => {
+      try {
+        const r = await httpGet(`https://gitlab.com/api/v4/users?username=${encodeURIComponent(username)}`, 6000);
+        if (r.statusCode === 200) {
+          const d = JSON.parse(r.body);
+          if (d.length > 0) return { source: 'GitLab', found: true, url: d[0].web_url, data: {
+            nom: d[0].name, bio: d[0].bio, localisation: d[0].location, repos: d[0].public_repos
+          }};
+        }
+      } catch(e) {}
+      return { source: 'GitLab', found: false };
+    },
+    // crt.sh domaines
+    async () => {
+      try {
+        const r = await httpGet(`https://crt.sh/?q=${encodeURIComponent(username)}&output=json`, 7000);
+        if (r.statusCode === 200) {
+          const d = JSON.parse(r.body);
+          const domains = [...new Set(d.map(c => c.common_name).filter(n => n && !n.startsWith('*')))].slice(0, 10);
+          if (domains.length) return { source: 'crt.sh (domaines)', found: true, url: `https://crt.sh/?q=${username}`, data: {
+            domaines: domains.join(', ')
+          }};
+        }
+      } catch(e) {}
+      return { source: 'crt.sh (domaines)', found: false };
+    },
+    // Pastebin mentions
+    async () => {
+      try {
+        const r = await searchDDG(`site:pastebin.com "${username}"`, 5);
+        if (r.length) return { source: 'Pastebin', found: true, url: `https://pastebin.com/search?q=${encodeURIComponent(username)}`, data: {
+          mentions: r.map(x => x.title).join(' | ')
+        }};
+      } catch(e) {}
+      return { source: 'Pastebin', found: false };
+    },
+    // Web mentions
+    async () => {
+      try {
+        const r = await searchDDG(`"${username}"`, 8);
+        if (r.length) return { source: 'Web (DuckDuckGo)', found: true, data: { résultats: r.length, liens: r.map(x=>x.url).join(' | ') }};
+      } catch(e) {}
+      return { source: 'Web', found: false };
+    },
+  ];
+
+  for (const check of checks) {
+    try {
+      const result = await check();
+      send('result', result);
+    } catch(e) {}
+  }
+
+  send('done', { total: checks.length });
+  res.end();
+});
+
+// ═══ SCAN APPROFONDI EMAIL ═══
+app.get('/api/deepscan/email/:email', heavyLimiter, async (req, res) => {
+  const email = sanitize(req.params.email, 254).toLowerCase();
+  if (!isValidEmail(email)) return res.json({ success: false, error: 'Email invalide' });
+  const [user, domain] = email.split('@');
+  const md5 = crypto.createHash('md5').update(email).digest('hex');
+
+  res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive', 'X-Accel-Buffering': 'no' });
+  const send = (type, data) => res.write(`data: ${JSON.stringify({ type, ...data })}\n\n`);
+  send('start', { email });
+
+  // Plateformes à tester avec l'email (via reset password ou API)
+  const platforms = [
+    { name: 'Gravatar', check: async () => {
+      const r = await httpGet(`https://www.gravatar.com/avatar/${md5}?d=404`, 4000);
+      if (r.statusCode === 200) {
+        let profile = null;
+        try { const gp = await httpGet(`https://www.gravatar.com/${md5}.json`, 4000); if (gp.statusCode===200) profile=JSON.parse(gp.body).entry?.[0]; } catch(e){}
+        return { found: true, url: `https://gravatar.com/${user}`, data: { avatar: `https://www.gravatar.com/avatar/${md5}?s=100`, nom: profile?.displayName, bio: profile?.aboutMe }};
+      }
+      return { found: false };
+    }},
+    { name: 'GitHub (email)', check: async () => {
+      const r = await httpGet(`https://api.github.com/search/users?q=${encodeURIComponent(email)}+in:email`, 6000);
+      if (r.statusCode === 200) {
+        const d = JSON.parse(r.body);
+        if (d.total_count > 0) return { found: true, url: d.items[0].html_url, data: { login: d.items[0].login, total: d.total_count }};
+      }
+      return { found: false };
+    }},
+    { name: 'Fuites (LeakCheck)', check: async () => {
+      const r = await httpGet(`https://leakcheck.io/api/public?check=${encodeURIComponent(email)}`, 6000);
+      if (r.statusCode === 200) {
+        const d = JSON.parse(r.body);
+        if (d.success && d.sources?.length) return { found: true, data: { fuites: d.sources.map(s=>s.name).join(', '), nombre: d.sources.length }};
+      }
+      return { found: false };
+    }},
+    { name: 'crt.sh (domaine)', check: async () => {
+      const r = await httpGet(`https://crt.sh/?q=${encodeURIComponent(domain)}&output=json`, 7000);
+      if (r.statusCode === 200) {
+        const d = JSON.parse(r.body);
+        const subdomains = [...new Set(d.map(c=>c.common_name).filter(n=>n&&!n.startsWith('*')))].slice(0,8);
+        if (subdomains.length) return { found: true, url: `https://crt.sh/?q=${domain}`, data: { 'sous-domaines': subdomains.join(', ') }};
+      }
+      return { found: false };
+    }},
+    { name: 'Web (mentions)', check: async () => {
+      const r = await searchDDG(`"${email}"`, 8);
+      if (r.length) return { found: true, data: { résultats: r.length, liens: r.slice(0,5).map(x=>x.url).join(' | ') }};
+      return { found: false };
+    }},
+    { name: 'Pastebin', check: async () => {
+      const r = await searchDDG(`site:pastebin.com "${email}"`, 5);
+      if (r.length) return { found: true, url: r[0].url, data: { mentions: r.length, exemple: r[0].title }};
+      return { found: false };
+    }},
+    { name: 'GitHub commits', check: async () => {
+      const r = await httpGet(`https://api.github.com/search/commits?q=author-email:${encodeURIComponent(email)}&per_page=3`, 6000);
+      if (r.statusCode === 200) {
+        const d = JSON.parse(r.body);
+        if (d.total_count > 0) return { found: true, data: { commits: d.total_count, exemple: d.items[0]?.html_url }};
+      }
+      return { found: false };
+    }},
+    { name: 'WHOIS (domaine)', check: async () => {
+      const r = await httpGet(`https://www.whois.com/whois/${encodeURIComponent(domain)}`, 6000);
+      if (r.statusCode === 200 && r.body.includes(email)) return { found: true, url: `https://www.whois.com/whois/${domain}`, data: { info: 'Email trouvé dans les données WHOIS du domaine' }};
+      return { found: false };
+    }},
+  ];
+
+  for (const p of platforms) {
+    try {
+      const result = await p.check();
+      send('result', { source: p.name, ...result });
+    } catch(e) {
+      send('result', { source: p.name, found: false });
+    }
+  }
+
+  send('done', { total: platforms.length });
+  res.end();
+});
+
 // ═══ CVE / EXPLOITS ═══
 app.post('/api/exploits', heavyLimiter, async (req, res) => {
   const { services } = req.body;
