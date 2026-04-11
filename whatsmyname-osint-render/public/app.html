@@ -128,6 +128,7 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
   <button data-p="e" data-tip="Analyse un email : vérifie s'il a un avatar public, s'il apparaît dans des bases de données hackées (fuites), et cherche ses mentions publiques sur le web.">EMAIL</button>
   <button data-p="i" data-tip="Analyse une IP ou un domaine : localisation géographique, fournisseur internet, ports réseau ouverts (Nmap), et scan de failles web (Nikto).">IP / DOMAINE</button>
   <button data-p="h" data-tip="Cassage de hash — Colle un hash MD5, SHA1, SHA256... et John the Ripper essaie de retrouver le mot de passe original en testant 14 millions de mots de passe courants (rockyou.txt).">HASH</button>
+  <button data-p="x" data-tip="ExifTool — Analyse les métadonnées cachées dans vos photos : GPS, appareil photo, date, auteur, logiciel... Détecte les données récurrentes sur plusieurs photos et permet de les modifier.">EXIF</button>
 </div>
 
 <!-- USERNAME -->
@@ -296,6 +297,31 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
   </div>
 </div>
 
+<!-- EXIF -->
+<div class="P z" id="Px">
+  <div style="max-width:900px;margin:18px auto;padding:0 12px">
+    <div class="rs" style="margin-bottom:12px">
+      <h4>📷 ANALYSE EXIF — EXIFTOOL</h4>
+      <p style="font-size:.5rem;color:var(--mx2);line-height:1.6">
+        Upload une ou plusieurs photos pour extraire leurs métadonnées cachées.<br>
+        <span style="color:var(--mx3)">GPS • Appareil photo • Date • Auteur • Logiciel • Données récurrentes mises en évidence</span>
+      </p>
+    </div>
+    <div id="exifDrop" style="border:2px dashed var(--mx3);padding:30px;text-align:center;cursor:pointer;transition:.3s;background:rgba(0,255,65,.01);margin-bottom:12px;position:relative">
+      <div style="font-size:1.5rem;margin-bottom:6px;opacity:.3">📷</div>
+      <div style="color:var(--mx2);font-size:.6rem;letter-spacing:.1em">DÉPOSER DES PHOTOS ICI</div>
+      <div style="color:var(--mx3);font-size:.45rem;margin-top:4px">JPG, PNG, TIFF, RAW... — jusqu'à 20 fichiers</div>
+      <input type="file" id="exifInput" multiple accept="image/*,video/*,.pdf,.doc,.docx" style="position:absolute;inset:0;opacity:0;cursor:pointer">
+    </div>
+    <div id="exifFileList" style="display:none;margin-bottom:10px"></div>
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <button id="exifReadBtn" style="flex:1;padding:10px;background:var(--mx);color:#000;border:none;font-family:'Orbitron',sans-serif;font-size:.6rem;letter-spacing:.1em;cursor:pointer;text-transform:uppercase;transition:.2s">ANALYSER LES MÉTADONNÉES</button>
+      <button id="exifClearBtn" style="padding:10px 16px;background:transparent;color:var(--mx2);border:1px solid var(--mx3);font-family:'Share Tech Mono',monospace;font-size:.55rem;cursor:pointer;text-transform:uppercase;transition:.2s">EFFACER</button>
+    </div>
+    <div id="exifResult"></div>
+  </div>
+</div>
+
 <div class="ft z"><p>THIS YOU? // OSINT PLATFORM // MATRIX:RELOADED // DATA © MICAH HOFFMAN (CC BY-SA 4.0)</p></div>
 
 <script>
@@ -306,7 +332,7 @@ addEventListener('resize',()=>{dr=Array(co()).fill(1)});
 setInterval(()=>{cx.fillStyle='rgba(0,0,0,0.05)';cx.fillRect(0,0,cv.width,cv.height);cx.fillStyle='#00ff41';cx.font=fz+'px monospace';for(let i=0;i<dr.length;i++){cx.fillText(ch[Math.random()*ch.length|0],i*fz,dr[i]*fz);if(dr[i]*fz>cv.height&&Math.random()>.975)dr[i]=0;dr[i]++;}},35);
 
 // NAV
-const ps=['u','f','p','e','i','h'];
+const ps=['u','f','p','e','i','h','x'];
 function sw(n){document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('on',b.dataset.p===n));ps.forEach(p=>{const e=document.getElementById('P'+p);e&&e.classList.toggle('on',p===n)})}
 document.querySelectorAll('.nav button').forEach(b=>b.addEventListener('click',()=>sw(b.dataset.p)));
 
@@ -727,6 +753,79 @@ async function exploitScan(){
     el.innerHTML=h;
   }catch(e){el.innerHTML='<div class="rs"><p style="color:var(--red);font-size:.55rem">'+e.message+'</p></div>'}
 }
+
+// EXIF
+const SENSITIVE_KEYS=['GPSLatitude','GPSLongitude','GPSPosition','Make','Model','Software','Artist','Author','Creator','Copyright','SerialNumber','LensSerialNumber','OwnerName','UserComment','DateTimeOriginal','CreateDate','ModifyDate'];
+let exifFiles=[];
+const exifDrop=document.getElementById('exifDrop');
+const exifInput=document.getElementById('exifInput');
+['dragenter','dragover'].forEach(ev=>exifDrop.addEventListener(ev,e=>{e.preventDefault();exifDrop.style.borderColor='var(--mx)'}));
+['dragleave','drop'].forEach(ev=>exifDrop.addEventListener(ev,e=>{e.preventDefault();exifDrop.style.borderColor='var(--mx3)'}));
+exifDrop.addEventListener('drop',e=>{addExifFiles(e.dataTransfer.files)});
+exifInput.addEventListener('change',e=>{addExifFiles(e.target.files)});
+function addExifFiles(files){exifFiles=[...exifFiles,...Array.from(files)].slice(0,20);renderExifFileList()}
+function renderExifFileList(){const el=document.getElementById('exifFileList');if(!exifFiles.length){el.style.display='none';return}el.style.display='block';el.innerHTML='<div style="font-size:.45rem;color:var(--mx2);margin-bottom:6px">'+exifFiles.length+' fichier(s)</div>'+exifFiles.map(f=>'<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--mx3);font-size:.48rem"><span style="color:var(--mx)">'+E(f.name)+'</span><span style="color:var(--mx2)">'+(f.size/1024).toFixed(0)+' KB</span></div>').join('')}
+document.getElementById('exifClearBtn').addEventListener('click',()=>{exifFiles=[];exifInput.value='';document.getElementById('exifFileList').style.display='none';document.getElementById('exifResult').innerHTML=''});
+document.getElementById('exifReadBtn').addEventListener('click',async()=>{
+  if(!exifFiles.length)return;
+  const btn=document.getElementById('exifReadBtn'),el=document.getElementById('exifResult');
+  btn.disabled=true;btn.textContent='ANALYSE EN COURS...';
+  el.innerHTML='<div style="text-align:center;padding:20px;animation:pu 1.5s infinite;color:var(--mx2)">ExifTool analyse les métadonnées...</div>';
+  try{
+    const fd=new FormData();exifFiles.forEach(f=>fd.append('photos',f));
+    const r=await fetch('/api/exif/read',{method:'POST',body:fd});const d=await r.json();
+    if(!d.success){el.innerHTML='<div class="rs"><p style="color:var(--red);font-size:.55rem">'+E(d.error)+'</p></div>';return}
+    const{files,recurring}=d.data;let h='';
+    if(recurring.length){
+      h+='<div class="rs" style="border-color:var(--gold);margin-bottom:12px"><h4 style="color:var(--gold)">⚡ DONNÉES RÉCURRENTES</h4><p style="font-size:.45rem;color:var(--mx2);margin-bottom:8px">Présentes sur plusieurs photos — peuvent identifier l\'auteur ou l\'appareil.</p>';
+      recurring.slice(0,15).forEach(r=>{
+        const sens=SENSITIVE_KEYS.some(k=>r.key.toLowerCase().includes(k.toLowerCase()));
+        h+='<div style="padding:4px 0;border-bottom:1px solid rgba(255,215,64,.1)"><span style="color:'+(sens?'var(--red)':'var(--gold)')+';font-size:.5rem">'+(sens?'⚠ ':'')+E(r.key)+'</span>';
+        Object.entries(r.values).forEach(([val,count])=>{h+='<span style="color:var(--mx2);font-size:.45rem;margin-left:8px">'+E(val)+' <span style="color:var(--mx)">(×'+count+')</span></span>'});
+        h+='</div>';
+      });
+      h+='</div>';
+    }
+    files.forEach((file,fi)=>{
+      const data=file.data;const sensData=Object.entries(data).filter(([k])=>SENSITIVE_KEYS.some(s=>k.toLowerCase().includes(s.toLowerCase())));
+      const hasGps=data.GPSLatitude&&data.GPSLongitude;
+      h+='<div class="rs" style="margin-bottom:8px"><h4 style="display:flex;justify-content:space-between;align-items:center">'+E(file.filename);
+      if(hasGps)h+='<a href="https://www.google.com/maps?q='+data.GPSLatitude+','+data.GPSLongitude+'" target="_blank" style="font-size:.45rem;color:var(--cyan);border:1px solid var(--cyan);padding:2px 6px;text-decoration:none">📍 MAPS</a>';
+      h+='</h4>';
+      if(sensData.length){h+='<div style="background:rgba(255,23,68,.05);border:1px solid rgba(255,23,68,.2);padding:8px;margin-bottom:8px"><div style="font-size:.45rem;color:var(--red);margin-bottom:4px">⚠ DONNÉES SENSIBLES</div>';sensData.forEach(([k,v])=>{h+=rw(k,String(v),'bad')});h+='</div>'}
+      h+='<details><summary style="font-size:.48rem;color:var(--mx2);cursor:pointer">TOUTES LES MÉTADONNÉES ('+Object.keys(data).length+')</summary><div style="margin-top:6px">';
+      Object.entries(data).filter(([k])=>k!=='SourceFile').forEach(([k,v])=>{const s=SENSITIVE_KEYS.some(x=>k.toLowerCase().includes(x.toLowerCase()));h+='<div style="display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid rgba(0,255,65,.04);font-size:.48rem"><span style="color:'+(s?'var(--red)':'var(--mx2)')+'">'+E(k)+'</span><span style="color:var(--mx);text-align:right;max-width:60%;word-break:break-all">'+E(String(v))+'</span></div>'});
+      h+='</div></details>';
+      h+='<div style="margin-top:8px"><button onclick="openExifEdit('+fi+')" style="background:transparent;border:1px solid var(--mx2);color:var(--mx2);padding:4px 10px;font-family:\'Share Tech Mono\',monospace;font-size:.45rem;cursor:pointer;text-transform:uppercase">✏ ÉDITER</button></div></div>';
+    });
+    el.innerHTML=h;
+  }catch(e){el.innerHTML='<div class="rs"><p style="color:var(--red);font-size:.55rem">'+e.message+'</p></div>'}
+  btn.disabled=false;btn.textContent='ANALYSER LES MÉTADONNÉES';
+});
+function openExifEdit(fi){
+  const file=exifFiles[fi];if(!file)return;
+  const modal=document.createElement('div');
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.innerHTML='<div style="background:#050805;border:1px solid var(--mx3);padding:20px;max-width:600px;width:100%;max-height:80vh;overflow-y:auto"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h4 style="font-family:\'Orbitron\',sans-serif;font-size:.6rem;color:var(--gold)">✏ ÉDITER — '+E(file.name)+'</h4><button id="closeModal" style="background:transparent;border:none;color:var(--red);cursor:pointer;font-size:1.2rem">✕</button></div><p style="font-size:.45rem;color:var(--mx2);margin-bottom:12px">Modifie les tags. Laisse vide pour ne pas changer.</p><div id="editFields">'+SENSITIVE_KEYS.map(k=>'<div style="margin-bottom:8px"><div style="font-size:.45rem;color:var(--mx2);margin-bottom:3px">'+k+'</div><input data-key="'+k+'" placeholder="nouvelle valeur..." style="width:100%;background:#000;border:1px solid var(--mx3);color:var(--mx);font-family:\'Share Tech Mono\',monospace;font-size:.55rem;padding:5px;outline:0"></div>').join('')+'</div><div style="margin-top:8px"><div style="font-size:.45rem;color:var(--mx2);margin-bottom:3px">Tag personnalisé</div><div style="display:flex;gap:6px"><input id="customKey" placeholder="Nom" style="flex:1;background:#000;border:1px solid var(--mx3);color:var(--mx);font-family:\'Share Tech Mono\',monospace;font-size:.55rem;padding:5px;outline:0"><input id="customVal" placeholder="Valeur" style="flex:2;background:#000;border:1px solid var(--mx3);color:var(--mx);font-family:\'Share Tech Mono\',monospace;font-size:.55rem;padding:5px;outline:0"></div></div><button id="saveExifBtn" style="width:100%;margin-top:14px;padding:10px;background:var(--mx);color:#000;border:none;font-family:\'Orbitron\',sans-serif;font-size:.6rem;cursor:pointer;text-transform:uppercase">SAUVEGARDER ET TÉLÉCHARGER</button><div id="editStatus" style="margin-top:8px;font-size:.48rem;text-align:center"></div></div>';
+  document.body.appendChild(modal);
+  document.getElementById('closeModal').addEventListener('click',()=>modal.remove());
+  modal.addEventListener('click',e=>{if(e.target===modal)modal.remove()});
+  document.getElementById('saveExifBtn').addEventListener('click',async()=>{
+    const tags={};modal.querySelectorAll('[data-key]').forEach(inp=>{if(inp.value.trim())tags[inp.dataset.key]=inp.value.trim()});
+    const ck=document.getElementById('customKey').value.trim(),cv=document.getElementById('customVal').value.trim();
+    if(ck&&cv)tags[ck]=cv;
+    if(!Object.keys(tags).length){document.getElementById('editStatus').textContent='Aucune modification.';return}
+    document.getElementById('saveExifBtn').disabled=true;document.getElementById('saveExifBtn').textContent='...';
+    try{
+      const fd=new FormData();fd.append('photo',file);fd.append('tags',JSON.stringify(tags));
+      const r=await fetch('/api/exif/edit',{method:'POST',body:fd});
+      if(r.ok&&r.headers.get('content-type')?.includes('image')){
+        const blob=await r.blob();const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='edited_'+file.name;a.click();
+        document.getElementById('editStatus').style.color='var(--mx)';document.getElementById('editStatus').textContent='✓ Téléchargé avec les nouvelles métadonnées';
+      }else{const err=await r.json();document.getElementById('editStatus').style.color='var(--red)';document.getElementById('editStatus').textContent=err.error||'Erreur'}
+    }catch(e){document.getElementById('editStatus').style.color='var(--red)';document.getElementById('editStatus').textContent=e.message}
+    document.getElementById('saveExifBtn').disabled=false;document.getElementById('saveExifBtn').textContent='SAUVEGARDER ET TÉLÉCHARGER';
+  });
+}
 </script>
-</body></html>
 </body></html>
