@@ -409,6 +409,83 @@ app.post('/api/exploits', heavyLimiter, async (req, res) => {
   res.json({ success: true, data: results });
 });
 
+// ═══ EXIFTOOL — LECTURE ═══
+const multer = require('multer');
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024, files: 20 } });
+
+app.post('/api/exif/read', upload.array('photos', 20), async (req, res) => {
+  if (!req.files || !req.files.length) return res.json({ success: false, error: 'Aucun fichier reçu' });
+  const os2 = require('os');
+  const results = [];
+  const tmpFiles = [];
+  try {
+    for (const file of req.files) {
+      const tmpPath = path.join(os2.tmpdir(), 'exif_' + Date.now() + '_' + file.originalname.replace(/[^a-zA-Z0-9.]/g, '_'));
+      fs.writeFileSync(tmpPath, file.buffer);
+      tmpFiles.push(tmpPath);
+    }
+    await new Promise((resolve, reject) => {
+      execFile('exiftool', ['-json', '-n', ...tmpFiles], { timeout: 30000, maxBuffer: 10 * 1024 * 1024 }, (err, stdout) => {
+        try {
+          const data = JSON.parse(stdout || '[]');
+          data.forEach((d, i) => results.push({ filename: req.files[i]?.originalname || 'photo', data: d }));
+          resolve();
+        } catch(e) { reject(e); }
+      });
+    });
+  } catch(e) {
+    return res.json({ success: false, error: 'Erreur ExifTool : ' + e.message });
+  } finally {
+    tmpFiles.forEach(f => { try { fs.unlinkSync(f) } catch(e) {} });
+  }
+  // Calculer récurrences
+  const freq = {};
+  results.forEach(r => {
+    Object.entries(r.data).forEach(([k, v]) => {
+      if (k === 'SourceFile') return;
+      const val = String(v);
+      if (!freq[k]) freq[k] = {};
+      freq[k][val] = (freq[k][val] || 0) + 1;
+    });
+  });
+  const recurring = Object.entries(freq)
+    .filter(([k, vals]) => Object.values(vals).some(c => c > 1))
+    .map(([k, vals]) => ({ key: k, values: vals }))
+    .sort((a, b) => Math.max(...Object.values(b.values)) - Math.max(...Object.values(a.values)));
+  res.json({ success: true, data: { files: results, recurring, total: results.length } });
+});
+
+// ═══ EXIFTOOL — ÉDITION ═══
+app.post('/api/exif/edit', upload.single('photo'), async (req, res) => {
+  if (!req.file) return res.json({ success: false, error: 'Aucun fichier reçu' });
+  const { tags } = req.body;
+  if (!tags) return res.json({ success: false, error: 'Tags manquants' });
+  let parsedTags;
+  try { parsedTags = JSON.parse(tags); } catch(e) { return res.json({ success: false, error: 'Tags invalides' }); }
+  const os2 = require('os');
+  const tmpIn = path.join(os2.tmpdir(), 'exif_in_' + Date.now() + '_' + req.file.originalname.replace(/[^a-zA-Z0-9.]/g, '_'));
+  const tmpOut = tmpIn + '_edited' + path.extname(req.file.originalname);
+  try {
+    fs.writeFileSync(tmpIn, req.file.buffer);
+    const tagArgs = Object.entries(parsedTags).map(([k, v]) => `-${k}=${v}`);
+    await new Promise((resolve, reject) => {
+      execFile('exiftool', [...tagArgs, '-o', tmpOut, tmpIn], { timeout: 15000 }, (err, stdout, stderr) => {
+        if (err && !fs.existsSync(tmpOut)) reject(new Error(stderr || err.message));
+        else resolve();
+      });
+    });
+    const editedBuffer = fs.readFileSync(tmpOut);
+    res.setHeader('Content-Disposition', `attachment; filename="edited_${req.file.originalname}"`);
+    res.setHeader('Content-Type', req.file.mimetype);
+    res.send(editedBuffer);
+  } catch(e) {
+    res.json({ success: false, error: 'Erreur édition : ' + e.message });
+  } finally {
+    try { fs.unlinkSync(tmpIn) } catch(e) {}
+    try { fs.unlinkSync(tmpOut) } catch(e) {}
+  }
+});
+
 app.use((req, res) => { res.status(404).json({ error: 'Not found' }) });
 app.use((err, req, res, next) => { console.error('Server error:', err.message); res.status(500).json({ error: 'Erreur interne' }); });
 
