@@ -370,7 +370,7 @@ app.post('/api/sqlmap', sqlmapLimiter, async (req, res) => {
     let injectable = false, dbms = null;
     const dbmsMatch = output.match(/back-end DBMS:\s*(.+)/i);
     if (dbmsMatch) dbms = dbmsMatch[1].trim();
-    if (output.includes('is vulnerable') || output.includes('Parameter:')) injectable = true;
+    if (output.includes('is vulnerable') || output.includes('Parameter:') || output.includes('injectable') || injTypes.length > 0) injectable = true;
     const vulns = [];
     const paramMatches = [...output.matchAll(/Parameter:\s*(.+?)\s*\((.+?)\)/g)];
     paramMatches.forEach(m => vulns.push({ param: m[1], type: m[2] }));
