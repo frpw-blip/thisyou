@@ -370,14 +370,18 @@ app.post('/api/sqlmap', sqlmapLimiter, async (req, res) => {
     let injectable = false, dbms = null;
     const dbmsMatch = output.match(/back-end DBMS:\s*(.+)/i);
     if (dbmsMatch) dbms = dbmsMatch[1].trim();
-    if (output.includes('is vulnerable') || output.includes('Parameter:') || output.includes('injectable') || injTypes.length > 0) injectable = true;
+    // Injectable seulement si SQLMap le confirme explicitement
+    if (output.includes('is vulnerable') || output.match(/Parameter:[\s\S]+?Type:/)) injectable = true;
     const vulns = [];
     const paramMatches = [...output.matchAll(/Parameter:\s*(.+?)\s*\((.+?)\)/g)];
     paramMatches.forEach(m => vulns.push({ param: m[1], type: m[2] }));
+    // Types seulement si injection confirmée
     const injTypes = [];
-    ['boolean-based blind','time-based blind','error-based','UNION query','stacked queries'].forEach(t => {
-      if (output.toLowerCase().includes(t)) injTypes.push(t);
-    });
+    if (injectable) {
+      ['boolean-based blind','time-based blind','error-based','UNION query','stacked queries'].forEach(t => {
+        if (output.toLowerCase().includes(t)) injTypes.push(t);
+      });
+    }
     res.json({ success: true, data: { url: cleanUrl, injectable, dbms, vulns, injTypes } });
   });
 });
