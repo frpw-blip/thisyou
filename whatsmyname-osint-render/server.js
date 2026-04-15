@@ -629,6 +629,64 @@ app.get('/api/deepscan/email/:email', heavyLimiter, async (req, res) => {
   res.end();
 });
 
+// ═══ REVERSE IMAGE SEARCH ═══
+app.post('/api/reverse-image', heavyLimiter, async (req, res) => {
+  const { image } = req.body;
+  if (!image || typeof image !== 'string') return res.json({ success: false, error: 'Image manquante' });
+  if (image.length > 5 * 1024 * 1024) return res.json({ success: false, error: 'Image trop lourde' });
+
+  const results = [];
+
+  // FaceCheck.id — API publique gratuite
+  try {
+    const boundary = '----FormBoundary' + Date.now();
+    const imgBuffer = Buffer.from(image, 'base64');
+    const body = Buffer.concat([
+      Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="images"; filename="photo.jpg"\r\nContent-Type: image/jpeg\r\n\r\n`),
+      imgBuffer,
+      Buffer.from(`\r\n--${boundary}--\r\n`)
+    ]);
+    const fcRes = await new Promise((resolve, reject) => {
+      const req2 = https.request({
+        hostname: 'facecheck.id', port: 443, path: '/api/upload_pic',
+        method: 'POST',
+        headers: { 'Content-Type': `multipart/form-data; boundary=${boundary}`, 'Content-Length': body.length, 'Accept': 'application/json' },
+        timeout: 15000
+      }, r => { let d = ''; r.on('data', c => d += c); r.on('end', () => resolve(d)); });
+      req2.on('error', reject); req2.on('timeout', () => { req2.destroy(); reject(new Error('timeout')); });
+      req2.write(body); req2.end();
+    });
+    const fcData = JSON.parse(fcRes);
+    if (fcData && fcData.id) {
+      // Lancer la recherche
+      const searchRes = await new Promise((resolve, reject) => {
+        const payload = JSON.stringify({ id_search: fcData.id, with_progress: false });
+        const req3 = https.request({
+          hostname: 'facecheck.id', port: 443, path: '/api/search',
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) },
+          timeout: 20000
+        }, r => { let d = ''; r.on('data', c => d += c); r.on('end', () => resolve(d)); });
+        req3.on('error', reject); req3.on('timeout', () => { req3.destroy(); reject(new Error('timeout')); });
+        req3.write(payload); req3.end();
+      });
+      const srData = JSON.parse(searchRes);
+      if (srData.output?.items?.length) {
+        results.push({
+          source: 'FaceCheck.id',
+          found: true,
+          items: srData.output.items.slice(0, 10).map(item => ({
+            url: item.url, score: item.score,
+            thumb: item.base64 ? `data:image/jpeg;base64,${item.base64}` : null
+          }))
+        });
+      }
+    }
+  } catch(e) { results.push({ source: 'FaceCheck.id', found: false, error: e.message }); }
+
+  res.json({ success: true, data: results });
+});
+
 // ═══ CVE / EXPLOITS ═══
 app.post('/api/exploits', heavyLimiter, async (req, res) => {
   const { services } = req.body;
