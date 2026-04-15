@@ -566,7 +566,7 @@ if('wakeLock' in navigator){navigator.wakeLock.request('screen').then(w=>{wakeLo
     if(d.type==='done'){sc=false;document.getElementById('goB').disabled=false;document.getElementById('goB').textContent='SCAN';document.getElementById('pg').classList.remove('on');document.getElementById('sm').classList.add('on');document.getElementById('smB').textContent=d.found;document.getElementById('smD').textContent='sur '+d.total+' sites';
       const sm=document.getElementById('sm');
       if(!sm.querySelector('.deepBtn')){const dsBtn=document.createElement('button');dsBtn.className='deepBtn';dsBtn.textContent='🕷 SCAN APPROFONDI';dsBtn.style.cssText='margin-top:10px;padding:8px 20px;background:transparent;color:var(--cyan);border:1px solid var(--cyan);font-family:\'Orbitron\',sans-serif;font-size:.5rem;letter-spacing:.1em;cursor:pointer;text-transform:uppercase';dsBtn.addEventListener('click',()=>deepScanUsername(document.getElementById('inp').value.trim()));sm.appendChild(dsBtn);}
-      es.close()}
+      if(wakeLock)wakeLock.release();es.close()}}
   };
   es.onerror=function(){es.close();sc=false;document.getElementById('goB').disabled=false;document.getElementById('goB').textContent='SCAN';document.getElementById('pg').classList.remove('on')};
 }
