@@ -204,9 +204,25 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
       <button data-s="ch_avatar" data-tip="Recherche dans les avatars Clubhouse — 13 millions de profils.">Clubhouse<span class="dc">13 millions de profils</span></button>
     </div>
   </div>
-  <div class="sfb" id="sfB"><button id="fG" data-tip="Lance la recherche du visage détecté dans la base sélectionnée ci-dessus.">RECHERCHER CE VISAGE</button></div>
+  <div class="sfb" id="sfB"><button id="fG" data-tip="Lance la recherche du visage détecté dans la base sélectionnée ci-dessus (VK, TikTok...).">RECHERCHER CE VISAGE</button></div>
   <div class="fst" id="fSt"></div>
   <div class="fr" id="fR"><h3 id="fRT"></h3><div class="fg" id="fGr"></div></div>
+
+  <!-- Moteurs supplémentaires -->
+  <div id="extraSearch" style="display:none;max-width:650px;margin:10px auto">
+    <div class="rs">
+      <h4>🌐 RECHERCHE ÉTENDUE — INSTAGRAM, X, WEB GLOBAL</h4>
+      <p style="font-size:.48rem;color:var(--mx2);margin-bottom:10px;line-height:1.5">Ces moteurs cherchent le visage sur l'ensemble du web — Instagram, X (Twitter), Facebook, sites d'actualité...</p>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">
+        <button id="btnFaceCheck" data-tip="FaceCheck.id — Moteur de recherche par visage gratuit. Cherche sur tout le web public incluant Instagram, X, sites d'actualité. Résultats avec score de similarité." style="flex:1;min-width:140px;padding:8px;background:transparent;border:1px solid var(--cyan);color:var(--cyan);font-family:'Orbitron',sans-serif;font-size:.5rem;cursor:pointer;text-transform:uppercase;transition:.2s">🔍 FaceCheck.id</button>
+        <button id="btnYandex" data-tip="Yandex Images — Moteur de recherche d'images inversée russe, très puissant pour retrouver des personnes. Souvent plus efficace que Google pour les visages." style="flex:1;min-width:140px;padding:8px;background:transparent;border:1px solid var(--gold);color:var(--gold);font-family:'Orbitron',sans-serif;font-size:.5rem;cursor:pointer;text-transform:uppercase;transition:.2s">🔍 Yandex Images</button>
+        <button id="btnGoogle" data-tip="Google Images — Recherche inversée d'image Google. Trouve les pages web où cette photo apparaît." style="flex:1;min-width:140px;padding:8px;background:transparent;border:1px solid var(--mx2);color:var(--mx2);font-family:'Orbitron',sans-serif;font-size:.5rem;cursor:pointer;text-transform:uppercase;transition:.2s">🔍 Google Images</button>
+        <button id="btnPimEyes" data-tip="PimEyes — Le moteur de recherche par visage le plus puissant. Gratuit limité, trouve des profils sur Instagram, X, et partout sur le web." style="flex:1;min-width:140px;padding:8px;background:transparent;border:1px solid var(--red);color:var(--red);font-family:'Orbitron',sans-serif;font-size:.5rem;cursor:pointer;text-transform:uppercase;transition:.2s">🔍 PimEyes</button>
+      </div>
+      <div id="faceCheckResults" style="display:none"></div>
+    </div>
+  </div>
+
   <div class="ee" id="fE">
     <h3>AUTRES OUTILS DE RECHERCHE PAR VISAGE</h3>
     <div class="eg">
@@ -557,15 +573,112 @@ function xCSV(){const f=aR.filter(r=>r.status==='found');if(!f.length)return;let
 
 // VISAGE
 let iB=null,sS='vkok_avatar';
-function sdb(b){document.querySelectorAll('.db button').forEach(x=>x.classList.remove('on'));b.classList.add('on');sS=b.dataset.s}
+function sdb(b){
+  if(sS===b.dataset.s){
+    // Déselectionner
+    sS=null;
+    document.querySelectorAll('.db button').forEach(x=>x.classList.remove('on'));
+    return;
+  }
+  document.querySelectorAll('.db button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');
+  sS=b.dataset.s;
+}
 document.querySelectorAll('.db button').forEach(b=>b.addEventListener('click',()=>sdb(b)));
 document.getElementById('fG').addEventListener('click',fSrch);
+
+// Boutons recherche étendue
+document.getElementById('btnFaceCheck').addEventListener('click', async () => {
+  if(!iB){alert('Upload d\'abord une photo');return;}
+  const btn=document.getElementById('btnFaceCheck');
+  const el=document.getElementById('faceCheckResults');
+  btn.textContent='...';btn.disabled=true;
+  el.style.display='block';
+  el.innerHTML='<div style="text-align:center;padding:12px;animation:pu 1.5s infinite;color:var(--cyan)">FaceCheck.id analyse le visage...</div>';
+  try{
+    const r=await fetch('/api/reverse-image',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:iB})});
+    const d=await r.json();
+    if(d.success&&d.data?.length){
+      const fc=d.data.find(x=>x.source==='FaceCheck.id');
+      if(fc&&fc.found&&fc.items?.length){
+        let h='<div style="font-size:.48rem;color:var(--cyan);margin-bottom:8px">'+fc.items.length+' résultats FaceCheck.id</div>';
+        h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:6px">';
+        fc.items.forEach(item=>{
+          h+='<div style="border:1px solid var(--mx3);padding:6px;text-align:center;cursor:pointer" onclick="window.open(\''+E(item.url)+'\',\'_blank\')">';
+          if(item.thumb)h+='<img src="'+item.thumb+'" style="width:80px;height:80px;object-fit:cover;border:1px solid var(--mx3);display:block;margin:0 auto 4px">';
+          h+='<div style="font-size:.42rem;color:var(--mx2);word-break:break-all">'+E(item.url.replace(/https?:\/\//,'').slice(0,30))+'</div>';
+          if(item.score)h+='<div style="font-size:.4rem;color:var(--cyan)">'+Math.round(item.score*100)+'%</div>';
+          h+='</div>';
+        });
+        h+='</div>';
+        el.innerHTML=h;
+      }else{el.innerHTML='<div style="font-size:.5rem;color:var(--amb);padding:8px">Aucun résultat FaceCheck.id — essaie Yandex ou PimEyes</div>';}
+    }else{el.innerHTML='<div style="font-size:.5rem;color:var(--amb);padding:8px">'+( d.error||'Aucun résultat')+'</div>';}
+  }catch(e){el.innerHTML='<div style="font-size:.5rem;color:var(--red);padding:8px">'+e.message+'</div>';}
+  btn.textContent='🔍 FaceCheck.id';btn.disabled=false;
+});
+
+document.getElementById('btnYandex').addEventListener('click', async () => {
+  if(!iB){alert('Upload d\'abord une photo');return;}
+  // Créer un blob temporaire et ouvrir Yandex
+  const blob=await (await fetch('data:image/jpeg;base64,'+iB)).blob();
+  const formData=new FormData();
+  formData.append('upfile',blob,'photo.jpg');
+  // Ouvrir Yandex dans un nouvel onglet avec upload
+  const tmpUrl=URL.createObjectURL(blob);
+  // Yandex ne supporte pas l'upload direct via URL, on ouvre leur page
+  window.open('https://yandex.com/images/search?rpt=imageview','_blank');
+  // Instruction à l'utilisateur
+  const el=document.getElementById('faceCheckResults');
+  el.style.display='block';
+  el.innerHTML='<div style="background:rgba(255,215,64,.05);border:1px solid var(--gold);padding:10px;font-size:.5rem;color:var(--gold)">'
+    +'<strong>Yandex Images ouvert !</strong><br><br>'
+    +'Sur Yandex, clique sur l\'icône appareil photo 📷 dans la barre de recherche, puis :<br>'
+    +'• Sélectionne "Télécharger une image"<br>'
+    +'• Télécharge la photo uploadée ici<br><br>'
+    +'<button id="copyImgBtn" style="background:var(--gold);color:#000;border:none;padding:5px 12px;font-family:\'Share Tech Mono\',monospace;font-size:.5rem;cursor:pointer">TÉLÉCHARGER LA PHOTO</button>'
+    +'</div>';
+  document.getElementById('copyImgBtn').addEventListener('click',()=>{
+    const a=document.createElement('a');a.href='data:image/jpeg;base64,'+iB;a.download='face_search.jpg';a.click();
+  });
+});
+
+document.getElementById('btnGoogle').addEventListener('click', () => {
+  if(!iB){alert('Upload d\'abord une photo');return;}
+  window.open('https://images.google.com/','_blank');
+  const el=document.getElementById('faceCheckResults');
+  el.style.display='block';
+  el.innerHTML='<div style="background:rgba(0,255,65,.05);border:1px solid var(--mx3);padding:10px;font-size:.5rem;color:var(--mx2)">'
+    +'<strong style="color:var(--mx)">Google Images ouvert !</strong><br><br>'
+    +'Sur Google Images, clique sur l\'icône appareil photo 📷, puis "Importer une image".<br><br>'
+    +'<button id="dlForGoogle" style="background:var(--mx);color:#000;border:none;padding:5px 12px;font-family:\'Share Tech Mono\',monospace;font-size:.5rem;cursor:pointer">TÉLÉCHARGER LA PHOTO</button>'
+    +'</div>';
+  document.getElementById('dlForGoogle').addEventListener('click',()=>{
+    const a=document.createElement('a');a.href='data:image/jpeg;base64,'+iB;a.download='face_search.jpg';a.click();
+  });
+});
+
+document.getElementById('btnPimEyes').addEventListener('click', () => {
+  if(!iB){alert('Upload d\'abord une photo');return;}
+  window.open('https://pimeyes.com/en','_blank');
+  const el=document.getElementById('faceCheckResults');
+  el.style.display='block';
+  el.innerHTML='<div style="background:rgba(255,23,68,.05);border:1px solid var(--red);padding:10px;font-size:.5rem;color:var(--mx2)">'
+    +'<strong style="color:var(--red)">PimEyes ouvert — le plus puissant pour Instagram et X !</strong><br><br>'
+    +'Sur PimEyes, clique sur la zone d\'upload et sélectionne la photo.<br>'
+    +'<span style="color:var(--mx3)">Gratuit : 5 recherches/jour • Payant : résultats complets avec liens</span><br><br>'
+    +'<button id="dlForPim" style="background:var(--red);color:#fff;border:none;padding:5px 12px;font-family:\'Share Tech Mono\',monospace;font-size:.5rem;cursor:pointer">TÉLÉCHARGER LA PHOTO</button>'
+    +'</div>';
+  document.getElementById('dlForPim').addEventListener('click',()=>{
+    const a=document.createElement('a');a.href='data:image/jpeg;base64,'+iB;a.download='face_search.jpg';a.click();
+  });
+});
 const dz=document.getElementById('dz');
 ['dragenter','dragover'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.add('drag')}));
 ['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.remove('drag')}));
 dz.addEventListener('drop',e=>{if(e.dataTransfer.files.length)hf(e.dataTransfer.files[0])});
 document.getElementById('fI').addEventListener('change',e=>{if(e.target.files.length)hf(e.target.files[0])});
-async function hf(file){if(!file.type.startsWith('image/'))return;const reader=new FileReader();reader.onload=async e=>{const du=e.target.result;iB=du.split(',')[1];const img=new Image();img.onload=async()=>{const cv=document.getElementById('fC'),ctx=cv.getContext('2d');let w=img.width,h=img.height;if(w>400){h*=400/w;w=400}if(h>400){w*=400/h;h=400}cv.width=w;cv.height=h;ctx.drawImage(img,0,0,w,h);document.getElementById('fp').style.display='block';document.getElementById('dS').style.display='block';document.getElementById('sfB').style.display='block';document.getElementById('fE').classList.add('on');await dl(cv)};img.src=du};reader.readAsDataURL(file)}
+async function hf(file){if(!file.type.startsWith('image/'))return;const reader=new FileReader();reader.onload=async e=>{const du=e.target.result;iB=du.split(',')[1];const img=new Image();img.onload=async()=>{const cv=document.getElementById('fC'),ctx=cv.getContext('2d');let w=img.width,h=img.height;if(w>400){h*=400/w;w=400}if(h>400){w*=400/h;h=400}cv.width=w;cv.height=h;ctx.drawImage(img,0,0,w,h);document.getElementById('fp').style.display='block';document.getElementById('dS').style.display='block';document.getElementById('sfB').style.display='block';document.getElementById('extraSearch').style.display='block';document.getElementById('fE').classList.add('on');await dl(cv)};img.src=du};reader.readAsDataURL(file)}
 async function dl(cv){const n=document.getElementById('fN');n.innerHTML='<div class="at">Analyse IA...</div>';n.classList.add('on');try{if(typeof faceapi==='undefined')return;if(!faceapi.nets.tinyFaceDetector.isLoaded){const M='https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights/';await faceapi.nets.tinyFaceDetector.loadFromUri(M);await faceapi.nets.ageGenderNet.loadFromUri(M);await faceapi.nets.faceExpressionNet.loadFromUri(M)}const ds=await faceapi.detectAllFaces(cv,new faceapi.TinyFaceDetectorOptions({inputSize:416,scoreThreshold:.4})).withAgeAndGender().withFaceExpressions();const ctx=cv.getContext('2d');if(!ds.length){n.innerHTML='<div class="at" style="color:var(--amb)">AUCUN VISAGE DÉTECTÉ</div>';return}ds.forEach(d=>{const b=d.detection.box;ctx.strokeStyle='#00ff41';ctx.lineWidth=2;ctx.strokeRect(b.x,b.y,b.width,b.height)});let h='<div class="at" style="border-color:var(--mx);color:var(--mx)">'+ds.length+' VISAGE(S)</div>';ds.forEach(d=>{h+='<div class="at">~'+Math.round(d.age)+' ans</div><div class="at">'+(d.gender==='male'?'Homme':'Femme')+' '+Math.round(d.genderProbability*100)+'%</div>'});n.innerHTML=h}catch(e){n.innerHTML='<div class="at" style="color:var(--amb)">'+e.message+'</div>'}}
 async function fSrch(){if(!iB)return;const btn=document.getElementById('fG');btn.disabled=true;btn.textContent='...';const st=document.getElementById('fSt');st.innerHTML='<div style="animation:pu 1.5s infinite">Recherche en cours...</div>';st.classList.add('on');document.getElementById('fR').classList.remove('on');try{const r=await fetch('/api/face-search',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:iB,source:sS,results:'50'})});const d=await r.json();if(d.success&&d.profiles?.length){st.innerHTML='<div style="color:var(--mx)">'+d.profiles.length+' profils trouvés</div>';document.getElementById('fR').classList.add('on');document.getElementById('fRT').textContent=d.profiles.length+' PROFILS';const g=document.getElementById('fGr');g.innerHTML='';d.profiles.forEach(p=>{const c=document.createElement('div');c.className='fc';c.innerHTML='<img src="'+(p.face||'')+'" onerror="this.style.display=\'none\'"><div class="fn">'+E((p.first_name||'')+' '+(p.last_name||''))+'</div><div class="fm">'+(p.city||'')+'</div><div class="fs">'+p.score+'%</div>';c.addEventListener('click',()=>window.open(p.profile,'_blank'));g.appendChild(c)})}else st.innerHTML='<div style="color:var(--amb)">'+(d.message||'Aucun résultat')+'</div>'}catch(e){st.innerHTML='<div style="color:var(--amb)">'+e.message+'</div>'}btn.disabled=false;btn.textContent='RECHERCHER CE VISAGE'}
 
@@ -799,6 +912,12 @@ let selectedFmt='raw-md5';
 document.querySelectorAll('#fmtBtns button').forEach(b=>{
   b.style.cssText=fmtStyle;
   b.addEventListener('click',()=>{
+    if(selectedFmt===b.dataset.f){
+      // Déselectionner
+      selectedFmt=null;
+      b.style.cssText=fmtStyle;
+      return;
+    }
     document.querySelectorAll('#fmtBtns button').forEach(x=>x.style.cssText=fmtStyle);
     b.style.cssText=fmtStyleOn;
     selectedFmt=b.dataset.f;
@@ -1255,9 +1374,19 @@ document.getElementById('dorkQuery').addEventListener('click', () => {
 // Init
 renderDorks('cameras');
 
-// Catégories
+// Catégories dork — déselection possible (revient à cameras par défaut)
 document.querySelectorAll('.dcat').forEach(btn => {
   btn.addEventListener('click', () => {
+    if(btn.classList.contains('on') && currentCat === btn.dataset.cat) {
+      // Déjà sélectionné = déselectionner, revenir à cameras
+      document.querySelectorAll('.dcat').forEach(b => b.classList.remove('on'));
+      document.querySelector('.dcat[data-cat="cameras"]').classList.add('on');
+      currentCat = 'cameras';
+      currentDork = null;
+      document.getElementById('dorkQuery').textContent = 'Sélectionne un dork ci-dessous...';
+      renderDorks('cameras');
+      return;
+    }
     document.querySelectorAll('.dcat').forEach(b => b.classList.remove('on'));
     btn.classList.add('on');
     currentCat = btn.dataset.cat;
@@ -1267,9 +1396,13 @@ document.querySelectorAll('.dcat').forEach(btn => {
   });
 });
 
-// Engines
+// Engines dork — déselection possible (revient à google)
 document.querySelectorAll('.dork-engine').forEach(btn => {
   btn.addEventListener('click', () => {
+    if(btn.classList.contains('on') && currentEngine === btn.dataset.engine) {
+      // Déjà sélectionné = garder (il faut toujours un moteur actif)
+      return;
+    }
     document.querySelectorAll('.dork-engine').forEach(b => b.classList.remove('on'));
     btn.classList.add('on');
     currentEngine = btn.dataset.engine;
