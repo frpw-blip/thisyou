@@ -479,9 +479,32 @@ fetch('/api/stats').then(r=>r.json()).then(d=>{
   const e=document.getElementById('flt');e.innerHTML='';
   const a=mk('button','ALL');a.classList.add('on');a.addEventListener('click',()=>{aC='all';uf()});e.appendChild(a);
   d.categories.forEach(c=>{const b=mk('button',c);b.addEventListener('click',()=>{aC=c;uf()});e.appendChild(b)});
+  setupFilterListeners();
 });
 function mk(t,x){const e=document.createElement(t);e.textContent=x;return e}
 function uf(){document.querySelectorAll('.fl button').forEach(b=>b.classList.toggle('on',(aC==='all'&&b.textContent==='ALL')||b.textContent===aC))}
+
+// Remplacer les listeners de filtres après leur création pour permettre la déselection
+function setupFilterListeners(){
+  document.querySelectorAll('.fl button').forEach(b=>{
+    // Supprimer les anciens listeners en clonant
+    const newB=b.cloneNode(true);
+    b.parentNode.replaceChild(newB,b);
+    if(newB.textContent==='ALL'){
+      newB.addEventListener('click',()=>{aC='all';uf()});
+    } else {
+      newB.addEventListener('click',()=>{
+        if(aC===newB.textContent){
+          // Déselectionner = revenir à ALL
+          aC='all';
+        } else {
+          aC=newB.textContent;
+        }
+        uf();
+      });
+    }
+  });
+}
 document.getElementById('inp').addEventListener('keydown',e=>{if(e.key==='Enter')scan()});
 document.getElementById('goB').addEventListener('click',scan);
 document.getElementById('exB').addEventListener('click',xCSV);
@@ -491,7 +514,12 @@ function scan(){
   sc=true;aR=[];
   document.getElementById('goB').disabled=true;document.getElementById('goB').textContent='...';
   document.getElementById('emp').style.display='none';document.getElementById('pg').classList.add('on');
-  document.getElementById('sm').classList.remove('on');document.getElementById('rh').classList.add('on');
+  // Reset sm et deepBtn
+  const smEl=document.getElementById('sm');
+  smEl.classList.remove('on');
+  const oldBtn=smEl.querySelector('.deepBtn');if(oldBtn)oldBtn.remove();
+  document.getElementById('deepScanU').style.display='none';
+  document.getElementById('rh').classList.add('on');
   document.getElementById('gr').innerHTML='';document.getElementById('lg').innerHTML='';
   ['sScn','sFnd','sErr'].forEach(x=>document.getElementById(x).textContent='0');
   document.getElementById('pF').style.width='0%';sv('found');
