@@ -528,6 +528,9 @@ document.querySelectorAll('.vt button').forEach(b=>b.addEventListener('click',()
 function scan(){
   const u=document.getElementById('inp').value.trim();if(!u||u.length<2||sc)return;
   sc=true;aR=[];
+// Empêcher la mise en veille pendant le scan
+let wakeLock=null;
+if('wakeLock' in navigator){navigator.wakeLock.request('screen').then(w=>{wakeLock=w}).catch(()=>{})}
   document.getElementById('goB').disabled=true;document.getElementById('goB').textContent='...';
   document.getElementById('emp').style.display='none';document.getElementById('pg').classList.add('on');
   // Reset sm et deepBtn
