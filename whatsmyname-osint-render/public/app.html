@@ -1,819 +1,1448 @@
-const express = require('express');
-const http = require('http');
-const https = require('https');
-const path = require('path');
-const fs = require('fs');
-const crypto = require('crypto');
-const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
-const { parsePhoneNumberFromString } = require('libphonenumber-js');
-const { execFile } = require('child_process');
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>THIS YOU? // OSINT</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--mx:#00ff41;--mx2:#008f11;--mx3:#003b00;--mxd:#00ff4118;--red:#ff1744;--gold:#ffd740;--amb:#ffab40;--cyan:#00e5ff;--bg:#050805}
+html,body{height:100%;overflow-x:hidden;background:var(--bg);color:var(--mx);font-family:'Share Tech Mono',monospace}
+::selection{background:var(--mx);color:#000}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:#000}::-webkit-scrollbar-thumb{background:var(--mx3)}
+#rain{position:fixed;inset:0;z-index:0;opacity:.08;pointer-events:none}
+body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,255,65,.015) 2px,rgba(0,255,65,.015) 4px);pointer-events:none;z-index:1}
+@keyframes g{0%,100%{text-shadow:0 0 20px var(--mx),0 0 60px var(--mx2)}93%{text-shadow:-3px 0 var(--red),3px 0 var(--cyan)}94%,98%{text-shadow:0 0 20px var(--mx)}97%{text-shadow:2px 0 var(--cyan),-2px 0 var(--red)}}
+@keyframes si{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pu{0%,100%{opacity:.3}50%{opacity:1}}
+.z{position:relative;z-index:10}
+.hdr{text-align:center;padding:28px 15px 12px;border-bottom:1px solid var(--mx3)}
+.hdr h1{font-family:'Orbitron',sans-serif;font-size:clamp(1.8rem,5vw,3.8rem);font-weight:900;letter-spacing:.18em;animation:g 5s infinite}
+.hdr h1 .q{color:var(--red);text-shadow:0 0 20px var(--red)}
+.hdr .sub{font-size:.55rem;color:var(--mx2);letter-spacing:.4em;margin-top:3px;opacity:.6}
+.hdr .tag{color:var(--gold);font-size:.48rem;margin-top:6px;letter-spacing:.1em;opacity:.7}
+.nav{display:flex;justify-content:center;border-bottom:1px solid var(--mx3);overflow-x:auto;-webkit-overflow-scrolling:touch}
+.nav button{flex:0 1 150px;padding:11px 8px;background:0;border:none;border-bottom:2px solid transparent;color:var(--mx2);font-family:'Orbitron',sans-serif;font-size:.5rem;letter-spacing:.1em;cursor:pointer;transition:.2s;text-transform:uppercase;white-space:nowrap;position:relative}
+.nav button:hover{color:var(--mx);background:rgba(0,255,65,.02)}
+.nav button.on{color:var(--mx);border-bottom-color:var(--mx)}
+/* TOOLTIPS */
+[data-tip]{position:relative}
+[data-tip]::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:#000;border:1px solid var(--mx3);color:var(--mx2);font-family:'Share Tech Mono',monospace;font-size:.48rem;line-height:1.5;padding:7px 10px;white-space:normal;width:230px;text-align:left;opacity:0;pointer-events:none;transition:opacity .15s;z-index:9999;letter-spacing:0;text-transform:none;font-weight:normal}
+[data-tip]:hover::after{opacity:1}
+.P{display:none;max-width:1100px;margin:0 auto;padding:16px}.P.on{display:block;animation:si .3s}
+.sts{display:flex;justify-content:center;gap:18px;padding:8px;background:linear-gradient(90deg,transparent,rgba(0,255,65,.03),transparent);border-bottom:1px solid var(--mx3);flex-wrap:wrap}
+.s{text-align:center}.s .v{font-family:'Orbitron',sans-serif;font-size:1rem;text-shadow:0 0 8px var(--mx)}.s .l{font-size:.42rem;color:var(--mx2);letter-spacing:.2em;text-transform:uppercase}.s .v.gd{color:var(--gold)}.s .v.rd{color:var(--red)}
+.ib{max-width:650px;margin:18px auto;padding:0 12px;position:relative}
+.ib input{width:100%;padding:12px 50px 12px 40px;background:#000;border:1px solid var(--mx3);color:var(--mx);font-family:'Share Tech Mono',monospace;font-size:.9rem;letter-spacing:.05em;outline:0;transition:.3s}
+.ib input:focus{border-color:var(--mx);box-shadow:0 0 18px var(--mxd)}.ib input::placeholder{color:var(--mx3)}
+.ib .pr{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--mx);opacity:.4;font-size:.9rem}
+.ib .go{position:absolute;right:4px;top:50%;transform:translateY(-50%);background:var(--mx3);border:1px solid var(--mx3);color:var(--mx);padding:6px 12px;font-family:'Share Tech Mono',monospace;font-size:.6rem;letter-spacing:.1em;cursor:pointer;text-transform:uppercase;transition:.2s}
+.ib .go:hover{background:var(--mx);color:#000}.ib .go:disabled{opacity:.3}
+.fl{display:flex;flex-wrap:wrap;gap:3px;justify-content:center;margin-top:10px}
+.fl button{background:0;border:1px solid var(--mx3);color:var(--mx2);padding:2px 7px;font-family:'Share Tech Mono',monospace;font-size:.48rem;cursor:pointer;text-transform:uppercase;letter-spacing:.08em;transition:.15s}
+.fl button:hover,.fl button.on{background:var(--mx);color:#000;border-color:var(--mx)}
+.pg{max-width:650px;margin:0 auto;padding:10px 12px;display:none}.pg.on{display:block}
+.pg .br{height:3px;background:var(--mx3);overflow:hidden;margin:5px 0}
+.pg .br .fl2{height:100%;background:var(--mx);box-shadow:0 0 8px var(--mx);width:0%;transition:width .15s}
+.pg .nf{display:flex;justify-content:space-between;font-size:.5rem;color:var(--mx2)}
+.pg .sn{color:var(--mx);font-size:.55rem;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sm{text-align:center;padding:14px;display:none}.sm.on{display:block;animation:si .3s}
+.sm .bg{font-family:'Orbitron',sans-serif;font-size:2rem;text-shadow:0 0 20px var(--mx)}.sm .dt{font-size:.55rem;color:var(--mx2);margin-top:3px}
+.rh{display:none;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--mx3);margin-bottom:8px}.rh.on{display:flex}
+.rh .ct{font-family:'Orbitron',sans-serif;color:var(--gold);font-size:.7rem}
+.rh .ex{background:0;border:1px solid var(--gold);color:var(--gold);padding:3px 8px;font-family:'Share Tech Mono',monospace;font-size:.45rem;cursor:pointer;transition:.2s}.rh .ex:hover{background:var(--gold);color:#000}
+.vt{display:flex;gap:0;margin-bottom:8px}
+.vt button{flex:1;max-width:140px;padding:6px;background:0;border:1px solid var(--mx3);color:var(--mx2);font-family:'Share Tech Mono',monospace;font-size:.5rem;cursor:pointer;letter-spacing:.1em;text-transform:uppercase;transition:.15s}.vt button.on{background:var(--mx);color:#000}
+.gr{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:6px}
+.cd{background:linear-gradient(135deg,#070d07,#0a130a);border:1px solid var(--mx3);padding:9px 11px;position:relative;overflow:hidden;transition:.2s;animation:si .3s both;cursor:pointer}
+.cd:hover{border-color:var(--mx);box-shadow:0 2px 15px rgba(0,255,65,.07)}
+.cd .nm{font-family:'Orbitron',sans-serif;font-size:.68rem;font-weight:700;display:flex;align-items:center;gap:6px}
+.cd .nm .dt2{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.cd.found .nm .dt2{background:var(--mx);box-shadow:0 0 6px var(--mx)}.cd.not-found .nm .dt2{background:#222}.cd.error .nm .dt2{background:var(--amb)}
+.cd .ur{font-size:.46rem;color:var(--mx2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.35}
+.cd .bd{position:absolute;top:7px;right:7px;font-size:.38rem;padding:1px 5px;border:1px solid var(--mx3);color:var(--mx3);letter-spacing:.08em;text-transform:uppercase}.cd.found .bd{border-color:var(--mx2);color:var(--mx2)}
+.lg{display:none;max-height:350px;overflow-y:auto;background:#000;border:1px solid var(--mx3);padding:6px;font-size:.46rem;line-height:1.4}.lg.on{display:block}
+.lg .ln{opacity:.45}.lg .ln.found{color:var(--mx);opacity:1}.lg .ln.err{color:var(--amb)}
+.em{text-align:center;padding:40px 15px}.em .ic{font-size:1.8rem;margin-bottom:8px;opacity:.2}.em .mg{color:var(--mx2);font-size:.6rem;letter-spacing:.1em}
+.dz{border:2px dashed var(--mx3);padding:35px 15px;text-align:center;cursor:pointer;transition:.3s;position:relative;background:rgba(0,255,65,.015);max-width:650px;margin:0 auto}
+.dz:hover,.dz.drag{border-color:var(--mx);background:rgba(0,255,65,.04)}
+.dz .ic{font-size:1.8rem;margin-bottom:6px;opacity:.3}.dz .mg{color:var(--mx2);font-size:.6rem;letter-spacing:.1em}.dz .mg2{color:var(--mx3);font-size:.45rem;margin-top:5px}.dz input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.fp{display:none;text-align:center;margin:14px auto;max-width:650px}.fp canvas{max-width:100%;max-height:320px;border:1px solid var(--mx3)}
+.fi{text-align:center;margin:10px auto;font-size:.55rem;color:var(--mx2);display:none;max-width:650px}.fi.on{display:block;animation:si .3s}
+.fi .at{display:inline-block;margin:2px 5px;padding:3px 8px;border:1px solid var(--mx3)}
+.ds{max-width:650px;margin:14px auto;text-align:center;display:none}.ds h3{font-family:'Orbitron',sans-serif;font-size:.6rem;color:var(--gold);margin-bottom:8px;letter-spacing:.12em}
+.db{display:flex;flex-wrap:wrap;gap:4px;justify-content:center}
+.db button{background:0;border:1px solid var(--mx3);color:var(--mx2);padding:5px 10px;font-family:'Share Tech Mono',monospace;font-size:.46rem;cursor:pointer;transition:.2s;min-width:120px}
+.db button:hover{border-color:var(--mx);color:var(--mx)}.db button.on{background:var(--mx);color:#000}
+.db button .dc{display:block;font-size:.38rem;color:var(--mx3);margin-top:1px}.db button.on .dc{color:rgba(0,0,0,.4)}
+.sfb{display:none;max-width:650px;margin:10px auto;text-align:center}
+.sfb button{background:var(--mx);color:#000;border:0;padding:10px 30px;font-family:'Orbitron',sans-serif;font-size:.7rem;letter-spacing:.12em;cursor:pointer;transition:.2s;text-transform:uppercase}.sfb button:hover{box-shadow:0 0 20px var(--mxd)}.sfb button:disabled{opacity:.3}
+.fst{text-align:center;padding:12px;font-size:.55rem;color:var(--mx2);display:none;max-width:650px;margin:0 auto}.fst.on{display:block}
+.fr{display:none;max-width:650px;margin:14px auto}.fr.on{display:block;animation:si .3s}
+.fr h3{font-family:'Orbitron',sans-serif;font-size:.65rem;text-align:center;margin-bottom:10px;color:var(--mx);letter-spacing:.12em}
+.fg{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:6px}
+.fc{background:linear-gradient(135deg,#070d07,#0d150d);border:1px solid var(--mx3);padding:8px;text-align:center;transition:.2s;cursor:pointer}
+.fc:hover{border-color:var(--mx);box-shadow:0 2px 12px rgba(0,255,65,.1)}
+.fc img{width:50px;height:50px;border-radius:50%;border:2px solid var(--mx3);object-fit:cover;margin-bottom:4px}.fc:hover img{border-color:var(--mx)}
+.fc .fn{font-size:.6rem;color:var(--mx)}.fc .fm{font-size:.4rem;color:var(--mx2)}.fc .fs{display:inline-block;margin-top:3px;padding:1px 5px;font-size:.4rem;border:1px solid var(--mx);color:var(--mx)}
+.rb{max-width:650px;margin:16px auto;display:none}.rb.on{display:block;animation:si .3s}
+.rs{border:1px solid var(--mx3);padding:12px;margin-bottom:8px;background:linear-gradient(135deg,#060c06,#0a120a)}
+.rs h4{font-family:'Orbitron',sans-serif;font-size:.58rem;color:var(--gold);margin-bottom:8px;letter-spacing:.1em}
+.rw{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(0,255,65,.04);font-size:.55rem}
+.rw .rl{color:var(--mx2)}.rw .rv{color:var(--mx);text-align:right;max-width:60%;word-break:break-all}.rw .rv.bad{color:var(--red)}.rw .rv.ok{color:var(--mx)}
+.sr{border:1px solid var(--mx3);padding:8px 10px;margin-bottom:4px;background:rgba(0,0,0,.3);transition:.2s;cursor:pointer}
+.sr:hover{border-color:var(--mx);background:rgba(0,255,65,.03)}
+.sr .st2{font-size:.6rem;color:var(--mx);margin-bottom:2px}.sr .su{font-size:.42rem;color:var(--mx2);word-break:break-all;opacity:.5}
+.gi{width:80px;height:80px;border-radius:50%;border:2px solid var(--mx);margin:8px auto;display:block}
+.bl{display:flex;flex-wrap:wrap;gap:3px;margin-top:4px}.bl span{padding:1px 6px;font-size:.4rem;border:1px solid var(--red);color:var(--red)}
+.ml{display:inline-block;margin-top:6px;padding:5px 12px;border:1px solid var(--cyan);color:var(--cyan);font-size:.5rem;text-decoration:none;transition:.2s}.ml:hover{background:var(--cyan);color:#000}
+.ee{max-width:650px;margin:12px auto;display:none}.ee.on{display:block}
+.ee h3{font-family:'Orbitron',sans-serif;font-size:.5rem;text-align:center;color:var(--mx3);margin-bottom:6px;letter-spacing:.1em}
+.eg{display:flex;flex-wrap:wrap;gap:4px;justify-content:center}
+.eg a,.tool-link{display:inline-block;padding:4px 10px;border:1px solid var(--mx3);color:var(--mx3);font-size:.45rem;text-decoration:none;transition:.2s}
+.eg a:hover,.tool-link:hover{border-color:var(--mx);color:var(--mx)}
+.tool-link{font-size:.48rem;padding:5px 10px;color:var(--mx2)}
+/* SOUS-ONGLETS IP */
+.sub-nav{display:none;max-width:650px;margin:14px auto 0;border:1px solid var(--mx3);overflow:hidden}
+.sub-nav.on{display:flex}
+.sub-nav button{flex:1;padding:10px 4px;background:0;border:none;border-right:1px solid var(--mx3);color:var(--mx2);font-family:'Share Tech Mono',monospace;font-size:.45rem;cursor:pointer;text-transform:uppercase;letter-spacing:.06em;transition:.2s;text-align:center;line-height:1.4}
+.sub-nav button:last-child{border-right:none}
+.sub-nav button:hover{background:rgba(0,255,65,.05);color:var(--mx)}
+.sub-nav button.on{background:var(--mx3);color:var(--mx)}
+.sub-nav button .sn-icon{display:block;font-size:1rem;margin-bottom:2px}
+.sub-panel{display:none;max-width:650px;margin:0 auto;padding-top:8px}.sub-panel.on{display:block;animation:si .3s}
+.ft{text-align:center;padding:18px;border-top:1px solid var(--mx3);margin-top:20px}.ft p{font-size:.42rem;color:var(--mx3);letter-spacing:.1em}
+.dork-engine{background:transparent;border:1px solid var(--mx3);color:var(--mx2);padding:5px 10px;font-family:'Share Tech Mono',monospace;font-size:.48rem;cursor:pointer;text-transform:uppercase;transition:.2s;letter-spacing:.05em}
+.dork-engine.on{background:var(--mx3);border-color:var(--mx);color:var(--mx)}
+.dork-engine:hover{border-color:var(--mx2);color:var(--mx)}
+.dcat{background:transparent;border:1px solid var(--mx3);color:var(--mx2);padding:4px 8px;font-family:'Share Tech Mono',monospace;font-size:.45rem;cursor:pointer;text-transform:uppercase;transition:.2s;letter-spacing:.05em}
+.dcat.on{background:var(--mx);color:#000;border-color:var(--mx)}
+.dcat:hover{border-color:var(--mx2);color:var(--mx)}
+.dork-card{background:linear-gradient(135deg,#070d07,#0a130a);border:1px solid var(--mx3);padding:10px 12px;cursor:pointer;transition:.2s;position:relative}
+.dork-card:hover{border-color:var(--mx);box-shadow:0 2px 12px rgba(0,255,65,.08)}
+.dork-card.selected{border-color:var(--gold);background:rgba(255,215,64,.04);box-shadow:0 0 14px rgba(255,215,64,.1)}
+.dork-card .dk-title{font-family:'Orbitron',sans-serif;font-size:.55rem;color:var(--mx);margin-bottom:4px}
+.dork-card.selected .dk-title{color:var(--gold)}
+.dork-card .dk-query{font-size:.48rem;color:var(--mx2);font-family:'Share Tech Mono',monospace;word-break:break-all;line-height:1.4}
+.dork-card .dk-desc{font-size:.42rem;color:var(--mx3);margin-top:4px;line-height:1.4}
+.dork-card .dk-badge{position:absolute;top:6px;right:6px;font-size:.38rem;padding:1px 5px;border:1px solid var(--cyan);color:var(--cyan);text-transform:uppercase}
+.dork-card .dk-sel{position:absolute;bottom:6px;right:6px;font-size:.38rem;color:var(--gold);display:none}
+.dork-card.selected .dk-sel{display:block}
+.op-badge{display:inline-block;padding:3px 8px;border:1px solid var(--mx3);color:var(--cyan);font-family:'Share Tech Mono',monospace;font-size:.5rem;cursor:help;transition:.2s;margin:2px}
+.op-badge:hover{border-color:var(--cyan);background:rgba(0,229,255,.06)}
+@media(max-width:600px){.hdr h1{letter-spacing:.05em;font-size:1.8rem}.nav button{font-size:.42rem;padding:7px 5px;flex:0 1 auto}.gr,.fg{grid-template-columns:1fr}[data-tip]::after{width:180px;font-size:.44rem}}
+</style>
+</head><body>
+<canvas id="rain"></canvas>
+<div class="hdr z">
+  <h1>THIS YOU<span class="q">?</span></h1>
+  <div class="sub">MATRIX : RELOADED // OSINT</div>
+  <div class="tag">» 958 Sites • Recherche Visage • Téléphone • Email • IP/Domaine «</div>
+</div>
 
-const app = express();
-const PORT = process.env.PORT || 3000;
+<div class="nav z">
+  <button class="on" data-p="u" data-tip="Cherche un pseudo sur 958 sites (réseaux sociaux, forums, jeux vidéo...). Indique si un compte existe ou non sur chaque plateforme.">PSEUDO</button>
+  <button data-p="f" data-tip="Analyse une photo pour détecter un visage, estimer l'âge et le genre, puis cherche des profils correspondants dans des bases de données (VK, TikTok, Odnoklassniki...).">VISAGE</button>
+  <button data-p="p" data-tip="Analyse un numéro de téléphone : pays, opérateur, type de ligne. Recherche aussi toutes les mentions publiques de ce numéro sur internet.">TÉLÉPHONE</button>
+  <button data-p="e" data-tip="Analyse un email : vérifie s'il a un avatar public, s'il apparaît dans des bases de données hackées (fuites), et cherche ses mentions publiques sur le web.">EMAIL</button>
+  <button data-p="i" data-tip="Analyse une IP ou un domaine : localisation géographique, fournisseur internet, ports réseau ouverts (Nmap), et scan de failles web (Nikto).">IP / DOMAINE</button>
+  <button data-p="h" data-tip="Cassage de hash — Colle un hash MD5, SHA1, SHA256... et John the Ripper essaie de retrouver le mot de passe original en testant 14 millions de mots de passe courants (rockyou.txt).">HASH</button>
+  <button data-p="x" data-tip="ExifTool — Analyse les métadonnées cachées dans vos photos : GPS, appareil photo, date, auteur, logiciel... Détecte les données récurrentes sur plusieurs photos et permet de les modifier.">EXIF</button>
+  <button data-p="d" data-tip="Google Dorking — Recherches avancées sur Google, Bing, Shodan, GitHub et Exploit-DB. Accès aux caméras publiques, fichiers sensibles, panneaux admin, bases de données exposées. Filtrage par pays/ville.">DORK</button>
+</div>
 
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-hashes'", "https://cdn.jsdelivr.net"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-      fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      imgSrc: ["'self'", "data:", "https://www.gravatar.com", "https://search4faces.com", "https://*.userapi.com"],
-      connectSrc: ["'self'", "https://search4faces.com"],
-      frameSrc: ["'self'"],
-      objectSrc: ["'none'"],
-      baseUri: ["'self'"],
-    }
-  },
-  crossOriginEmbedderPolicy: false,
-  hsts: { maxAge: 31536000, includeSubDomains: true },
-}));
+<!-- USERNAME -->
+<div class="P on z" id="Pu">
+  <div class="sts">
+    <div class="s"><div class="v" id="sTot">—</div><div class="l">Sites</div></div>
+    <div class="s"><div class="v" id="sCat">—</div><div class="l">Catégories</div></div>
+    <div class="s"><div class="v" id="sScn">0</div><div class="l">Scannés</div></div>
+    <div class="s"><div class="v gd" id="sFnd">0</div><div class="l">Trouvés</div></div>
+    <div class="s"><div class="v rd" id="sErr">0</div><div class="l">Erreurs</div></div>
+  </div>
+  <div class="ib"><span class="pr">›_</span><input id="inp" placeholder="pseudo à rechercher..." autocomplete="off" spellcheck="false"><button class="go" id="goB" data-tip="Lance le scan sur 958 sites simultanément.">SCAN</button></div>
+  <div class="fl" id="flt"></div>
+  <div class="pg" id="pg">
+    <div class="nf"><span id="pT"></span><span id="pP">0%</span></div>
+    <div class="br"><div class="fl2" id="pF"></div></div>
+    <div class="sn" id="pS"></div>
+  </div>
+  <div class="sm" id="sm"><div class="bg" id="smB">0</div><div class="dt" id="smD"></div></div>
+  <div>
+    <div class="rh" id="rh">
+      <div class="ct" id="rC"></div>
+      <button class="ex" id="exB" data-tip="Télécharge la liste des comptes trouvés au format CSV (fichier Excel).">EXPORTER CSV</button>
+    </div>
+    <div class="vt">
+      <button class="on" data-v="found" data-tip="Affiche uniquement les comptes trouvés.">TROUVÉS</button>
+      <button data-v="all" data-tip="Affiche tous les sites scannés (trouvés et non trouvés).">TOUS</button>
+      <button data-v="log" data-tip="Affiche le journal brut du scan en temps réel.">LOG</button>
+    </div>
+    <div class="gr" id="gr"></div>
+    <div class="lg" id="lg"></div>
+  </div>
+  <div class="em" id="emp"><div class="ic">⬡</div><div class="mg">Entrez un pseudo — 958 sites scannés en temps réel</div></div>
+  <div id="deepScanU" style="display:none;max-width:650px;margin:16px auto"></div>
+</div>
 
-app.use((req, res, next) => {
-  if (req.headers['x-forwarded-proto'] && req.headers['x-forwarded-proto'] !== 'https') {
-    return res.redirect(301, 'https://' + req.hostname + req.url);
-  }
-  next();
-});
+<!-- VISAGE -->
+<div class="P z" id="Pf">
+  <div class="dz" id="dz">
+    <div class="ic">◉</div>
+    <div class="mg">DÉPOSER UNE PHOTO ICI</div>
+    <div class="mg2">JPG / PNG — L'IA détecte le visage, estime l'âge et le genre automatiquement</div>
+    <input type="file" id="fI" accept="image/*">
+  </div>
+  <div class="fp" id="fp"><canvas id="fC"></canvas></div>
+  <div class="fi" id="fN"></div>
+  <div class="ds" id="dS">
+    <h3>CHOISIR LA BASE DE RECHERCHE</h3>
+    <div class="db">
+      <button class="on" data-s="vkok_avatar" data-tip="Recherche dans les photos de profil VK et Odnoklassniki — 280 millions de profils russes indexés.">VK + OK<span class="dc">280 millions de profils</span></button>
+      <button data-s="vk_wall" data-tip="Recherche dans les photos publiées sur les murs VK — 1,1 milliard de photos analysées.">VK Mur<span class="dc">1,1 milliard de photos</span></button>
+      <button data-s="vkokn_avatar" data-tip="Recherche dans les profils VK et OK ajoutés récemment — 312 millions de profils.">Récents<span class="dc">312 millions de profils</span></button>
+      <button data-s="tt_avatar" data-tip="Recherche dans les avatars TikTok — 125 millions de profils.">TikTok<span class="dc">125 millions de profils</span></button>
+      <button data-s="ch_avatar" data-tip="Recherche dans les avatars Clubhouse — 13 millions de profils.">Clubhouse<span class="dc">13 millions de profils</span></button>
+    </div>
+  </div>
+  <div class="sfb" id="sfB"><button id="fG" data-tip="Lance la recherche du visage détecté dans la base sélectionnée ci-dessus (VK, TikTok...).">RECHERCHER CE VISAGE</button></div>
+  <div class="fst" id="fSt"></div>
+  <div class="fr" id="fR"><h3 id="fRT"></h3><div class="fg" id="fGr"></div></div>
 
-app.set('trust proxy', 1);
+  <!-- Moteurs supplémentaires -->
+  <div id="extraSearch" style="display:none;max-width:650px;margin:10px auto">
+    <div class="rs">
+      <h4>🌐 RECHERCHE ÉTENDUE — INSTAGRAM, X, WEB GLOBAL</h4>
+      <p style="font-size:.48rem;color:var(--mx2);margin-bottom:10px;line-height:1.5">Ces moteurs cherchent le visage sur l'ensemble du web — Instagram, X (Twitter), Facebook, sites d'actualité...</p>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">
+        <button id="btnFaceCheck" data-tip="FaceCheck.id — Moteur de recherche par visage gratuit. Cherche sur tout le web public incluant Instagram, X, sites d'actualité. Résultats avec score de similarité." style="flex:1;min-width:140px;padding:8px;background:transparent;border:1px solid var(--cyan);color:var(--cyan);font-family:'Orbitron',sans-serif;font-size:.5rem;cursor:pointer;text-transform:uppercase;transition:.2s">🔍 FaceCheck.id</button>
+        <button id="btnYandex" data-tip="Yandex Images — Moteur de recherche d'images inversée russe, très puissant pour retrouver des personnes. Souvent plus efficace que Google pour les visages." style="flex:1;min-width:140px;padding:8px;background:transparent;border:1px solid var(--gold);color:var(--gold);font-family:'Orbitron',sans-serif;font-size:.5rem;cursor:pointer;text-transform:uppercase;transition:.2s">🔍 Yandex Images</button>
+        <button id="btnGoogle" data-tip="Google Images — Recherche inversée d'image Google. Trouve les pages web où cette photo apparaît." style="flex:1;min-width:140px;padding:8px;background:transparent;border:1px solid var(--mx2);color:var(--mx2);font-family:'Orbitron',sans-serif;font-size:.5rem;cursor:pointer;text-transform:uppercase;transition:.2s">🔍 Google Images</button>
+        <button id="btnPimEyes" data-tip="PimEyes — Le moteur de recherche par visage le plus puissant. Gratuit limité, trouve des profils sur Instagram, X, et partout sur le web." style="flex:1;min-width:140px;padding:8px;background:transparent;border:1px solid var(--red);color:var(--red);font-family:'Orbitron',sans-serif;font-size:.5rem;cursor:pointer;text-transform:uppercase;transition:.2s">🔍 PimEyes</button>
+      </div>
+      <div id="faceCheckResults" style="display:none"></div>
+    </div>
+  </div>
 
-const globalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, max: 100, standardHeaders: true, legacyHeaders: false,
-  message: { error: 'Trop de requêtes. Réessayez dans 15 minutes.' },
-  keyGenerator: (req) => req.ip || 'unknown', validate: false,
-});
-app.use('/api/', globalLimiter);
+  <div class="ee" id="fE">
+    <h3>AUTRES OUTILS DE RECHERCHE PAR VISAGE</h3>
+    <div class="eg">
+      <a href="https://pimeyes.com/en" target="_blank" data-tip="PimEyes — Moteur de recherche par visage très puissant. Trouve des photos sur tout le web. Gratuit limité, payant pour les détails.">PimEyes</a>
+      <a href="https://facecheck.id/" target="_blank" data-tip="FaceCheck — Recherche par visage sur internet. Gratuit et sans compte requis.">FaceCheck</a>
+      <a href="https://search4faces.com/en/" target="_blank" data-tip="Search4Faces — Le même moteur utilisé ici. Recherche dans des millions de profils russes (VK, TikTok...).">Search4Faces</a>
+      <a href="https://yandex.com/images/" target="_blank" data-tip="Yandex Images — Recherche inversée d'image. Très efficace pour trouver l'origine d'une photo ou des photos similaires.">Yandex Images</a>
+      <a href="https://tineye.com/" target="_blank" data-tip="TinEye — Recherche inversée d'image. Trouve tous les sites où cette photo a déjà été publiée sur internet.">TinEye</a>
+    </div>
+  </div>
+</div>
 
-const heavyLimiter = rateLimit({ windowMs: 60 * 1000, max: 5, message: { error: 'Maximum 5 scans par minute. Patientez.' }, validate: false });
-const faceLimiter = rateLimit({ windowMs: 60 * 1000, max: 3, message: { error: 'Maximum 3 recherches faciales par minute.' }, validate: false });
+<!-- TÉLÉPHONE -->
+<div class="P z" id="Pp">
+  <div class="ib"><span class="pr">☎</span><input id="phI" placeholder="+33612345678" autocomplete="off"><button class="go" id="phB" data-tip="Lance l'analyse du numéro et la recherche de ses mentions publiques sur le web.">ANALYSER</button></div>
+  <div class="rb" id="phR"></div>
+  <div class="em" id="phE">
+    <div class="ic">☎</div>
+    <div class="mg">
+      Format international requis : +33 (France), +1 (USA), +44 (UK)...<br>
+      <span style="color:var(--mx3);font-size:.5rem">Identifie le pays, l'opérateur et le type de ligne — recherche aussi les mentions publiques du numéro sur internet</span>
+    </div>
+  </div>
+</div>
 
-app.use(express.json({ limit: '5mb' }));
-app.use(express.static(path.join(__dirname, 'public'), { maxAge: '1h', etag: true }));
-app.disable('x-powered-by');
+<!-- EMAIL -->
+<div class="P z" id="Pe">
+  <div class="ib"><span class="pr">@</span><input id="emI" placeholder="cible@example.com" autocomplete="off"><button class="go" id="emB" data-tip="Lance l'analyse complète de l'adresse email.">ANALYSER</button></div>
+  <div class="rb" id="emR"></div>
+  <div class="em" id="emE">
+    <div class="ic">@</div>
+    <div class="mg">
+      Analyse complète d'une adresse email<br>
+      <span style="color:var(--mx3);font-size:.5rem">Vérifie si l'email a un avatar public • Détecte les fuites dans des bases de données hackées • Cherche ses mentions sur le web</span>
+    </div>
+  </div>
+  <div id="deepScanE" style="display:none;max-width:650px;margin:16px auto"></div>
+</div>
 
-function sanitize(str, maxLen = 100) {
-  if (typeof str !== 'string') return '';
-  return str.replace(/[<>"'`;\\{}()]/g, '').trim().slice(0, maxLen);
+<!-- IP / DOMAINE -->
+<div class="P z" id="Pi">
+  <div class="ib">
+    <span class="pr">⟐</span>
+    <input id="ipI" placeholder="8.8.8.8 ou example.com" autocomplete="off">
+    <button class="go" id="ipB" data-tip="Lance la géolocalisation et l'analyse réseau de l'IP ou du domaine.">ANALYSER</button>
+  </div>
+
+  <div class="sub-nav" id="subNav" style="display:flex">
+    <button class="on" data-sp="geo" data-tip="Géolocalisation — Affiche le pays, la ville, le fournisseur internet (FAI), les coordonnées GPS, et indique si c'est un VPN ou un proxy.">
+      <span class="sn-icon">🌍</span>LOCALISATION
+    </button>
+    <button data-sp="ports" data-tip="Scan de ports (Nmap) — Liste les ports réseau ouverts sur cette IP. Un port ouvert = un service actif (ex: port 80 = site web, port 22 = SSH, port 21 = FTP). Permet de savoir ce qui tourne sur la machine.">
+      <span class="sn-icon">🔌</span>PORTS OUVERTS
+    </button>
+    <button data-sp="vulns" data-tip="Scan de failles web (Nikto) — Analyse le serveur web pour détecter des vulnérabilités connues : fichiers sensibles exposés, mauvaises configurations, logiciels obsolètes avec des failles de sécurité.">
+      <span class="sn-icon">⚠️</span>FAILLES WEB
+    </button>
+    <button data-sp="sqli" data-tip="Injection SQL (SQLMap) — Teste si le site est vulnérable aux injections SQL. Une injection SQL permet de lire ou modifier la base de données d'un site. Nécessite une URL avec paramètres (ex: site.com/page?id=1).">
+      <span class="sn-icon">💉</span>INJECTION SQL
+    </button>
+    <button data-sp="exploits" data-tip="Exploits / CVE (Metasploit) — Après un scan Nmap, recherche automatiquement les failles connues (CVE) pour chaque service détecté. Affiche le score de dangerosité et les liens vers Metasploit et Exploit-DB.">
+      <span class="sn-icon">🎯</span>EXPLOITS
+    </button>
+  </div>
+
+  <div class="sub-panel on" id="spGeo"></div>
+  <div class="sub-panel" id="spPorts"></div>
+  <div class="sub-panel" id="spVulns"></div>
+  <div class="sub-panel" id="spSqli"></div>
+  <div class="sub-panel" id="spExploits"></div>
+
+  <div class="em" id="ipE">
+    <div class="ic">⟐</div>
+    <div class="mg">
+      Entrez une adresse IP ou un nom de domaine<br>
+      <span style="color:var(--mx3);font-size:.5rem">Géolocalisation • Ports ouverts (Nmap) • Scan de failles web (Nikto)</span>
+    </div>
+  </div>
+</div>
+
+<!-- HASH CRACKER -->
+<div class="P z" id="Ph">
+  <div style="max-width:650px;margin:18px auto;padding:0 12px">
+    <div class="rs" style="margin-bottom:12px">
+      <h4>⚡ ANALYSE HASH / URL — JOHN THE RIPPER</h4>
+      <p style="font-size:.5rem;color:var(--mx2);line-height:1.6">
+        Colle un <strong style="color:var(--mx)">hash</strong> (MD5, SHA1, SHA256...) pour retrouver le mot de passe original.<br>
+        Colle une <strong style="color:var(--mx)">URL</strong> (https://...) pour analyser le site web.<br>
+        <span style="color:var(--mx3)">Le type est détecté automatiquement.</span>
+      </p>
+    </div>
+    <div style="margin-bottom:10px">
+      <textarea id="hashInput" placeholder="Colle ton hash ou une URL ici...&#10;&#10;Hash MD5 : 5f4dcc3b5aa765d61d8327deb882cf99&#10;URL : https://example.com" style="width:100%;background:#000;border:1px solid var(--mx3);color:var(--mx);font-family:'Share Tech Mono',monospace;font-size:.75rem;padding:10px;outline:0;resize:vertical;min-height:90px;transition:.3s"></textarea>
+      <div id="detectLabel" style="font-size:.45rem;color:var(--mx3);margin-top:4px;letter-spacing:.08em">— en attente —</div>
+    </div>
+    <div id="hashFmtWrap" style="margin-bottom:12px">
+      <div style="font-size:.48rem;color:var(--mx2);margin-bottom:6px;letter-spacing:.1em">TYPE DE HASH (sélectionne si détection incorrecte)</div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px" id="fmtBtns">
+        <button data-f="raw-md5"     data-tip="MD5 — 32 caractères. Ex: 5f4dcc3b5aa765d61d8327deb882cf99">MD5</button>
+        <button data-f="raw-sha1"    data-tip="SHA1 — 40 caractères. Ex: 5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8">SHA1</button>
+        <button data-f="raw-sha256"  data-tip="SHA256 — 64 caractères hexadécimaux.">SHA256</button>
+        <button data-f="raw-sha512"  data-tip="SHA512 — 128 caractères hexadécimaux.">SHA512</button>
+        <button data-f="nt"          data-tip="NTLM — Hash Windows pour les mots de passe de comptes Windows.">NTLM</button>
+        <button data-f="bcrypt"      data-tip="bcrypt — Hash commençant par $2b$ ou $2a$. Très lent à casser.">bcrypt</button>
+      </div>
+    </div>
+    <button id="crackB" style="width:100%;padding:12px;background:var(--mx);color:#000;border:none;font-family:'Orbitron',sans-serif;font-size:.7rem;letter-spacing:.15em;cursor:pointer;text-transform:uppercase;transition:.2s">ANALYSER</button>
+    <div id="crackR" style="margin-top:12px"></div>
+  </div>
+</div>
+
+<!-- EXIF -->
+<div class="P z" id="Px">
+  <div style="max-width:900px;margin:18px auto;padding:0 12px">
+    <div class="rs" style="margin-bottom:12px">
+      <h4>📷 ANALYSE EXIF — EXIFTOOL</h4>
+      <p style="font-size:.5rem;color:var(--mx2);line-height:1.6">
+        Upload une ou plusieurs photos pour extraire leurs métadonnées cachées.<br>
+        <span style="color:var(--mx3)">GPS • Appareil photo • Date • Auteur • Logiciel • Données récurrentes mises en évidence</span>
+      </p>
+    </div>
+    <div id="exifDrop" style="border:2px dashed var(--mx3);padding:30px;text-align:center;cursor:pointer;transition:.3s;background:rgba(0,255,65,.01);margin-bottom:12px;position:relative">
+      <div style="font-size:1.5rem;margin-bottom:6px;opacity:.3">📷</div>
+      <div style="color:var(--mx2);font-size:.6rem;letter-spacing:.1em">DÉPOSER DES PHOTOS ICI</div>
+      <div style="color:var(--mx3);font-size:.45rem;margin-top:4px">JPG, PNG, TIFF, RAW... — jusqu'à 20 fichiers</div>
+      <input type="file" id="exifInput" multiple accept="image/*,video/*,.pdf,.doc,.docx" style="position:absolute;inset:0;opacity:0;cursor:pointer">
+    </div>
+    <div id="exifFileList" style="display:none;margin-bottom:10px"></div>
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <button id="exifReadBtn" style="flex:1;padding:10px;background:var(--mx);color:#000;border:none;font-family:'Orbitron',sans-serif;font-size:.6rem;letter-spacing:.1em;cursor:pointer;text-transform:uppercase;transition:.2s">ANALYSER LES MÉTADONNÉES</button>
+      <button id="exifClearBtn" style="padding:10px 16px;background:transparent;color:var(--mx2);border:1px solid var(--mx3);font-family:'Share Tech Mono',monospace;font-size:.55rem;cursor:pointer;text-transform:uppercase;transition:.2s">EFFACER</button>
+    </div>
+    <div id="exifResult"></div>
+  </div>
+</div>
+
+<!-- DORK -->
+<div class="P z" id="Pd">
+  <div style="max-width:1100px;margin:0 auto;padding:16px">
+
+    <!-- GUIDE DÉBUTANT -->
+    <div class="rs" style="margin-bottom:14px;border-color:var(--cyan)">
+      <h4 style="color:var(--cyan)">🎓 GUIDE RAPIDE — COMMENT ÇA MARCHE ?</h4>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-top:8px">
+        <div style="padding:6px;border:1px solid var(--mx3)">
+          <div style="font-size:.48rem;color:var(--mx);margin-bottom:3px">① TAPE TA CIBLE</div>
+          <div style="font-size:.43rem;color:var(--mx2)">Ex: <span style="color:var(--mx)">France</span>, <span style="color:var(--mx)">webcam</span>, <span style="color:var(--mx)">google.com</span></div>
+        </div>
+        <div style="padding:6px;border:1px solid var(--mx3)">
+          <div style="font-size:.48rem;color:var(--mx);margin-bottom:3px">② CHOISIS UNE CATÉGORIE</div>
+          <div style="font-size:.43rem;color:var(--mx2)">Caméras, fichiers secrets, failles web...</div>
+        </div>
+        <div style="padding:6px;border:1px solid var(--mx3)">
+          <div style="font-size:.48rem;color:var(--mx);margin-bottom:3px">③ CLIQUE UN DORK</div>
+          <div style="font-size:.43rem;color:var(--mx2)">La requête se génère automatiquement</div>
+        </div>
+        <div style="padding:6px;border:1px solid var(--mx3)">
+          <div style="font-size:.48rem;color:var(--mx);margin-bottom:3px">④ LANCE LA RECHERCHE</div>
+          <div style="font-size:.43rem;color:var(--mx2)">Google/Shodan/GitHub s'ouvre avec ta requête</div>
+        </div>
+      </div>
+      <!-- Explication des opérateurs -->
+      <div style="margin-top:10px;border-top:1px solid var(--mx3);padding-top:8px">
+        <div style="font-size:.45rem;color:var(--mx2);margin-bottom:6px;letter-spacing:.08em">📖 LES OPÉRATEURS — SURVOLE POUR COMPRENDRE</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px">
+          <span class="op-badge" data-tip="site:google.com — Limite la recherche à un seul site web. Ex: site:facebook.com 'email' cherche le mot email uniquement sur Facebook">site:</span>
+          <span class="op-badge" data-tip="intitle:&quot;webcam&quot; — Cherche ce mot dans le TITRE de la page web (ce qui apparaît dans l'onglet du navigateur). Plus précis que la recherche normale">intitle:</span>
+          <span class="op-badge" data-tip="inurl:admin — Cherche ce mot dans l'URL de la page. Ex: inurl:admin trouve toutes les pages dont l'adresse contient 'admin'">inurl:</span>
+          <span class="op-badge" data-tip="filetype:pdf — Cherche uniquement ce type de fichier. Ex: filetype:xls trouve des fichiers Excel, filetype:sql des bases de données">filetype:</span>
+          <span class="op-badge" data-tip="intext:password — Cherche ce mot dans le CONTENU de la page (pas juste le titre). Utile pour trouver des mots de passe dans des pages">intext:</span>
+          <span class="op-badge" data-tip="&quot;mot exact&quot; — Les guillemets forcent la recherche d'une expression exacte. Ex: &quot;default password&quot; trouve cette phrase précise et non les mots séparément">&quot;exact&quot;</span>
+          <span class="op-badge" data-tip="-mot — Le tiret EXCLUT un mot des résultats. Ex: webcam -amazon exclut tous les résultats Amazon pour ne garder que les vraies webcams">-exclure</span>
+          <span class="op-badge" data-tip="mot1 | mot2 — Le pipe signifie OU. Ex: intitle:&quot;webcam&quot; | intitle:&quot;camera&quot; cherche les pages avec webcam OU camera dans le titre">A | B</span>
+          <span class="op-badge" data-tip="cache:site.com — Affiche la version sauvegardée par Google d'une page, même si elle a été supprimée ou modifiée depuis">cache:</span>
+          <span class="op-badge" data-tip="port:22 — Opérateur SHODAN uniquement. Cherche les appareils avec ce port ouvert. Port 22=SSH, 80=web, 443=HTTPS, 3389=bureau distant">port: (Shodan)</span>
+          <span class="op-badge" data-tip="country:FR — Opérateur SHODAN uniquement. Filtre par code pays ISO. FR=France, US=États-Unis, DE=Allemagne, CN=Chine, RU=Russie">country: (Shodan)</span>
+          <span class="op-badge" data-tip="city:Paris — Opérateur SHODAN uniquement. Filtre par ville. Très précis pour trouver des appareils dans une zone géographique spécifique">city: (Shodan)</span>
+          <span class="op-badge" data-tip="filename:.env — Opérateur GITHUB uniquement. Cherche les fichiers par leur nom exact dans tout le code source public de GitHub">filename: (GitHub)</span>
+          <span class="op-badge" data-tip="vuln:CVE-2021-44228 — Opérateur SHODAN uniquement. Filtre les appareils vulnérables à une CVE spécifique (faille de sécurité connue et répertoriée)">vuln: (Shodan)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Zone principale -->
+    <div style="max-width:750px;margin:0 auto 16px">
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <input id="dorkTarget" placeholder="Ta cible : ex: France, webcam, monsite.com, apache 2.4..." style="flex:1;background:#000;border:1px solid var(--mx3);color:var(--mx);font-family:'Share Tech Mono',monospace;font-size:.75rem;padding:10px 12px;outline:0;transition:.3s">
+        <button id="dorkClear" style="padding:10px 14px;background:transparent;border:1px solid var(--mx3);color:var(--mx2);font-family:'Share Tech Mono',monospace;font-size:.55rem;cursor:pointer;text-transform:uppercase">✕</button>
+      </div>
+
+      <!-- Requête générée -->
+      <div style="background:#000;border:1px solid var(--mx2);padding:10px 12px;margin-bottom:8px;min-height:44px;position:relative">
+        <div style="font-size:.4rem;color:var(--mx3);margin-bottom:3px;letter-spacing:.08em">REQUÊTE GÉNÉRÉE — CLIC POUR COPIER</div>
+        <div id="dorkQuery" style="font-size:.62rem;color:var(--mx);word-break:break-all;font-family:'Share Tech Mono',monospace;cursor:pointer" title="Cliquer pour copier">Sélectionne un dork ci-dessous...</div>
+        <div id="dorkCopied" style="display:none;position:absolute;right:8px;top:8px;font-size:.4rem;color:var(--mx);border:1px solid var(--mx);padding:1px 5px">COPIÉ ✓</div>
+      </div>
+
+      <!-- Moteurs -->
+      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px" id="dorkEngines">
+        <button data-engine="google" class="dork-engine on" data-tip="Google — Le plus puissant. Supporte tous les opérateurs : site:, intitle:, inurl:, filetype:, cache:">🔍 Google</button>
+        <button data-engine="bing" class="dork-engine" data-tip="Bing — Moins censuré que Google pour certaines recherches. Supporte site:, intitle:, filetype:">🔍 Bing</button>
+        <button data-engine="duckduckgo" class="dork-engine" data-tip="DuckDuckGo — Résultats non personnalisés, plus anonyme. Supporte site: et quelques opérateurs basiques">🦆 DDG</button>
+        <button data-engine="shodan" class="dork-engine" data-tip="Shodan — Moteur pour APPAREILS CONNECTÉS (caméras, serveurs, IoT). Opérateurs : port:, country:, city:, vuln:">📡 Shodan</button>
+        <button data-engine="github" class="dork-engine" data-tip="GitHub — Recherche dans tout le CODE SOURCE public. Opérateurs : filename:, language:, user:. Trouve des mots de passe, clés API...">💻 GitHub</button>
+        <button data-engine="exploitdb" class="dork-engine" data-tip="Exploit-DB — Base mondiale d'exploits de sécurité. Tape le nom d'un logiciel ou CVE pour trouver ses failles connues">💣 Exploit-DB</button>
+        <button data-engine="censys" class="dork-engine" data-tip="Censys — Scan de certificats SSL et services internet. Trouve des sous-domaines cachés et services exposés">🔭 Censys</button>
+      </div>
+
+      <button id="dorkLaunch" style="width:100%;padding:12px;background:var(--mx);color:#000;border:none;font-family:'Orbitron',sans-serif;font-size:.65rem;letter-spacing:.15em;cursor:pointer;text-transform:uppercase;transition:.2s">🚀 LANCER LA RECHERCHE</button>
+    </div>
+
+    <!-- Catégories -->
+    <div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:12px;border-bottom:1px solid var(--mx3);padding-bottom:8px" id="dorkCats">
+      <button class="dcat on" data-cat="cameras" data-tip="📷 Trouve des caméras IP publiques accessibles sans mot de passe. Webcams, caméras de surveillance, flux RTSP. Utilise Shodan pour filtrer par ville/pays">📷 CAMÉRAS</button>
+      <button class="dcat" data-cat="admin" data-tip="🔐 Panneaux d'administration mal sécurisés : phpMyAdmin (bases de données), WordPress admin, cPanel (hébergement), routeurs, Jenkins (DevOps)">🔐 PANNEAUX ADMIN</button>
+      <button class="dcat" data-cat="files" data-tip="📄 Fichiers sensibles indexés par erreur : .env avec mots de passe, dumps SQL, logs serveur, clés SSH, backups. Aussi secrets exposés sur GitHub">📄 FICHIERS SECRETS</button>
+      <button class="dcat" data-cat="databases" data-tip="🗄 Bases de données sans authentification : MongoDB, ElasticSearch, Redis, MySQL directement accessibles depuis internet. Via Shodan">🗄 BASES DE DONNÉES</button>
+      <button class="dcat" data-cat="passwords" data-tip="🔑 Mots de passe et clés exposés : fichiers htpasswd Apache, wp-config.php WordPress, clés AWS commençant par AKIA, variables d'environnement">🔑 MOTS DE PASSE</button>
+      <button class="dcat" data-cat="vulnerabilities" data-tip="⚠ Serveurs vulnérables : IIS obsolète, Apache en mode debug, erreurs PHP qui révèlent des infos internes, Shellshock, Heartbleed via Shodan">⚠ FAILLES</button>
+      <button class="dcat" data-cat="network" data-tip="🌐 Équipements réseau exposés : routeurs Cisco, firewalls pfSense, portails VPN, NAS Synology, imprimantes réseau accessibles depuis internet">🌐 RÉSEAU</button>
+      <button class="dcat" data-cat="iot" data-tip="📡 Objets connectés mal sécurisés : systèmes SCADA industriels, Home Assistant (domotique), thermostats, imprimantes 3D, panneaux solaires">📡 IoT OBJETS</button>
+      <button class="dcat" data-cat="osint" data-tip="🕵 Recherches OSINT : emails d'une organisation, sous-domaines cachés, profils LinkedIn d'employés, documents internes exposés, mentions web">🕵 OSINT</button>
+      <button class="dcat" data-cat="reconng" data-tip="🕸 Modules inspirés de Recon-ng : découverte de sous-domaines, reverse IP, WHOIS en masse, recherche de profils liés à un domaine">🕸 RECON-NG</button>
+      <button class="dcat" data-cat="exploitdb" data-tip="💣 Exploit-DB : recherche d'exploits par logiciel, RCE (exécution de code), injection SQL, CVE par numéro, escalade de privilèges">💣 EXPLOIT-DB</button>
+    </div>
+
+    <!-- Grille de dorks -->
+    <div id="dorkGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:6px"></div>
+
+  </div>
+</div>
+
+<div class="ft z"><p>THIS YOU? // OSINT PLATFORM // MATRIX:RELOADED // DATA © MICAH HOFFMAN (CC BY-SA 4.0)</p></div>
+
+<script>
+const cv=document.getElementById('rain'),cx=cv.getContext('2d');
+function rsz(){cv.width=innerWidth;cv.height=innerHeight}rsz();addEventListener('resize',rsz);
+const ch='アイウエオTHISYOU01';const fz=14,co=()=>Math.floor(cv.width/fz);let dr=Array(co()).fill(1);
+addEventListener('resize',()=>{dr=Array(co()).fill(1)});
+setInterval(()=>{cx.fillStyle='rgba(0,0,0,0.05)';cx.fillRect(0,0,cv.width,cv.height);cx.fillStyle='#00ff41';cx.font=fz+'px monospace';for(let i=0;i<dr.length;i++){cx.fillText(ch[Math.random()*ch.length|0],i*fz,dr[i]*fz);if(dr[i]*fz>cv.height&&Math.random()>.975)dr[i]=0;dr[i]++;}},35);
+
+// NAV
+const ps=['u','f','p','e','i','h','x','d'];
+function sw(n){document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('on',b.dataset.p===n));ps.forEach(p=>{const e=document.getElementById('P'+p);e&&e.classList.toggle('on',p===n)})}
+document.querySelectorAll('.nav button').forEach(b=>b.addEventListener('click',()=>sw(b.dataset.p)));
+
+// SOUS-ONGLETS IP
+function swSub(n){
+  document.querySelectorAll('.sub-nav button').forEach(b=>b.classList.toggle('on',b.dataset.sp===n));
+  document.getElementById('spGeo').classList.toggle('on',n==='geo');
+  document.getElementById('spPorts').classList.toggle('on',n==='ports');
+  document.getElementById('spVulns').classList.toggle('on',n==='vulns');
+  document.getElementById('spSqli').classList.toggle('on',n==='sqli');
+  document.getElementById('spExploits').classList.toggle('on',n==='exploits');
 }
-function isValidUsername(u) { return /^[a-zA-Z0-9._\-]{2,64}$/.test(u); }
-function isValidEmail(e) { return /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/.test(e) && e.length <= 254; }
-function isValidPhone(p) { return /^\+?[0-9\s\-()]{6,20}$/.test(p); }
-function isValidIP(t) { return /^[a-zA-Z0-9.\-:]{2,253}$/.test(t); }
+document.querySelector('[data-sp="ports"]').addEventListener('click',()=>{swSub('ports');const t=lastIpTarget||document.getElementById('ipI').value.trim();if(t&&!document.getElementById('spPorts').innerHTML){lastIpTarget=t;nmapScan()}});
+document.querySelector('[data-sp="vulns"]').addEventListener('click',()=>{swSub('vulns');const t=lastIpTarget||document.getElementById('ipI').value.trim();if(t&&!document.getElementById('spVulns').innerHTML){lastIpTarget=t;niktoScan()}});
+document.querySelector('[data-sp="sqli"]').addEventListener('click',()=>{swSub('sqli');const t=lastIpTarget||document.getElementById('ipI').value.trim();if(t&&!document.getElementById('spSqli').innerHTML){lastIpTarget=t;sqlmapScan()}});
+document.querySelector('[data-sp="exploits"]').addEventListener('click',()=>{swSub('exploits');if(!document.getElementById('spExploits').innerHTML&&lastIpTarget)exploitScan()});
+document.querySelector('[data-sp="geo"]').addEventListener('click',()=>swSub('geo'));
 
-const SITES = JSON.parse(fs.readFileSync(path.join(__dirname, 'wmn-data.json'), 'utf8'));
+function E(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function rw(l,v,c){return'<div class="rw"><span class="rl">'+E(l)+'</span><span class="rv'+(c?' '+c:'')+'">'+E(v||'—')+'</span></div>'}
 
-function httpGet(url, timeout = 8000) {
-  return new Promise((resolve, reject) => {
-    const mod = url.startsWith('https') ? https : http;
-    const req = mod.get(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/json,*/*',
-        'Accept-Language': 'en-US,en;q=0.9',
-      },
-      timeout,
-    }, res => {
-      let body = ''; let sz = 0;
-      res.setEncoding('utf8');
-      res.on('data', c => { sz += c.length; if (sz < 300000) body += c; else req.destroy(); });
-      res.on('end', () => resolve({ statusCode: res.statusCode, body, headers: res.headers }));
-    });
-    req.on('error', reject);
-    req.on('timeout', () => { req.destroy(); reject(new Error('timeout')); });
-  });
-}
-
-function httpsPost(hostname, urlpath, body, headers = {}, timeout = 15000) {
-  return new Promise((resolve, reject) => {
-    const data = typeof body === 'string' ? body : JSON.stringify(body);
-    if (data.length > 5 * 1024 * 1024) return reject(new Error('Payload too large'));
-    const opts = { hostname, port: 443, path: urlpath, method: 'POST', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(data), ...headers }, timeout };
-    const req = https.request(opts, res => { let d = ''; res.on('data', c => d += c); res.on('end', () => { try { resolve(JSON.parse(d)) } catch (e) { resolve({ raw: d }) } }) });
-    req.on('error', reject); req.on('timeout', () => { req.destroy(); reject(new Error('timeout')); });
-    req.write(data); req.end();
-  });
-}
-
-async function searchDDG(query, max = 6) {
-  const results = [];
-  try {
-    const r = await httpGet(`https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`, 6000);
-    const ms = [...r.body.matchAll(/<a rel="nofollow" class="result__a" href="([^"]+)"[^>]*>(.*?)<\/a>/gs)];
-    for (const m of ms.slice(0, max)) {
-      const url = m[1], title = m[2].replace(/<[^>]+>/g, '');
-      if (url && title && url.startsWith('http')) results.push({ url, title });
-    }
-  } catch (e) { }
-  return results;
-}
-
-// ═══ PHONE ═══
-app.get('/api/phone/:number', heavyLimiter, async (req, res) => {
-  try {
-    const raw = sanitize(req.params.number, 25).replace(/[^\d+]/g, '');
-    if (!isValidPhone(raw)) return res.json({ success: false, error: 'Numéro invalide. Format: +33612345678' });
-    const num = raw.startsWith('+') ? raw : '+' + raw;
-    const phone = parsePhoneNumberFromString(num);
-    if (!phone) return res.json({ success: false, error: 'Numéro non reconnu' });
-    const result = {
-      international: phone.formatInternational(), national: phone.formatNational(),
-      e164: phone.format('E.164'), country: phone.country || '?', type: phone.getType() || 'inconnu',
-      valid: phone.isValid(), possible: phone.isPossible(),
-    };
-    const searches = [];
-    for (const fmt of [result.international, result.e164, result.e164.replace('+', '')]) {
-      const sr = await searchDDG(`"${fmt}"`);
-      for (const s of sr) { if (!searches.find(x => x.url === s.url)) searches.push({ ...s, query: fmt }); }
-    }
-    result.searches = searches.slice(0, 12);
-    res.json({ success: true, data: result });
-  } catch (e) { res.json({ success: false, error: 'Erreur serveur' }); }
+// USERNAME
+let aC='all',aR=[],cV='found',sc=false,es=null;
+fetch('/api/stats').then(r=>r.json()).then(d=>{
+  document.getElementById('sTot').textContent=d.totalSites;
+  document.getElementById('sCat').textContent=d.categories.length;
+  const e=document.getElementById('flt');e.innerHTML='';
+  const a=mk('button','ALL');a.classList.add('on');a.addEventListener('click',()=>{aC='all';uf()});e.appendChild(a);
+  d.categories.forEach(c=>{const b=mk('button',c);b.addEventListener('click',()=>{aC=c;uf()});e.appendChild(b)});
+  setupFilterListeners();
 });
+function mk(t,x){const e=document.createElement(t);e.textContent=x;return e}
+function uf(){document.querySelectorAll('.fl button').forEach(b=>b.classList.toggle('on',(aC==='all'&&b.textContent==='ALL')||b.textContent===aC))}
 
-// ═══ EMAIL ═══
-app.get('/api/email/:email', heavyLimiter, async (req, res) => {
-  try {
-    const email = sanitize(req.params.email, 254).toLowerCase();
-    if (!isValidEmail(email)) return res.json({ success: false, error: 'Email invalide' });
-    const [user, domain] = email.split('@');
-    const md5 = crypto.createHash('md5').update(email).digest('hex');
-    let hasGravatar = false;
-    try { const g = await httpGet(`https://www.gravatar.com/avatar/${md5}?d=404`, 4000); hasGravatar = g.statusCode === 200 } catch (e) { }
-    let gravatarProfile = null;
-    try { const gp = await httpGet(`https://www.gravatar.com/${md5}.json`, 4000); if (gp.statusCode === 200) gravatarProfile = JSON.parse(gp.body).entry?.[0] || null } catch (e) { }
-    let breaches = [];
-    try {
-      const lc = await httpGet(`https://leakcheck.io/api/public?check=${encodeURIComponent(email)}`, 6000);
-      if (lc.statusCode === 200 && lc.body) {
-        const lcData = JSON.parse(lc.body);
-        if (lcData.success && lcData.sources) {
-          breaches = lcData.sources.map(s => ({ name: s.name, date: s.date || '', count: s.records || 0 }));
-        }
-      }
-    } catch (e) { }
-    const searches = await searchDDG(`"${email}"`, 8);
-    res.json({
-      success: true, data: {
-        email, user, domain, md5,
-        gravatarUrl: hasGravatar ? `https://www.gravatar.com/avatar/${md5}?s=200` : null,
-        hasGravatar, gravatarProfile, breaches, breachCount: breaches.length, searches
-      }
-    });
-  } catch (e) { res.json({ success: false, error: 'Erreur serveur' }); }
-});
-
-// ═══ IP ═══
-app.get('/api/ip/:target', heavyLimiter, async (req, res) => {
-  try {
-    const target = sanitize(req.params.target, 253);
-    if (!isValidIP(target)) return res.json({ success: false, error: 'IP/domaine invalide' });
-    const r = await httpGet(`http://ip-api.com/json/${encodeURIComponent(target)}?fields=66846719`, 6000);
-    const geo = JSON.parse(r.body);
-    let ipinfo = null;
-    try { const i = await httpGet(`https://ipinfo.io/${encodeURIComponent(target)}/json`, 5000); if (i.statusCode === 200) ipinfo = JSON.parse(i.body) } catch (e) { }
-    let reverseDns = null;
-    try { const dns = require('dns'); reverseDns = await new Promise((resolve, reject) => { dns.reverse(target, (err, h) => { if (err) resolve(null); else resolve(h) }) }) } catch (e) { }
-    const searches = await searchDDG(`"${target}"`, 6);
-    res.json({ success: true, data: { ...geo, ipinfo, reverseDns, searches, mapUrl: `https://www.openstreetmap.org/?mlat=${geo.lat}&mlon=${geo.lon}#map=13/${geo.lat}/${geo.lon}` } });
-  } catch (e) { res.json({ success: false, error: 'Erreur serveur' }); }
-});
-
-// ═══ FACE ═══
-app.post('/api/face-search', faceLimiter, async (req, res) => {
-  const { image, source, results: maxR } = req.body;
-  if (!image || typeof image !== 'string') return res.status(400).json({ error: 'No image' });
-  if (image.length > 5 * 1024 * 1024) return res.status(400).json({ error: 'Image trop lourde (max 5MB)' });
-  const validSources = ['vkok_avatar', 'vk_wall', 'vkokn_avatar', 'tt_avatar', 'ch_avatar', 'sb_photo'];
-  const src = validSources.includes(source) ? source : 'vkok_avatar';
-  try {
-    const d1 = await httpsPost('search4faces.com', '/api/json-rpc/v1', { jsonrpc: '2.0', method: 'detectFaces', id: 'ty-' + Date.now(), params: { image } }, { Origin: 'https://search4faces.com', Referer: 'https://search4faces.com/en/vkok/index.html' });
-    if (!d1.result?.faces?.length) return res.json({ success: false, message: 'Aucun visage détecté' });
-    const d2 = await httpsPost('search4faces.com', '/api/json-rpc/v1', { jsonrpc: '2.0', method: 'searchFace', id: 'ty-' + Date.now(), params: { image: d1.result.image, face: d1.result.faces[0], source: src, hidden: true, results: Math.min(parseInt(maxR) || 50, 100).toString(), lang: 'en' } }, { Origin: 'https://search4faces.com', Referer: 'https://search4faces.com/en/vkok/index.html' });
-    if (d2.result?.profiles) return res.json({ success: true, profiles: d2.result.profiles });
-    return res.json({ success: false, message: d2.error?.message || 'Erreur API' });
-  } catch (e) { return res.json({ success: false, message: 'Erreur serveur' }) }
-});
-
-// ═══ USERNAME SCAN (SSE) ═══
-async function checkSite(site, username) {
-  const url = site.uri_check.replace('{account}', encodeURIComponent(username));
-  const result = { name: site.name, url, cat: site.cat, status: 'not-found', error: null };
-  try {
-    let cur = url;
-    for (let i = 0; i < 3; i++) {
-      const res = await httpGet(cur, 8000);
-      if ([301, 302, 303, 307, 308].includes(res.statusCode) && res.headers.location) {
-        if (site.m_code && res.statusCode === site.m_code) return result;
-        let loc = res.headers.location; if (loc.startsWith('/')) { const u = new URL(cur); loc = u.origin + loc }
-        cur = loc; continue;
-      }
-      const code = res.statusCode, body = res.body || '';
-      if (site.m_code && code === site.m_code) return result;
-      if (site.m_string && body.includes(site.m_string)) return result;
-      if ((code === site.e_code) && (site.e_string ? body.includes(site.e_string) : true)) result.status = 'found';
-      break;
-    }
-  } catch (e) { result.status = 'error'; result.error = e.message } return result;
-}
-
-app.get('/api/scan/:username', heavyLimiter, (req, res) => {
-  const username = sanitize(req.params.username, 64);
-  if (!isValidUsername(username)) return res.status(400).json({ error: 'Username invalide (lettres, chiffres, . _ - uniquement)' });
-  const catFilter = sanitize(req.query.cat || 'all', 30);
-  res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive', 'X-Accel-Buffering': 'no' });
-  let filtered = catFilter === 'all' ? SITES : SITES.filter(s => s.cat === catFilter);
-  const total = filtered.length; let completed = 0, found = 0, closed = false;
-  res.on('close', () => { closed = true; clearInterval(pingInterval); });
-  res.write(`data: ${JSON.stringify({ type: 'init', total, username })}\n\n`);
-  // Ping toutes les 15s pour garder la connexion vivante (écran qui s'éteint)
-  const pingInterval = setInterval(() => {
-    if (!closed) res.write(`: ping\n\n`);
-  }, 15000);
-  let queue = [...filtered];
-  async function go() {
-    while (queue.length > 0 && !closed) {
-      const batch = queue.splice(0, 15);
-      const results = await Promise.allSettled(batch.map(s => checkSite(s, username)));
-      for (const r of results) {
-        if (closed) return; completed++;
-        const val = r.status === 'fulfilled' ? r.value : { name: '?', status: 'error', error: r.reason?.message };
-        if (val.status === 'found') found++;
-        res.write(`data: ${JSON.stringify({ type: 'result', ...val, progress: completed, total, found })}\n\n`);
-      }
-    }
-    if (!closed) {
-      clearInterval(pingInterval);
-      res.write(`data: ${JSON.stringify({ type: 'done', total: completed, found })}\n\n`);
-      res.end();
-    }
-  }
-  go().catch(e => {
-    clearInterval(pingInterval);
-    if (!closed) { res.write(`data: ${JSON.stringify({ type: 'error', message: 'Erreur serveur' })}\n\n`); res.end() }
-  });
-});
-
-app.get('/api/stats', (req, res) => {
-  const cats = [...new Set(SITES.map(s => s.cat))].sort();
-  res.json({ totalSites: SITES.length, categories: cats });
-});
-
-// ═══ NMAP ═══
-const nmapLimiter = rateLimit({ windowMs: 60 * 1000, max: 3, message: { error: 'Maximum 3 scans nmap par minute.' }, validate: false });
-app.get('/api/nmap/:target', nmapLimiter, async (req, res) => {
-  const target = sanitize(req.params.target, 253);
-  if (!isValidIP(target)) return res.json({ success: false, error: 'Cible invalide' });
-  const args = ['-Pn', '--open', '-T3', '--host-timeout', '30s', '-oX', '-', target];
-  execFile('nmap', args, { timeout: 35000, maxBuffer: 1024 * 512 }, (err, stdout, stderr) => {
-    if (err && !stdout) return res.json({ success: false, error: 'Nmap indisponible ou cible injoignable' });
-    try {
-      const ports = [];
-      const portMatches = [...stdout.matchAll(/<port protocol="([^"]+)" portid="([^"]+)">.*?<state state="([^"]+)".*?<service name="([^"]*)"[^/]*(?:product="([^"]*)")?[^/]*(?:version="([^"]*)")?/gs)];
-      for (const m of portMatches) {
-        ports.push({ protocol: m[1], port: m[2], state: m[3], service: m[4] || '?', product: m[5] || '', version: m[6] || '' });
-      }
-      const osMatch = stdout.match(/<osmatch name="([^"]+)" accuracy="([^"]+)"/);
-      const os = osMatch ? { name: osMatch[1], accuracy: osMatch[2] } : null;
-      const latencyMatch = stdout.match(/rttvar=([0-9.]+)ms/);
-      const latency = latencyMatch ? latencyMatch[1] + 'ms' : null;
-      res.json({ success: true, data: { target, ports, os, latency, portCount: ports.length } });
-    } catch (e) {
-      res.json({ success: false, error: 'Erreur parsing résultats' });
-    }
-  });
-});
-
-// ═══ NIKTO ═══
-const niktoLimiter = rateLimit({ windowMs: 60 * 1000, max: 2, message: { error: 'Maximum 2 scans nikto par minute.' }, validate: false });
-app.get('/api/nikto/:target', niktoLimiter, async (req, res) => {
-  const target = sanitize(req.params.target, 253);
-  if (!isValidIP(target)) return res.json({ success: false, error: 'Cible invalide' });
-  const url = target.startsWith('http') ? target : 'http://' + target;
-  const args = ['-h', url, '-Cgidirs', 'all', '-nointeractive', '-timeout', '10', '-maxtime', '30'];
-  execFile('nikto', args, { timeout: 35000, maxBuffer: 1024 * 512 }, (err, stdout, stderr) => {
-    const output = (stdout || '') + (stderr || '');
-    if (!output && err) return res.json({ success: false, error: 'Nikto injoignable — ' + (err.message || '') });
-    try {
-      const vulns = [];
-      const lines = output.split('\n');
-      for (const line of lines) {
-        if (line.startsWith('+ ') && !line.includes('Target IP') && !line.includes('Target Port') && !line.includes('Start Time') && !line.includes('Server:')) {
-          vulns.push({ id: '?', uri: '', method: 'GET', msg: line.replace(/^\+ /, '').trim() });
-        }
-      }
-      res.json({ success: true, data: { target, vulnCount: vulns.length, vulns } });
-    } catch (e) {
-      res.json({ success: false, error: 'Erreur parsing résultats' });
-    }
-  });
-});
-
-// ═══ JOHN THE RIPPER ═══
-const johnLimiter = rateLimit({ windowMs: 60 * 1000, max: 3, message: { error: 'Maximum 3 tentatives par minute.' }, validate: false });
-app.post('/api/crack', johnLimiter, async (req, res) => {
-  const { hash, format } = req.body;
-  if (!hash || typeof hash !== 'string') return res.json({ success: false, error: 'Hash manquant' });
-  const cleanHash = hash.trim().replace(/[^a-fA-F0-9$./:\\*!@#%^&+=\[\]{}|<>?~`\-]/g, '').slice(0, 512);
-  if (!cleanHash) return res.json({ success: false, error: 'Hash invalide' });
-  const validFormats = ['raw-md5','raw-sha1','raw-sha256','raw-sha512','bcrypt','nt','raw-md4'];
-  const fmt = validFormats.includes(format) ? format : 'raw-md5';
-  const os2 = require('os');
-  const tmpFile = path.join(os2.tmpdir(), 'john_' + Date.now() + '.txt');
-  fs.writeFileSync(tmpFile, cleanHash + '\n');
-  const wordlist = '/usr/share/john/rockyou.txt';
-  execFile('john', ['--wordlist='+wordlist, '--format='+fmt, tmpFile], { timeout: 30000, maxBuffer: 1024 * 256 }, () => {
-    execFile('john', ['--show', '--format='+fmt, tmpFile], { timeout: 5000 }, (err2, stdout2) => {
-      try { fs.unlinkSync(tmpFile) } catch(e) {}
-      const match = stdout2 && stdout2.match(/^[^:]+:(.+?)(?:\s*:\d+)?$/m);
-      if (match && match[1]) return res.json({ success: true, found: true, password: match[1], hash: cleanHash, format: fmt });
-      res.json({ success: true, found: false, hash: cleanHash, format: fmt });
-    });
-  });
-});
-
-// ═══ WEBINFO ═══
-app.post('/api/webinfo', heavyLimiter, async (req, res) => {
-  const { url } = req.body;
-  if (!url || typeof url !== 'string') return res.json({ success: false, error: 'URL manquante' });
-  if (!url.startsWith('http://') && !url.startsWith('https://')) return res.json({ success: false, error: 'URL invalide' });
-  try {
-    const r = await httpGet(url, 8000);
-    const headers = r.headers || {};
-    const techs = [];
-    if (headers['x-powered-by']) techs.push(headers['x-powered-by']);
-    if (headers['server']) techs.push(headers['server']);
-    const body = r.body || '';
-    if (body.includes('wp-content')) techs.push('WordPress');
-    if (body.includes('Drupal')) techs.push('Drupal');
-    if (body.includes('Joomla')) techs.push('Joomla');
-    if (body.includes('shopify')) techs.push('Shopify');
-    if (body.includes('react')) techs.push('React');
-    if (body.includes('vue.js') || body.includes('vue.min.js')) techs.push('Vue.js');
-    if (body.includes('angular')) techs.push('Angular');
-    if (body.includes('jquery')) techs.push('jQuery');
-    if (body.includes('bootstrap')) techs.push('Bootstrap');
-    if (headers['cf-ray']) techs.push('Cloudflare');
-    if (headers['x-vercel-id']) techs.push('Vercel');
-    if (headers['x-amz-request-id']) techs.push('AWS');
-    const secHeaders = {};
-    ['strict-transport-security','content-security-policy','x-frame-options','x-content-type-options','x-xss-protection','referrer-policy'].forEach(h => {
-      if (headers[h]) secHeaders[h] = headers[h];
-    });
-    res.json({ success: true, data: { url, status: r.statusCode, server: headers['server'] || '—', redirectUrl: headers['location'] || null, headers: secHeaders, techs: [...new Set(techs)] } });
-  } catch (e) {
-    res.json({ success: false, error: 'Impossible de joindre le site : ' + e.message });
-  }
-});
-
-// ═══ SQLMAP ═══
-const sqlmapLimiter = rateLimit({ windowMs: 60 * 1000, max: 2, message: { error: 'Maximum 2 scans SQLMap par minute.' }, validate: false });
-app.post('/api/sqlmap', sqlmapLimiter, async (req, res) => {
-  const { url } = req.body;
-  if (!url || typeof url !== 'string') return res.json({ success: false, error: 'URL manquante' });
-  if (!url.startsWith('http://') && !url.startsWith('https://')) return res.json({ success: false, error: 'URL invalide' });
-  const cleanUrl = url.trim().slice(0, 500);
-  const args = ['/opt/sqlmap/sqlmap.py', '-u', cleanUrl, '--batch', '--level=1', '--risk=1', '--timeout=10', '--retries=1', '--output-dir=/tmp/sqlmap_out', '--disable-coloring'];
-  execFile('python3', args, { timeout: 60000, maxBuffer: 1024 * 512 }, (err, stdout, stderr) => {
-    const output = (stdout || '') + (stderr || '');
-    if (!output && err) return res.json({ success: false, error: 'SQLMap indisponible ou cible injoignable' });
-    let injectable = false, dbms = null;
-    const dbmsMatch = output.match(/back-end DBMS:\s*(.+)/i);
-    if (dbmsMatch) dbms = dbmsMatch[1].trim();
-    // Injectable seulement si SQLMap le confirme explicitement
-    if (output.includes('is vulnerable') || output.match(/Parameter:[\s\S]+?Type:/)) injectable = true;
-    const vulns = [];
-    const paramMatches = [...output.matchAll(/Parameter:\s*(.+?)\s*\((.+?)\)/g)];
-    paramMatches.forEach(m => vulns.push({ param: m[1], type: m[2] }));
-    // Types seulement si injection confirmée
-    const injTypes = [];
-    if (injectable) {
-      ['boolean-based blind','time-based blind','error-based','UNION query','stacked queries'].forEach(t => {
-        if (output.toLowerCase().includes(t)) injTypes.push(t);
-      });
-    }
-    res.json({ success: true, data: { url: cleanUrl, injectable, dbms, vulns, injTypes } });
-  });
-});
-
-// ═══ SCAN APPROFONDI PSEUDO ═══
-app.get('/api/deepscan/username/:username', heavyLimiter, async (req, res) => {
-  const username = sanitize(req.params.username, 64);
-  if (!isValidUsername(username)) return res.json({ success: false, error: 'Username invalide' });
-
-  res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive', 'X-Accel-Buffering': 'no' });
-  const send = (type, data) => res.write(`data: ${JSON.stringify({ type, ...data })}\n\n`);
-
-  send('start', { username });
-
-  const checks = [
-    // GitHub
-    async () => {
-      try {
-        const r = await httpGet(`https://api.github.com/users/${encodeURIComponent(username)}`, 6000);
-        if (r.statusCode === 200) {
-          const d = JSON.parse(r.body);
-          return { source: 'GitHub', found: true, url: d.html_url, data: {
-            nom: d.name, bio: d.bio, localisation: d.location, email: d.email,
-            repos: d.public_repos, followers: d.followers, créé: d.created_at?.split('T')[0],
-            blog: d.blog, entreprise: d.company, twitter: d.twitter_username
-          }};
-        }
-      } catch(e) {}
-      return { source: 'GitHub', found: false };
-    },
-    // Reddit
-    async () => {
-      try {
-        const r = await httpGet(`https://www.reddit.com/user/${encodeURIComponent(username)}/about.json`, 6000);
-        if (r.statusCode === 200) {
-          const d = JSON.parse(r.body).data;
-          return { source: 'Reddit', found: true, url: `https://reddit.com/u/${username}`, data: {
-            karma: d.link_karma + d.comment_karma, créé: new Date(d.created_utc*1000).toISOString().split('T')[0],
-            vérifié: d.verified, premium: d.is_gold
-          }};
-        }
-      } catch(e) {}
-      return { source: 'Reddit', found: false };
-    },
-    // Keybase
-    async () => {
-      try {
-        const r = await httpGet(`https://keybase.io/_/api/1.0/user/lookup.json?username=${encodeURIComponent(username)}`, 6000);
-        if (r.statusCode === 200) {
-          const d = JSON.parse(r.body);
-          if (d.them && d.them.length > 0) {
-            const u = d.them[0];
-            const proofs = u.proofs_summary?.all || [];
-            return { source: 'Keybase', found: true, url: `https://keybase.io/${username}`, data: {
-              nom: u.profile?.full_name, bio: u.profile?.bio, localisation: u.profile?.location,
-              preuves: proofs.map(p => `${p.proof_type}: ${p.nametag}`).join(', ')
-            }};
-          }
-        }
-      } catch(e) {}
-      return { source: 'Keybase', found: false };
-    },
-    // DEV.to
-    async () => {
-      try {
-        const r = await httpGet(`https://dev.to/api/users/by_username?url=${encodeURIComponent(username)}`, 6000);
-        if (r.statusCode === 200) {
-          const d = JSON.parse(r.body);
-          return { source: 'DEV.to', found: true, url: `https://dev.to/${username}`, data: {
-            nom: d.name, bio: d.summary, twitter: d.twitter_username, github: d.github_username,
-            articles: d.articles_count
-          }};
-        }
-      } catch(e) {}
-      return { source: 'DEV.to', found: false };
-    },
-    // HackerNews
-    async () => {
-      try {
-        const r = await httpGet(`https://hacker-news.firebaseio.com/v0/user/${encodeURIComponent(username)}.json`, 6000);
-        if (r.statusCode === 200 && r.body !== 'null') {
-          const d = JSON.parse(r.body);
-          return { source: 'HackerNews', found: true, url: `https://news.ycombinator.com/user?id=${username}`, data: {
-            karma: d.karma, créé: new Date(d.created*1000).toISOString().split('T')[0], about: d.about?.replace(/<[^>]+>/g,'').slice(0,150)
-          }};
-        }
-      } catch(e) {}
-      return { source: 'HackerNews', found: false };
-    },
-    // Gravatar
-    async () => {
-      try {
-        const crypto2 = require('crypto');
-        const md5 = crypto2.createHash('md5').update(username.toLowerCase()).digest('hex');
-        const r = await httpGet(`https://www.gravatar.com/${md5}.json`, 5000);
-        if (r.statusCode === 200) {
-          const d = JSON.parse(r.body).entry?.[0];
-          if (d) return { source: 'Gravatar', found: true, url: `https://gravatar.com/${username}`, data: {
-            nom: d.displayName, email: d.emails?.[0]?.value, bio: d.aboutMe, localisation: d.currentLocation
-          }};
-        }
-      } catch(e) {}
-      return { source: 'Gravatar', found: false };
-    },
-    // GitLab
-    async () => {
-      try {
-        const r = await httpGet(`https://gitlab.com/api/v4/users?username=${encodeURIComponent(username)}`, 6000);
-        if (r.statusCode === 200) {
-          const d = JSON.parse(r.body);
-          if (d.length > 0) return { source: 'GitLab', found: true, url: d[0].web_url, data: {
-            nom: d[0].name, bio: d[0].bio, localisation: d[0].location, repos: d[0].public_repos
-          }};
-        }
-      } catch(e) {}
-      return { source: 'GitLab', found: false };
-    },
-    // crt.sh domaines
-    async () => {
-      try {
-        const r = await httpGet(`https://crt.sh/?q=${encodeURIComponent(username)}&output=json`, 7000);
-        if (r.statusCode === 200) {
-          const d = JSON.parse(r.body);
-          const domains = [...new Set(d.map(c => c.common_name).filter(n => n && !n.startsWith('*')))].slice(0, 10);
-          if (domains.length) return { source: 'crt.sh (domaines)', found: true, url: `https://crt.sh/?q=${username}`, data: {
-            domaines: domains.join(', ')
-          }};
-        }
-      } catch(e) {}
-      return { source: 'crt.sh (domaines)', found: false };
-    },
-    // Pastebin mentions
-    async () => {
-      try {
-        const r = await searchDDG(`site:pastebin.com "${username}"`, 5);
-        if (r.length) return { source: 'Pastebin', found: true, url: `https://pastebin.com/search?q=${encodeURIComponent(username)}`, data: {
-          mentions: r.map(x => x.title).join(' | ')
-        }};
-      } catch(e) {}
-      return { source: 'Pastebin', found: false };
-    },
-    // Web mentions
-    async () => {
-      try {
-        const r = await searchDDG(`"${username}"`, 8);
-        if (r.length) return { source: 'Web (DuckDuckGo)', found: true, data: { résultats: r.length, liens: r.map(x=>x.url).join(' | ') }};
-      } catch(e) {}
-      return { source: 'Web', found: false };
-    },
-  ];
-
-  for (const check of checks) {
-    try {
-      const result = await check();
-      send('result', result);
-    } catch(e) {}
-  }
-
-  send('done', { total: checks.length });
-  res.end();
-});
-
-// ═══ SCAN APPROFONDI EMAIL ═══
-app.get('/api/deepscan/email/:email', heavyLimiter, async (req, res) => {
-  const email = sanitize(req.params.email, 254).toLowerCase();
-  if (!isValidEmail(email)) return res.json({ success: false, error: 'Email invalide' });
-  const [user, domain] = email.split('@');
-  const md5 = crypto.createHash('md5').update(email).digest('hex');
-
-  res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive', 'X-Accel-Buffering': 'no' });
-  const send = (type, data) => res.write(`data: ${JSON.stringify({ type, ...data })}\n\n`);
-  send('start', { email });
-
-  // Plateformes à tester avec l'email (via reset password ou API)
-  const platforms = [
-    { name: 'Gravatar', check: async () => {
-      const r = await httpGet(`https://www.gravatar.com/avatar/${md5}?d=404`, 4000);
-      if (r.statusCode === 200) {
-        let profile = null;
-        try { const gp = await httpGet(`https://www.gravatar.com/${md5}.json`, 4000); if (gp.statusCode===200) profile=JSON.parse(gp.body).entry?.[0]; } catch(e){}
-        return { found: true, url: `https://gravatar.com/${user}`, data: { avatar: `https://www.gravatar.com/avatar/${md5}?s=100`, nom: profile?.displayName, bio: profile?.aboutMe }};
-      }
-      return { found: false };
-    }},
-    { name: 'GitHub (email)', check: async () => {
-      const r = await httpGet(`https://api.github.com/search/users?q=${encodeURIComponent(email)}+in:email`, 6000);
-      if (r.statusCode === 200) {
-        const d = JSON.parse(r.body);
-        if (d.total_count > 0) return { found: true, url: d.items[0].html_url, data: { login: d.items[0].login, total: d.total_count }};
-      }
-      return { found: false };
-    }},
-    { name: 'Fuites (LeakCheck)', check: async () => {
-      const r = await httpGet(`https://leakcheck.io/api/public?check=${encodeURIComponent(email)}`, 6000);
-      if (r.statusCode === 200) {
-        const d = JSON.parse(r.body);
-        if (d.success && d.sources?.length) return { found: true, data: { fuites: d.sources.map(s=>s.name).join(', '), nombre: d.sources.length }};
-      }
-      return { found: false };
-    }},
-    { name: 'crt.sh (domaine)', check: async () => {
-      const r = await httpGet(`https://crt.sh/?q=${encodeURIComponent(domain)}&output=json`, 7000);
-      if (r.statusCode === 200) {
-        const d = JSON.parse(r.body);
-        const subdomains = [...new Set(d.map(c=>c.common_name).filter(n=>n&&!n.startsWith('*')))].slice(0,8);
-        if (subdomains.length) return { found: true, url: `https://crt.sh/?q=${domain}`, data: { 'sous-domaines': subdomains.join(', ') }};
-      }
-      return { found: false };
-    }},
-    { name: 'Web (mentions)', check: async () => {
-      const r = await searchDDG(`"${email}"`, 8);
-      if (r.length) return { found: true, data: { résultats: r.length, liens: r.slice(0,5).map(x=>x.url).join(' | ') }};
-      return { found: false };
-    }},
-    { name: 'Pastebin', check: async () => {
-      const r = await searchDDG(`site:pastebin.com "${email}"`, 5);
-      if (r.length) return { found: true, url: r[0].url, data: { mentions: r.length, exemple: r[0].title }};
-      return { found: false };
-    }},
-    { name: 'GitHub commits', check: async () => {
-      const r = await httpGet(`https://api.github.com/search/commits?q=author-email:${encodeURIComponent(email)}&per_page=3`, 6000);
-      if (r.statusCode === 200) {
-        const d = JSON.parse(r.body);
-        if (d.total_count > 0) return { found: true, data: { commits: d.total_count, exemple: d.items[0]?.html_url }};
-      }
-      return { found: false };
-    }},
-    { name: 'WHOIS (domaine)', check: async () => {
-      const r = await httpGet(`https://www.whois.com/whois/${encodeURIComponent(domain)}`, 6000);
-      if (r.statusCode === 200 && r.body.includes(email)) return { found: true, url: `https://www.whois.com/whois/${domain}`, data: { info: 'Email trouvé dans les données WHOIS du domaine' }};
-      return { found: false };
-    }},
-  ];
-
-  for (const p of platforms) {
-    try {
-      const result = await p.check();
-      send('result', { source: p.name, ...result });
-    } catch(e) {
-      send('result', { source: p.name, found: false });
-    }
-  }
-
-  send('done', { total: platforms.length });
-  res.end();
-});
-
-// ═══ REVERSE IMAGE SEARCH ═══
-app.post('/api/reverse-image', heavyLimiter, async (req, res) => {
-  const { image } = req.body;
-  if (!image || typeof image !== 'string') return res.json({ success: false, error: 'Image manquante' });
-  if (image.length > 5 * 1024 * 1024) return res.json({ success: false, error: 'Image trop lourde' });
-
-  const results = [];
-
-  // FaceCheck.id — API publique gratuite
-  try {
-    const boundary = '----FormBoundary' + Date.now();
-    const imgBuffer = Buffer.from(image, 'base64');
-    const body = Buffer.concat([
-      Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="images"; filename="photo.jpg"\r\nContent-Type: image/jpeg\r\n\r\n`),
-      imgBuffer,
-      Buffer.from(`\r\n--${boundary}--\r\n`)
-    ]);
-    const fcRes = await new Promise((resolve, reject) => {
-      const req2 = https.request({
-        hostname: 'facecheck.id', port: 443, path: '/api/upload_pic',
-        method: 'POST',
-        headers: { 'Content-Type': `multipart/form-data; boundary=${boundary}`, 'Content-Length': body.length, 'Accept': 'application/json' },
-        timeout: 15000
-      }, r => { let d = ''; r.on('data', c => d += c); r.on('end', () => resolve(d)); });
-      req2.on('error', reject); req2.on('timeout', () => { req2.destroy(); reject(new Error('timeout')); });
-      req2.write(body); req2.end();
-    });
-    const fcData = JSON.parse(fcRes);
-    if (fcData && fcData.id) {
-      // Lancer la recherche
-      const searchRes = await new Promise((resolve, reject) => {
-        const payload = JSON.stringify({ id_search: fcData.id, with_progress: false });
-        const req3 = https.request({
-          hostname: 'facecheck.id', port: 443, path: '/api/search',
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) },
-          timeout: 20000
-        }, r => { let d = ''; r.on('data', c => d += c); r.on('end', () => resolve(d)); });
-        req3.on('error', reject); req3.on('timeout', () => { req3.destroy(); reject(new Error('timeout')); });
-        req3.write(payload); req3.end();
-      });
-      const srData = JSON.parse(searchRes);
-      if (srData.output?.items?.length) {
-        results.push({
-          source: 'FaceCheck.id',
-          found: true,
-          items: srData.output.items.slice(0, 10).map(item => ({
-            url: item.url, score: item.score,
-            thumb: item.base64 ? `data:image/jpeg;base64,${item.base64}` : null
-          }))
-        });
-      }
-    }
-  } catch(e) { results.push({ source: 'FaceCheck.id', found: false, error: e.message }); }
-
-  res.json({ success: true, data: results });
-});
-
-// ═══ CVE / EXPLOITS ═══
-app.post('/api/exploits', heavyLimiter, async (req, res) => {
-  const { services } = req.body;
-  if (!services || !Array.isArray(services)) return res.json({ success: false, error: 'Services manquants' });
-  const results = [];
-  for (const svc of services.slice(0, 5)) {
-    const query = `${svc.service} ${svc.product || ''} ${svc.version || ''}`.trim();
-    if (!query || query === '?') continue;
-    try {
-      const r = await httpGet(`https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=${encodeURIComponent(query)}&resultsPerPage=5`, 8000);
-      if (r.statusCode === 200) {
-        const data = JSON.parse(r.body);
-        const cves = (data.vulnerabilities || []).map(v => ({
-          id: v.cve.id,
-          description: (v.cve.descriptions?.find(d => d.lang === 'en')?.value || '').slice(0, 200),
-          severity: v.cve.metrics?.cvssMetricV31?.[0]?.cvssData?.baseSeverity || v.cve.metrics?.cvssMetricV2?.[0]?.baseSeverity || '?',
-          score: v.cve.metrics?.cvssMetricV31?.[0]?.cvssData?.baseScore || v.cve.metrics?.cvssMetricV2?.[0]?.cvssData?.baseScore || null,
-          metasploitUrl: `https://www.rapid7.com/db/search/?q=${encodeURIComponent(svc.service + ' ' + (svc.product || ''))}`,
-          exploitdbUrl: `https://www.exploit-db.com/search?q=${encodeURIComponent(query)}`,
-        }));
-        if (cves.length) results.push({ service: svc.service, product: svc.product, version: svc.version, port: svc.port, cves });
-      }
-    } catch(e) {}
-  }
-  res.json({ success: true, data: results });
-});
-
-// ═══ EXIFTOOL — LECTURE ═══
-const multer = require('multer');
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024, files: 20 } });
-
-app.post('/api/exif/read', upload.array('photos', 20), async (req, res) => {
-  if (!req.files || !req.files.length) return res.json({ success: false, error: 'Aucun fichier reçu' });
-  const os2 = require('os');
-  const results = [];
-  const tmpFiles = [];
-  try {
-    for (const file of req.files) {
-      const tmpPath = path.join(os2.tmpdir(), 'exif_' + Date.now() + '_' + file.originalname.replace(/[^a-zA-Z0-9.]/g, '_'));
-      fs.writeFileSync(tmpPath, file.buffer);
-      tmpFiles.push(tmpPath);
-    }
-    await new Promise((resolve, reject) => {
-      execFile('exiftool', ['-json', '-n', ...tmpFiles], { timeout: 30000, maxBuffer: 10 * 1024 * 1024 }, (err, stdout) => {
-        try {
-          const data = JSON.parse(stdout || '[]');
-          data.forEach((d, i) => results.push({ filename: req.files[i]?.originalname || 'photo', data: d }));
-          resolve();
-        } catch(e) { reject(e); }
-      });
-    });
-  } catch(e) {
-    return res.json({ success: false, error: 'Erreur ExifTool : ' + e.message });
-  } finally {
-    tmpFiles.forEach(f => { try { fs.unlinkSync(f) } catch(e) {} });
-  }
-  // Calculer récurrences
-  const freq = {};
-  results.forEach(r => {
-    Object.entries(r.data).forEach(([k, v]) => {
-      if (k === 'SourceFile') return;
-      const val = String(v);
-      if (!freq[k]) freq[k] = {};
-      freq[k][val] = (freq[k][val] || 0) + 1;
-    });
-  });
-  const recurring = Object.entries(freq)
-    .filter(([k, vals]) => Object.values(vals).some(c => c > 1))
-    .map(([k, vals]) => ({ key: k, values: vals }))
-    .sort((a, b) => Math.max(...Object.values(b.values)) - Math.max(...Object.values(a.values)));
-  res.json({ success: true, data: { files: results, recurring, total: results.length } });
-});
-
-// ═══ EXIFTOOL — ÉDITION ═══
-app.post('/api/exif/edit', upload.single('photo'), async (req, res) => {
-  if (!req.file) return res.json({ success: false, error: 'Aucun fichier reçu' });
-  const stripAll = req.body.stripAll === '1';
-  const os2 = require('os');
-  const ext = path.extname(req.file.originalname);
-  const tmpIn = path.join(os2.tmpdir(), 'exif_in_' + Date.now() + '_' + req.file.originalname.replace(/[^a-zA-Z0-9.]/g, '_'));
-  const tmpOut = tmpIn + '_out' + ext;
-  try {
-    fs.writeFileSync(tmpIn, req.file.buffer);
-    let tagArgs;
-    if (stripAll) {
-      // Supprimer toutes les métadonnées
-      tagArgs = ['-all=', '-tagsfromfile', '@', '-ICC_Profile', '-o', tmpOut, tmpIn];
+// Remplacer les listeners de filtres après leur création pour permettre la déselection
+function setupFilterListeners(){
+  document.querySelectorAll('.fl button').forEach(b=>{
+    // Supprimer les anciens listeners en clonant
+    const newB=b.cloneNode(true);
+    b.parentNode.replaceChild(newB,b);
+    if(newB.textContent==='ALL'){
+      newB.addEventListener('click',()=>{aC='all';uf()});
     } else {
-      const { tags } = req.body;
-      if (!tags) return res.json({ success: false, error: 'Tags manquants' });
-      let parsedTags;
-      try { parsedTags = JSON.parse(tags); } catch(e) { return res.json({ success: false, error: 'Tags invalides' }); }
-      // Valeur vide = supprimer le tag, valeur non vide = modifier
-      tagArgs = Object.entries(parsedTags).map(([k, v]) => v === '' ? `-${k}=` : `-${k}=${v}`);
-      tagArgs.push('-o', tmpOut, tmpIn);
-    }
-    await new Promise((resolve, reject) => {
-      execFile('exiftool', tagArgs, { timeout: 15000 }, (err, stdout, stderr) => {
-        if (err && !fs.existsSync(tmpOut)) reject(new Error(stderr || err.message));
-        else resolve();
+      newB.addEventListener('click',()=>{
+        if(aC===newB.textContent){
+          // Déselectionner = revenir à ALL
+          aC='all';
+        } else {
+          aC=newB.textContent;
+        }
+        uf();
       });
-    });
-    if (!fs.existsSync(tmpOut)) return res.json({ success: false, error: 'ExifTool n\'a pas produit de fichier de sortie' });
-    const editedBuffer = fs.readFileSync(tmpOut);
-    res.setHeader('Content-Disposition', `attachment; filename="clean_${req.file.originalname}"`);
-    res.setHeader('Content-Type', req.file.mimetype || 'application/octet-stream');
-    res.send(editedBuffer);
-  } catch(e) {
-    res.json({ success: false, error: 'Erreur édition : ' + e.message });
-  } finally {
-    try { fs.unlinkSync(tmpIn) } catch(e) {}
-    try { fs.unlinkSync(tmpOut) } catch(e) {}
+    }
+  });
+}
+document.getElementById('inp').addEventListener('keydown',e=>{if(e.key==='Enter')scan()});
+document.getElementById('goB').addEventListener('click',scan);
+
+// Wake Lock — empêche l'écran de s'éteindre pendant un scan
+let wakeLock=null;
+async function requestWakeLock(){
+  try{if('wakeLock' in navigator){wakeLock=await navigator.wakeLock.request('screen');}}catch(e){}
+}
+async function releaseWakeLock(){
+  try{if(wakeLock){await wakeLock.release();wakeLock=null;}}catch(e){}
+}
+// Réacquérir le wake lock si la page redevient visible
+document.addEventListener('visibilitychange',async()=>{
+  if(document.visibilityState==='visible'&&sc)await requestWakeLock();
+});
+document.getElementById('exB').addEventListener('click',xCSV);
+document.querySelectorAll('.vt button').forEach(b=>b.addEventListener('click',()=>sv(b.dataset.v)));
+function scan(){
+  const u=document.getElementById('inp').value.trim();if(!u||u.length<2||sc)return;
+  sc=true;aR=[];
+  requestWakeLock();
+  document.getElementById('goB').disabled=true;document.getElementById('goB').textContent='...';
+  document.getElementById('emp').style.display='none';document.getElementById('pg').classList.add('on');
+  // Reset sm et deepBtn
+  const smEl=document.getElementById('sm');
+  smEl.classList.remove('on');
+  const oldBtn=smEl.querySelector('.deepBtn');if(oldBtn)oldBtn.remove();
+  document.getElementById('deepScanU').style.display='none';
+  document.getElementById('rh').classList.add('on');
+  document.getElementById('gr').innerHTML='';document.getElementById('lg').innerHTML='';
+  ['sScn','sFnd','sErr'].forEach(x=>document.getElementById(x).textContent='0');
+  document.getElementById('pF').style.width='0%';sv('found');
+  if(es)es.close();
+  es=new EventSource('/api/scan/'+encodeURIComponent(u)+'?cat='+aC);
+  let tot=0,dn=0,fd=0,er=0;
+  es.onmessage=function(ev){
+    const d=JSON.parse(ev.data);
+    if(d.type==='init'){tot=d.total;return}
+    if(d.type==='result'){
+      aR.push(d);dn=d.progress;fd=d.found;if(d.status==='error')er++;
+      document.getElementById('pF').style.width=Math.round(dn/tot*100)+'%';
+      document.getElementById('pP').textContent=Math.round(dn/tot*100)+'%';
+      document.getElementById('pT').textContent=dn+'/'+tot;
+      document.getElementById('pS').textContent=d.name;
+      document.getElementById('sScn').textContent=dn;document.getElementById('sFnd').textContent=fd;document.getElementById('sErr').textContent=er;
+      document.getElementById('rC').textContent=fd+'/'+aR.length;
+      const l=document.getElementById('lg'),ln=document.createElement('div');
+      ln.className='ln '+(d.status==='found'?'found':d.status==='error'?'err':'');
+      ln.textContent=(d.status==='found'?'[+]':d.status==='error'?'[!]':'[-]')+' '+d.name+' — '+d.url;
+      l.appendChild(ln);l.scrollTop=l.scrollHeight;
+      if(cV==='found'&&d.status==='found')document.getElementById('gr').appendChild(mc(d));
+      else if(cV==='all')document.getElementById('gr').appendChild(mc(d));return;
+    }
+    if(d.type==='done'){sc=false;releaseWakeLock();document.getElementById('goB').disabled=false;document.getElementById('goB').textContent='SCAN';document.getElementById('pg').classList.remove('on');document.getElementById('sm').classList.add('on');document.getElementById('smB').textContent=d.found;document.getElementById('smD').textContent='sur '+d.total+' sites';
+      const sm=document.getElementById('sm');
+      if(!sm.querySelector('.deepBtn')){const dsBtn=document.createElement('button');dsBtn.className='deepBtn';dsBtn.textContent='🕷 SCAN APPROFONDI';dsBtn.style.cssText='margin-top:10px;padding:8px 20px;background:transparent;color:var(--cyan);border:1px solid var(--cyan);font-family:\'Orbitron\',sans-serif;font-size:.5rem;letter-spacing:.1em;cursor:pointer;text-transform:uppercase';dsBtn.addEventListener('click',()=>deepScanUsername(document.getElementById('inp').value.trim()));sm.appendChild(dsBtn);}
+      es.close()}
+  };
+  es.onerror=function(){es.close();sc=false;releaseWakeLock();document.getElementById('goB').disabled=false;document.getElementById('goB').textContent='SCAN';document.getElementById('pg').classList.remove('on')};
+}
+function mc(r){const c=document.createElement('div');c.className='cd '+r.status;c.innerHTML='<div class="nm"><span class="dt2"></span>'+E(r.name)+'</div><div class="ur">'+E(r.url)+'</div><div class="bd">'+E(r.cat)+'</div>';if(r.status==='found')c.addEventListener('click',()=>window.open(r.url,'_blank'));return c}
+function sv(v){cV=v;document.querySelectorAll('.vt button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));document.getElementById('gr').style.display=v==='log'?'none':'grid';document.getElementById('lg').classList.toggle('on',v==='log');if(v!=='log'){const g=document.getElementById('gr');g.innerHTML='';(v==='found'?aR.filter(r=>r.status==='found'):aR).forEach(r=>g.appendChild(mc(r)))}}
+function xCSV(){const f=aR.filter(r=>r.status==='found');if(!f.length)return;let c='Site,URL,Cat\n';f.forEach(r=>c+='"'+r.name+'","'+r.url+'","'+r.cat+'"\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([c],{type:'text/csv'}));a.download='thisyou_'+Date.now()+'.csv';a.click()}
+
+// VISAGE
+let iB=null,sS='vkok_avatar';
+function sdb(b){
+  if(sS===b.dataset.s){
+    // Déselectionner
+    sS=null;
+    document.querySelectorAll('.db button').forEach(x=>x.classList.remove('on'));
+    return;
   }
+  document.querySelectorAll('.db button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');
+  sS=b.dataset.s;
+}
+document.querySelectorAll('.db button').forEach(b=>b.addEventListener('click',()=>sdb(b)));
+document.getElementById('fG').addEventListener('click',fSrch);
+
+// Boutons recherche étendue
+document.getElementById('btnFaceCheck').addEventListener('click', async () => {
+  if(!iB){alert('Upload d\'abord une photo');return;}
+  const btn=document.getElementById('btnFaceCheck');
+  const el=document.getElementById('faceCheckResults');
+  btn.textContent='...';btn.disabled=true;
+  el.style.display='block';
+  el.innerHTML='<div style="text-align:center;padding:12px;animation:pu 1.5s infinite;color:var(--cyan)">FaceCheck.id analyse le visage...</div>';
+  try{
+    const r=await fetch('/api/reverse-image',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:iB})});
+    const d=await r.json();
+    if(d.success&&d.data?.length){
+      const fc=d.data.find(x=>x.source==='FaceCheck.id');
+      if(fc&&fc.found&&fc.items?.length){
+        let h='<div style="font-size:.48rem;color:var(--cyan);margin-bottom:8px">'+fc.items.length+' résultats FaceCheck.id</div>';
+        h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:6px">';
+        fc.items.forEach(item=>{
+          h+='<div style="border:1px solid var(--mx3);padding:6px;text-align:center;cursor:pointer" onclick="window.open(\''+E(item.url)+'\',\'_blank\')">';
+          if(item.thumb)h+='<img src="'+item.thumb+'" style="width:80px;height:80px;object-fit:cover;border:1px solid var(--mx3);display:block;margin:0 auto 4px">';
+          h+='<div style="font-size:.42rem;color:var(--mx2);word-break:break-all">'+E(item.url.replace(/https?:\/\//,'').slice(0,30))+'</div>';
+          if(item.score)h+='<div style="font-size:.4rem;color:var(--cyan)">'+Math.round(item.score*100)+'%</div>';
+          h+='</div>';
+        });
+        h+='</div>';
+        el.innerHTML=h;
+      }else{el.innerHTML='<div style="font-size:.5rem;color:var(--amb);padding:8px">Aucun résultat FaceCheck.id — essaie Yandex ou PimEyes</div>';}
+    }else{el.innerHTML='<div style="font-size:.5rem;color:var(--amb);padding:8px">'+( d.error||'Aucun résultat')+'</div>';}
+  }catch(e){el.innerHTML='<div style="font-size:.5rem;color:var(--red);padding:8px">'+e.message+'</div>';}
+  btn.textContent='🔍 FaceCheck.id';btn.disabled=false;
 });
 
-app.use((req, res) => { res.status(404).json({ error: 'Not found' }) });
-app.use((err, req, res, next) => { console.error('Server error:', err.message); res.status(500).json({ error: 'Erreur interne' }); });
+document.getElementById('btnYandex').addEventListener('click', async () => {
+  if(!iB){alert('Upload d\'abord une photo');return;}
+  // Créer un blob temporaire et ouvrir Yandex
+  const blob=await (await fetch('data:image/jpeg;base64,'+iB)).blob();
+  const formData=new FormData();
+  formData.append('upfile',blob,'photo.jpg');
+  // Ouvrir Yandex dans un nouvel onglet avec upload
+  const tmpUrl=URL.createObjectURL(blob);
+  // Yandex ne supporte pas l'upload direct via URL, on ouvre leur page
+  window.open('https://yandex.com/images/search?rpt=imageview','_blank');
+  // Instruction à l'utilisateur
+  const el=document.getElementById('faceCheckResults');
+  el.style.display='block';
+  el.innerHTML='<div style="background:rgba(255,215,64,.05);border:1px solid var(--gold);padding:10px;font-size:.5rem;color:var(--gold)">'
+    +'<strong>Yandex Images ouvert !</strong><br><br>'
+    +'Sur Yandex, clique sur l\'icône appareil photo 📷 dans la barre de recherche, puis :<br>'
+    +'• Sélectionne "Télécharger une image"<br>'
+    +'• Télécharge la photo uploadée ici<br><br>'
+    +'<button id="copyImgBtn" style="background:var(--gold);color:#000;border:none;padding:5px 12px;font-family:\'Share Tech Mono\',monospace;font-size:.5rem;cursor:pointer">TÉLÉCHARGER LA PHOTO</button>'
+    +'</div>';
+  document.getElementById('copyImgBtn').addEventListener('click',()=>{
+    const a=document.createElement('a');a.href='data:image/jpeg;base64,'+iB;a.download='face_search.jpg';a.click();
+  });
+});
 
-app.listen(PORT, '0.0.0.0', () => console.log(`THIS YOU? OSINT [SECURED] — port ${PORT} — ${SITES.length} sites`));
+document.getElementById('btnGoogle').addEventListener('click', () => {
+  if(!iB){alert('Upload d\'abord une photo');return;}
+  window.open('https://images.google.com/','_blank');
+  const el=document.getElementById('faceCheckResults');
+  el.style.display='block';
+  el.innerHTML='<div style="background:rgba(0,255,65,.05);border:1px solid var(--mx3);padding:10px;font-size:.5rem;color:var(--mx2)">'
+    +'<strong style="color:var(--mx)">Google Images ouvert !</strong><br><br>'
+    +'Sur Google Images, clique sur l\'icône appareil photo 📷, puis "Importer une image".<br><br>'
+    +'<button id="dlForGoogle" style="background:var(--mx);color:#000;border:none;padding:5px 12px;font-family:\'Share Tech Mono\',monospace;font-size:.5rem;cursor:pointer">TÉLÉCHARGER LA PHOTO</button>'
+    +'</div>';
+  document.getElementById('dlForGoogle').addEventListener('click',()=>{
+    const a=document.createElement('a');a.href='data:image/jpeg;base64,'+iB;a.download='face_search.jpg';a.click();
+  });
+});
+
+document.getElementById('btnPimEyes').addEventListener('click', () => {
+  if(!iB){alert('Upload d\'abord une photo');return;}
+  window.open('https://pimeyes.com/en','_blank');
+  const el=document.getElementById('faceCheckResults');
+  el.style.display='block';
+  el.innerHTML='<div style="background:rgba(255,23,68,.05);border:1px solid var(--red);padding:10px;font-size:.5rem;color:var(--mx2)">'
+    +'<strong style="color:var(--red)">PimEyes ouvert — le plus puissant pour Instagram et X !</strong><br><br>'
+    +'Sur PimEyes, clique sur la zone d\'upload et sélectionne la photo.<br>'
+    +'<span style="color:var(--mx3)">Gratuit : 5 recherches/jour • Payant : résultats complets avec liens</span><br><br>'
+    +'<button id="dlForPim" style="background:var(--red);color:#fff;border:none;padding:5px 12px;font-family:\'Share Tech Mono\',monospace;font-size:.5rem;cursor:pointer">TÉLÉCHARGER LA PHOTO</button>'
+    +'</div>';
+  document.getElementById('dlForPim').addEventListener('click',()=>{
+    const a=document.createElement('a');a.href='data:image/jpeg;base64,'+iB;a.download='face_search.jpg';a.click();
+  });
+});
+const dz=document.getElementById('dz');
+['dragenter','dragover'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.add('drag')}));
+['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.remove('drag')}));
+dz.addEventListener('drop',e=>{if(e.dataTransfer.files.length)hf(e.dataTransfer.files[0])});
+document.getElementById('fI').addEventListener('change',e=>{if(e.target.files.length)hf(e.target.files[0])});
+async function hf(file){if(!file.type.startsWith('image/'))return;const reader=new FileReader();reader.onload=async e=>{const du=e.target.result;iB=du.split(',')[1];const img=new Image();img.onload=async()=>{const cv=document.getElementById('fC'),ctx=cv.getContext('2d');let w=img.width,h=img.height;if(w>400){h*=400/w;w=400}if(h>400){w*=400/h;h=400}cv.width=w;cv.height=h;ctx.drawImage(img,0,0,w,h);document.getElementById('fp').style.display='block';document.getElementById('dS').style.display='block';document.getElementById('sfB').style.display='block';document.getElementById('extraSearch').style.display='block';document.getElementById('fE').classList.add('on');await dl(cv)};img.src=du};reader.readAsDataURL(file)}
+async function dl(cv){const n=document.getElementById('fN');n.innerHTML='<div class="at">Analyse IA...</div>';n.classList.add('on');try{if(typeof faceapi==='undefined')return;if(!faceapi.nets.tinyFaceDetector.isLoaded){const M='https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights/';await faceapi.nets.tinyFaceDetector.loadFromUri(M);await faceapi.nets.ageGenderNet.loadFromUri(M);await faceapi.nets.faceExpressionNet.loadFromUri(M)}const ds=await faceapi.detectAllFaces(cv,new faceapi.TinyFaceDetectorOptions({inputSize:416,scoreThreshold:.4})).withAgeAndGender().withFaceExpressions();const ctx=cv.getContext('2d');if(!ds.length){n.innerHTML='<div class="at" style="color:var(--amb)">AUCUN VISAGE DÉTECTÉ</div>';return}ds.forEach(d=>{const b=d.detection.box;ctx.strokeStyle='#00ff41';ctx.lineWidth=2;ctx.strokeRect(b.x,b.y,b.width,b.height)});let h='<div class="at" style="border-color:var(--mx);color:var(--mx)">'+ds.length+' VISAGE(S)</div>';ds.forEach(d=>{h+='<div class="at">~'+Math.round(d.age)+' ans</div><div class="at">'+(d.gender==='male'?'Homme':'Femme')+' '+Math.round(d.genderProbability*100)+'%</div>'});n.innerHTML=h}catch(e){n.innerHTML='<div class="at" style="color:var(--amb)">'+e.message+'</div>'}}
+async function fSrch(){if(!iB)return;const btn=document.getElementById('fG');btn.disabled=true;btn.textContent='...';const st=document.getElementById('fSt');st.innerHTML='<div style="animation:pu 1.5s infinite">Recherche en cours...</div>';st.classList.add('on');document.getElementById('fR').classList.remove('on');try{const r=await fetch('/api/face-search',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:iB,source:sS,results:'50'})});const d=await r.json();if(d.success&&d.profiles?.length){st.innerHTML='<div style="color:var(--mx)">'+d.profiles.length+' profils trouvés</div>';document.getElementById('fR').classList.add('on');document.getElementById('fRT').textContent=d.profiles.length+' PROFILS';const g=document.getElementById('fGr');g.innerHTML='';d.profiles.forEach(p=>{const c=document.createElement('div');c.className='fc';c.innerHTML='<img src="'+(p.face||'')+'" onerror="this.style.display=\'none\'"><div class="fn">'+E((p.first_name||'')+' '+(p.last_name||''))+'</div><div class="fm">'+(p.city||'')+'</div><div class="fs">'+p.score+'%</div>';c.addEventListener('click',()=>window.open(p.profile,'_blank'));g.appendChild(c)})}else st.innerHTML='<div style="color:var(--amb)">'+(d.message||'Aucun résultat')+'</div>'}catch(e){st.innerHTML='<div style="color:var(--amb)">'+e.message+'</div>'}btn.disabled=false;btn.textContent='RECHERCHER CE VISAGE'}
+
+// TÉLÉPHONE
+document.getElementById('phI').addEventListener('keydown',e=>{if(e.key==='Enter')phL()});
+document.getElementById('phB').addEventListener('click',phL);
+async function phL(){
+  const n=document.getElementById('phI').value.trim();if(!n)return;
+  document.getElementById('phE').style.display='none';
+  const el=document.getElementById('phR');
+  el.innerHTML='<div style="text-align:center;padding:20px;animation:pu 1.5s infinite;color:var(--mx2)">Analyse en cours...</div>';el.classList.add('on');
+  try{
+    const r=await fetch('/api/phone/'+encodeURIComponent(n));const d=await r.json();
+    if(!d.success){el.innerHTML='<div class="rs"><h4>ERREUR</h4><p style="color:var(--red);font-size:.55rem">'+E(d.error)+'</p></div>';return}
+    const p=d.data;let h='<div class="rs"><h4>ANALYSE DU NUMÉRO</h4>';
+    h+=rw('Format international',p.international);h+=rw('Format national',p.national);h+=rw('Pays',p.country);h+=rw('Type de ligne',p.type);h+=rw('Valide',p.valid?'✓ OUI':'✗ NON',p.valid?'ok':'bad');h+='</div>';
+    if(p.searches.length){h+='<div class="rs"><h4>MENTIONS PUBLIQUES SUR LE WEB ('+p.searches.length+')</h4>';p.searches.forEach(s=>{h+='<div class="sr" onclick="window.open(\''+E(s.url)+'\',\'_blank\')"><div class="st2">'+E(s.title)+'</div><div class="su">'+E(s.url)+'</div></div>'});h+='</div>'}
+    else h+='<div class="rs"><h4>MENTIONS WEB</h4><p style="font-size:.55rem;color:var(--mx2)">Aucune mention publique trouvée pour ce numéro</p></div>';
+    h+='<div class="rs"><h4>OUTILS SPÉCIALISÉS</h4><div style="display:flex;flex-wrap:wrap;gap:4px">';
+    [['Truecaller','https://www.truecaller.com/search/'+encodeURIComponent(p.international.replace(/\s/g,'')),'Truecaller — Identifie le propriétaire du numéro grâce aux carnets d\'adresses partagés par des millions d\'utilisateurs.'],
+     ['Sync.me','https://sync.me/search/?number='+encodeURIComponent(p.e164),'Sync.me — Recherche le nom et le profil associés à ce numéro dans les contacts partagés.'],
+     ['NumLookup','https://www.numlookup.com/','NumLookup — Recherche gratuite d\'informations sur un numéro de téléphone (nom, opérateur, localisation).'],
+     ['SpyDialer','https://www.spydialer.com/','SpyDialer — Recherche le nom et l\'adresse associés à un numéro, surtout efficace pour les numéros américains.'],
+    ].forEach(([name,url,tip])=>{h+='<a href="'+E(url)+'" target="_blank" class="tool-link" data-tip="'+E(tip)+'">'+name+'</a>'});
+    h+='</div></div>';el.innerHTML=h;
+  }catch(e){el.innerHTML='<div class="rs"><p style="color:var(--red);font-size:.55rem">'+e.message+'</p></div>'}
+}
+
+// EMAIL
+document.getElementById('emI').addEventListener('keydown',e=>{if(e.key==='Enter')emL()});
+document.getElementById('emB').addEventListener('click',emL);
+async function emL(){
+  const em=document.getElementById('emI').value.trim();if(!em)return;
+  document.getElementById('emE').style.display='none';
+  const el=document.getElementById('emR');
+  el.innerHTML='<div style="text-align:center;padding:20px;animation:pu 1.5s infinite;color:var(--mx2)">Analyse en cours...</div>';el.classList.add('on');
+  try{
+    const r=await fetch('/api/email/'+encodeURIComponent(em));const d=await r.json();
+    if(!d.success){el.innerHTML='<div class="rs"><p style="color:var(--red);font-size:.55rem">'+E(d.error)+'</p></div>';return}
+    const e=d.data;let h='';
+    if(e.hasGravatar)h+='<img src="'+E(e.gravatarUrl)+'" class="gi">';
+    h+='<div class="rs"><h4>ANALYSE EMAIL</h4>';
+    h+=rw('Email',e.email);h+=rw('Nom d\'utilisateur',e.user);h+=rw('Domaine',e.domain);
+    h+=rw('Avatar public (Gravatar)',e.hasGravatar?'✓ OUI — photo de profil trouvée':'✗ Aucun avatar');
+    if(e.gravatarProfile){const gp=e.gravatarProfile;if(gp.displayName)h+=rw('Nom affiché',gp.displayName);if(gp.aboutMe)h+=rw('Bio',gp.aboutMe);if(gp.currentLocation)h+=rw('Localisation',gp.currentLocation)}
+    h+=rw('Fuites de données',e.breachCount>0?e.breachCount+' fuite(s) — email compromis':'Aucune fuite détectée',e.breachCount>0?'bad':'ok');
+    h+='</div>';
+    if(e.breachCount>0){
+      h+='<div class="rs"><h4>⚠ FUITES DE DONNÉES — CET EMAIL A ÉTÉ EXPOSÉ</h4>';
+      h+='<p style="font-size:.5rem;color:var(--mx2);margin-bottom:6px">Cet email apparaît dans des bases de données volées lors de piratages de sites web.</p>';
+      h+='<div class="bl">';
+      e.breaches.forEach(b=>{h+='<span>'+E(b.name)+(b.date?' ('+b.date+')':'')+'</span>'});
+      h+='</div></div>';
+    }
+    if(e.searches.length){h+='<div class="rs"><h4>MENTIONS PUBLIQUES SUR LE WEB ('+e.searches.length+')</h4>';e.searches.forEach(s=>{h+='<div class="sr" onclick="window.open(\''+E(s.url)+'\',\'_blank\')"><div class="st2">'+E(s.title)+'</div><div class="su">'+E(s.url)+'</div></div>'});h+='</div>'}
+    h+='<div class="rs"><h4>OUTILS COMPLÉMENTAIRES</h4><div style="display:flex;flex-wrap:wrap;gap:4px">';
+    [['Epieos','https://epieos.com/?q='+encodeURIComponent(em),'Epieos — Recherche les comptes Google et réseaux sociaux liés à cet email. Très puissant pour retrouver des profils associés.'],
+     ['LeakCheck','https://leakcheck.io/','LeakCheck — Vérifie si l\'email et ses mots de passe ont été exposés dans des bases de données volées.'],
+     ['BreachDirectory','https://breachdirectory.org/','BreachDirectory — Recherche dans des millions de données volées lors de piratages de sites.'],
+    ].forEach(([name,url,tip])=>{h+='<a href="'+E(url)+'" target="_blank" class="tool-link" data-tip="'+E(tip)+'">'+name+'</a>'});
+    h+='</div></div>';el.innerHTML=h;
+    const dsBtn=document.createElement('button');dsBtn.textContent='🕷 SCAN APPROFONDI SPIDERFOOT';dsBtn.style.cssText='margin-top:10px;width:100%;padding:10px;background:transparent;color:var(--cyan);border:1px solid var(--cyan);font-family:\'Orbitron\',sans-serif;font-size:.55rem;letter-spacing:.1em;cursor:pointer;text-transform:uppercase';dsBtn.addEventListener('click',()=>deepScanEmail(em));el.appendChild(dsBtn);
+  }catch(e){el.innerHTML='<div class="rs"><p style="color:var(--red);font-size:.55rem">'+e.message+'</p></div>'}
+}
+// ═══ DEEP SCAN ═══
+function renderDeepResult(r){
+  const c=document.createElement('div');
+  c.style.cssText='border:1px solid '+(r.found?'var(--mx)':'var(--mx3)')+';padding:8px 10px;margin-bottom:6px;animation:si .3s;display:flex;gap:10px;align-items:flex-start';
+  let h='<div style="width:8px;height:8px;border-radius:50%;background:'+(r.found?'var(--mx)':'#333')+';margin-top:4px;flex-shrink:0"></div><div style="flex:1">';
+  h+='<div style="font-family:\'Orbitron\',sans-serif;font-size:.5rem;color:'+(r.found?'var(--mx)':'var(--mx3)')+'">'+E(r.source)+'</div>';
+  if(r.found&&r.data){Object.entries(r.data).forEach(([k,v])=>{if(!v)return;h+='<div style="font-size:.45rem;margin-top:2px"><span style="color:var(--mx2)">'+E(k)+' : </span><span style="color:var(--mx)">'+E(String(v).slice(0,200))+'</span></div>';});if(r.url)h+='<a href="'+E(r.url)+'" target="_blank" style="font-size:.42rem;color:var(--cyan);text-decoration:none;display:inline-block;margin-top:3px">↗ Voir le profil</a>';}
+  h+='</div>';c.innerHTML=h;return c;
+}
+async function deepScanUsername(username){
+  if(!username)return;
+  const el=document.getElementById('deepScanU');el.style.display='block';
+  el.innerHTML='<div class="rs" style="border-color:var(--cyan)"><h4 style="color:var(--cyan)">🕷 SCAN APPROFONDI — '+E(username)+'</h4><p style="font-size:.45rem;color:var(--mx2);margin-bottom:8px">GitHub • Reddit • Keybase • DEV.to • HackerNews • Gravatar • GitLab • Pastebin • crt.sh • Web</p><div id="deepUResults"></div><div id="deepUStatus" style="font-size:.45rem;color:var(--mx3);margin-top:6px;animation:pu 1.5s infinite">En cours...</div></div>';
+  const container=document.getElementById('deepUResults');let found=0,total=0;
+  const es2=new EventSource('/api/deepscan/username/'+encodeURIComponent(username));
+  es2.onmessage=ev=>{const d=JSON.parse(ev.data);if(d.type==='result'){total++;if(d.found)found++;container.appendChild(renderDeepResult(d));}if(d.type==='done'){const s=document.getElementById('deepUStatus');if(s){s.style.animation='none';s.style.color='var(--mx)';s.textContent='✓ Terminé — '+found+'/'+total+' sources trouvées';}es2.close();}};
+  es2.onerror=()=>{es2.close();const s=document.getElementById('deepUStatus');if(s){s.textContent='Scan terminé';s.style.animation='none';}};
+}
+async function deepScanEmail(email){
+  if(!email)return;
+  const el=document.getElementById('deepScanE');el.style.display='block';
+  el.innerHTML='<div class="rs" style="border-color:var(--cyan)"><h4 style="color:var(--cyan)">🕷 SCAN APPROFONDI — '+E(email)+'</h4><p style="font-size:.45rem;color:var(--mx2);margin-bottom:8px">Gravatar • GitHub • LeakCheck • crt.sh • Pastebin • WHOIS • Web</p><div id="deepEResults"></div><div id="deepEStatus" style="font-size:.45rem;color:var(--mx3);margin-top:6px;animation:pu 1.5s infinite">En cours...</div></div>';
+  const container=document.getElementById('deepEResults');let found=0,total=0;
+  const es3=new EventSource('/api/deepscan/email/'+encodeURIComponent(email));
+  es3.onmessage=ev=>{const d=JSON.parse(ev.data);if(d.type==='result'){total++;if(d.found)found++;container.appendChild(renderDeepResult(d));}if(d.type==='done'){const s=document.getElementById('deepEStatus');if(s){s.style.animation='none';s.style.color='var(--mx)';s.textContent='✓ Terminé — '+found+'/'+total+' sources trouvées';}es3.close();}};
+  es3.onerror=()=>{es3.close();const s=document.getElementById('deepEStatus');if(s){s.textContent='Scan terminé';s.style.animation='none';}};
+}
+document.getElementById('ipI').addEventListener('keydown',e=>{if(e.key==='Enter')ipL()});
+document.getElementById('ipB').addEventListener('click',ipL);
+let lastIpTarget='';
+async function ipL(){
+  const ip=document.getElementById('ipI').value.trim();if(!ip)return;
+  lastIpTarget=ip;
+  document.getElementById('ipE').style.display='none';
+  document.getElementById('spPorts').innerHTML='';
+  document.getElementById('spVulns').innerHTML='';
+  document.getElementById('spSqli').innerHTML='';
+  document.getElementById('spExploits').innerHTML='';
+  // Si c'est une URL complète, aller directement sur injection SQL
+  const isUrl=ip.startsWith('http://') || ip.startsWith('https://');
+  if(isUrl){
+    swSub('sqli');
+    sqlmapScan();
+    // Afficher message dans géo
+    document.getElementById('spGeo').innerHTML='<div class="rs"><p style="font-size:.55rem;color:var(--mx2)">URL détectée — la géolocalisation fonctionne avec des IPs ou domaines (ex: 8.8.8.8 ou google.com).</p></div>';
+    return;
+  }
+  swSub('geo');
+  const el=document.getElementById('spGeo');
+  el.innerHTML='<div style="text-align:center;padding:20px;animation:pu 1.5s infinite;color:var(--mx2)">Géolocalisation en cours...</div>';
+  try{
+    const r=await fetch('/api/ip/'+encodeURIComponent(ip));const d=await r.json();
+    if(!d.success){el.innerHTML='<div class="rs"><p style="color:var(--red);font-size:.55rem">'+E(d.error||'Erreur')+'</p></div>';return}
+    const g=d.data;let h='<div class="rs"><h4>📍 LOCALISATION GÉOGRAPHIQUE</h4>';
+    h+=rw('IP / Domaine',g.query||ip);h+=rw('Pays',(g.country||'?')+' ('+(g.countryCode||'?')+')');h+=rw('Région',g.regionName);h+=rw('Ville',g.city);h+=rw('Code postal',g.zip);h+=rw('Coordonnées GPS',g.lat+', '+g.lon);h+=rw('Fuseau horaire',g.timezone);
+    if(g.lat&&g.lon)h+='<a class="ml" href="'+E(g.mapUrl)+'" target="_blank">↗ VOIR SUR LA CARTE</a>';
+    h+='</div>';
+    h+='<div class="rs"><h4>🌐 INFORMATIONS RÉSEAU</h4>';
+    h+=rw('Fournisseur internet (FAI)',g.isp);h+=rw('Organisation',g.org);h+=rw('Numéro AS',g.as);
+    h+=rw('Connexion mobile',g.mobile?'OUI':'NON',g.mobile?'bad':'');
+    h+=rw('VPN / Proxy détecté',g.proxy?'⚠ OUI — IP masquée':'NON',g.proxy?'bad':'ok');
+    h+=rw('Serveur d\'hébergement',g.hosting?'OUI':'NON');
+    if(g.reverseDns?.length)h+=rw('DNS inversé',g.reverseDns.join(', '));
+    if(g.ipinfo?.hostname)h+=rw('Nom d\'hôte',g.ipinfo.hostname);
+    h+='</div>';
+    if(g.searches?.length){h+='<div class="rs"><h4>🔍 MENTIONS PUBLIQUES SUR LE WEB</h4>';g.searches.forEach(s=>{h+='<div class="sr" onclick="window.open(\''+E(s.url)+'\',\'_blank\')"><div class="st2">'+E(s.title)+'</div><div class="su">'+E(s.url)+'</div></div>'});h+='</div>'}
+    h+='<div class="rs"><h4>🛠 OUTILS SPÉCIALISÉS</h4><div style="display:flex;flex-wrap:wrap;gap:4px">';
+    [['Shodan',    'https://www.shodan.io/host/'+encodeURIComponent(g.query||ip),    'Shodan — Moteur de recherche pour appareils connectés. Montre les services actifs, ports ouverts et vulnérabilités connues de cette IP.'],
+     ['Censys',    'https://search.censys.io/hosts/'+encodeURIComponent(g.query||ip),'Censys — Scan complet de l\'IP : certificats SSL, ports ouverts, logiciels détectés.'],
+     ['VirusTotal','https://www.virustotal.com/gui/ip-address/'+encodeURIComponent(g.query||ip),'VirusTotal — Vérifie si cette IP est blacklistée ou associée à des malwares et des attaques.'],
+     ['AbuseIPDB', 'https://www.abuseipdb.com/check/'+encodeURIComponent(g.query||ip),'AbuseIPDB — Vérifie si cette IP a été signalée pour spam, attaques DDoS ou activités malveillantes.'],
+     ['WHOIS',     'https://who.is/whois/'+encodeURIComponent(ip),                   'WHOIS — Affiche les informations d\'enregistrement du domaine : propriétaire, dates d\'enregistrement, serveurs DNS.'],
+     ['crt.sh',    'https://crt.sh/?q='+encodeURIComponent(ip),                      'crt.sh — Liste tous les certificats SSL émis pour ce domaine. Très utile pour découvrir des sous-domaines cachés.'],
+    ].forEach(([name,url,tip])=>{h+='<a href="'+E(url)+'" target="_blank" class="tool-link" data-tip="'+E(tip)+'">'+name+'</a>'});
+    h+='</div></div>';el.innerHTML=h;
+  }catch(e){el.innerHTML='<div class="rs"><p style="color:var(--red);font-size:.55rem">'+e.message+'</p></div>'}
+}
+
+// NMAP
+let lastNmapPorts = [];
+async function nmapScan(){
+  const el=document.getElementById('spPorts');
+  el.innerHTML='<div style="text-align:center;padding:20px;animation:pu 1.5s infinite;color:var(--mx2)">Scan des ports en cours (~30s)...<br><span style="font-size:.45rem;color:var(--mx3)">Nmap analyse quels services réseau sont actifs sur cette machine</span></div>';
+  try{
+    const r=await fetch('/api/nmap/'+encodeURIComponent(lastIpTarget));const d=await r.json();
+    if(!d.success){el.innerHTML='<div class="rs"><p style="color:var(--red);font-size:.55rem">'+E(d.error)+'</p></div>';return}
+    const g=d.data;let h='<div class="rs"><h4>🔌 PORTS RÉSEAU OUVERTS ('+g.portCount+')</h4>';
+    h+='<p style="font-size:.48rem;color:var(--mx2);margin-bottom:8px">Chaque port ouvert correspond à un service accessible depuis internet. Ex : port 80 = site web, port 22 = accès SSH (administration à distance), port 21 = FTP (transfert de fichiers).</p>';
+    if(g.os)h+=rw('Système d\'exploitation détecté',g.os.name+' (confiance '+g.os.accuracy+'%)');
+    if(g.latency)h+=rw('Latence réseau',g.latency);
+    h+='</div>';
+    if(g.ports.length){
+      h+='<div class="rs"><h4>LISTE DES PORTS</h4>';
+      h+='<div style="display:grid;grid-template-columns:70px 60px 1fr 1fr;gap:3px;font-size:.44rem;color:var(--mx2);padding:4px 0;border-bottom:1px solid var(--mx3)"><span>PORT</span><span>PROTO</span><span>SERVICE</span><span>VERSION</span></div>';
+      g.ports.forEach(p=>{h+='<div style="display:grid;grid-template-columns:70px 60px 1fr 1fr;gap:3px;font-size:.48rem;padding:4px 0;border-bottom:1px solid rgba(0,255,65,.04)"><span style="color:var(--mx);font-family:\'Orbitron\',sans-serif">'+E(p.port)+'</span><span style="color:var(--mx2)">'+E(p.protocol)+'</span><span style="color:var(--gold)">'+E(p.service)+'</span><span>'+E((p.product+' '+p.version).trim()||'—')+'</span></div>'});
+      h+='</div>';
+    }else{h+='<div class="rs"><p style="font-size:.55rem;color:var(--mx2)">Aucun port ouvert détecté — la cible est probablement protégée par un pare-feu.</p></div>'}
+    if(g.ports.length){h+='<div style="margin-top:8px;text-align:center"><button onclick="document.querySelector(\'[data-sp=exploits]\').click()" style="background:transparent;border:1px solid var(--gold);color:var(--gold);padding:6px 16px;font-family:\'Share Tech Mono\',monospace;font-size:.5rem;cursor:pointer;letter-spacing:.1em">🎯 CHERCHER LES EXPLOITS POUR CES SERVICES</button></div>'}
+    lastNmapPorts=g.ports;
+    el.innerHTML=h;
+  }catch(e){el.innerHTML='<div class="rs"><p style="color:var(--red);font-size:.55rem">'+e.message+'</p></div>'}
+}
+
+// NIKTO
+async function niktoScan(){
+  const el=document.getElementById('spVulns');
+  el.innerHTML='<div style="text-align:center;padding:20px;animation:pu 1.5s infinite;color:var(--red)">Scan de failles en cours (~30s)...<br><span style="font-size:.45rem;color:var(--mx3)">Nikto analyse le serveur web à la recherche de failles de sécurité connues</span></div>';
+  try{
+    const r=await fetch('/api/nikto/'+encodeURIComponent(lastIpTarget));const d=await r.json();
+    if(!d.success){el.innerHTML='<div class="rs"><p style="color:var(--red);font-size:.55rem">'+E(d.error)+'</p></div>';return}
+    const g=d.data;let h='<div class="rs" style="border-color:var(--red)"><h4 style="color:var(--red)">⚠ FAILLES WEB DÉTECTÉES ('+g.vulnCount+')</h4>';
+    h+='<p style="font-size:.48rem;color:var(--mx2);margin-bottom:8px">Nikto cherche les fichiers sensibles exposés (admin, config, backup), les mauvaises configurations et les logiciels obsolètes avec des failles de sécurité connues.</p>';
+    if(!g.vulns.length){h+='<p style="font-size:.55rem;color:var(--mx)">✓ Aucune faille web détectée — le serveur semble correctement configuré.</p>'}
+    else{g.vulns.forEach(v=>{h+='<div style="padding:7px 0;border-bottom:1px solid rgba(255,23,68,.15)"><div style="font-size:.48rem;color:var(--red);margin-bottom:3px">['+E(v.id)+'] '+E(v.method)+' '+E(v.uri)+'</div><div style="font-size:.52rem;color:var(--mx)">'+E(v.msg)+'</div>'+(v.references?'<div style="font-size:.42rem;color:var(--mx2);margin-top:2px">Référence: '+E(v.references)+'</div>':'')+'</div>'})}
+    h+='</div>';el.innerHTML=h;
+  }catch(e){el.innerHTML='<div class="rs"><p style="color:var(--red);font-size:.55rem">'+e.message+'</p></div>'}
+}
+
+// SQLMAP
+async function sqlmapScan(){
+  const el=document.getElementById('spSqli');
+  const target=lastIpTarget||document.getElementById('ipI').value.trim();
+  const url=target.startsWith('http')?target:'http://'+target;
+  el.innerHTML='<div style="text-align:center;padding:20px;animation:pu 1.5s infinite;color:var(--cyan)">Scan SQLMap en cours (~60s)...<br><span style="font-size:.45rem;color:var(--mx3)">SQLMap teste les injections SQL sur l\'URL cible</span></div>';
+  // Champ URL personnalisé pour SQLMap
+  const urlBox=document.createElement('div');
+  urlBox.style.cssText='max-width:650px;margin:0 auto;padding:8px 0';
+  urlBox.innerHTML='<div style="font-size:.48rem;color:var(--mx2);margin-bottom:6px">URL à tester (avec paramètres, ex: http://site.com/page?id=1)</div>'
+    +'<div style="display:flex;gap:6px"><input id="sqliUrl" value="'+E(url)+'" style="flex:1;background:#000;border:1px solid var(--mx3);color:var(--mx);font-family:\'Share Tech Mono\',monospace;font-size:.6rem;padding:7px;outline:0">'
+    +'<button id="sqliGo" style="background:var(--cyan);color:#000;border:none;padding:7px 14px;font-family:\'Share Tech Mono\',monospace;font-size:.55rem;cursor:pointer;text-transform:uppercase">LANCER</button></div>';
+  el.innerHTML='';
+  el.appendChild(urlBox);
+  const resultDiv=document.createElement('div');
+  el.appendChild(resultDiv);
+  document.getElementById('sqliGo').addEventListener('click',async()=>{
+    const scanUrl=document.getElementById('sqliUrl').value.trim();
+    if(!scanUrl)return;
+    document.getElementById('sqliGo').disabled=true;document.getElementById('sqliGo').textContent='...';
+    resultDiv.innerHTML='<div style="text-align:center;padding:20px;animation:pu 1.5s infinite;color:var(--cyan)">SQLMap en cours (~60s)...<br><span style="font-size:.45rem;color:var(--mx3)">Teste les injections SQL sur l\'URL</span></div>';
+    try{
+      const r=await fetch('/api/sqlmap',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:scanUrl})});
+      const d=await r.json();
+      if(!d.success){resultDiv.innerHTML='<div class="rs"><p style="color:var(--red);font-size:.55rem">'+E(d.error)+'</p></div>';return}
+      const g=d.data;
+      let h='<div class="rs" style="border-color:'+(g.injectable?'var(--red)':'var(--mx)')+'"><h4 style="color:'+(g.injectable?'var(--red)':'var(--mx)')+'">'+(g.injectable?'💉 INJECTION SQL DÉTECTÉE':'✓ AUCUNE INJECTION SQL DÉTECTÉE')+'</h4>';
+      h+='<p style="font-size:.48rem;color:var(--mx2);margin-bottom:8px">SQLMap teste si la base de données est accessible via des paramètres mal sécurisés dans l\'URL.</p>';
+      h+=rw('URL testée',g.url);
+      if(g.injectable&&g.dbms)h+=rw('Base de données détectée',g.dbms,'bad');
+      if(g.injectable&&g.injTypes.length)h+=rw('Types d\'injection',g.injTypes.join(', '),'bad');
+      h+='</div>';
+      if(g.vulns.length){
+        h+='<div class="rs" style="border-color:var(--red)"><h4 style="color:var(--red)">PARAMÈTRES VULNÉRABLES</h4>';
+        g.vulns.forEach(v=>{h+='<div style="padding:5px 0;border-bottom:1px solid rgba(255,23,68,.15)"><span style="color:var(--red)">'+E(v.param)+'</span> <span style="color:var(--mx2);font-size:.45rem">— '+E(v.type)+'</span></div>'});
+        h+='</div>';
+      }
+      if(!g.injectable){
+        h+='<div class="rs"><p style="font-size:.5rem;color:var(--mx2);line-height:1.6">⚠️ SQLMap nécessite une URL avec des paramètres pour tester les injections.<br>Exemple : <span style="color:var(--mx)">https://site.com/article?id=1</span><br>Sans paramètre dans l\'URL, aucun test possible.</p></div>';
+      }
+      resultDiv.innerHTML=h;
+    }catch(e){resultDiv.innerHTML='<div class="rs"><p style="color:var(--red);font-size:.55rem">'+e.message+'</p></div>'}
+    document.getElementById('sqliGo').disabled=false;document.getElementById('sqliGo').textContent='LANCER';
+  });
+}
+const fmtStyle='background:transparent;border:1px solid var(--mx3);color:var(--mx2);padding:3px 8px;font-family:\'Share Tech Mono\',monospace;font-size:.48rem;cursor:pointer;transition:.2s;text-transform:uppercase';
+const fmtStyleOn='background:var(--mx);border:1px solid var(--mx);color:#000;padding:3px 8px;font-family:\'Share Tech Mono\',monospace;font-size:.48rem;cursor:pointer;transition:.2s;text-transform:uppercase';
+let selectedFmt='raw-md5';
+document.querySelectorAll('#fmtBtns button').forEach(b=>{
+  b.style.cssText=fmtStyle;
+  b.addEventListener('click',()=>{
+    if(selectedFmt===b.dataset.f){
+      // Déselectionner
+      selectedFmt=null;
+      b.style.cssText=fmtStyle;
+      return;
+    }
+    document.querySelectorAll('#fmtBtns button').forEach(x=>x.style.cssText=fmtStyle);
+    b.style.cssText=fmtStyleOn;
+    selectedFmt=b.dataset.f;
+  });
+});
+document.querySelector('#fmtBtns button[data-f="raw-md5"]').style.cssText=fmtStyleOn;
+
+function detectInput(val){
+  val=val.trim();
+  if(val.startsWith('http://') || val.startsWith('https://')) return 'url';
+  if(/^\$2[ab]\$/.test(val)) return 'bcrypt';
+  if(/^[a-fA-F0-9]{128}$/.test(val)) return 'sha512';
+  if(/^[a-fA-F0-9]{64}$/.test(val)) return 'sha256';
+  if(/^[a-fA-F0-9]{40}$/.test(val)) return 'sha1';
+  if(/^[a-fA-F0-9]{32}$/.test(val)) return 'md5';
+  return 'unknown';
+}
+
+const inp=document.getElementById('hashInput');
+const lbl=document.getElementById('detectLabel');
+const fmtWrap=document.getElementById('hashFmtWrap');
+inp.addEventListener('input',()=>{
+  const v=inp.value.trim();
+  if(!v){lbl.textContent='— en attente —';lbl.style.color='var(--mx3)';fmtWrap.style.display='block';return}
+  const t=detectInput(v);
+  const labels={url:'🌐 URL détectée — analyse du site web',bcrypt:'🔑 bcrypt détecté',sha512:'🔑 SHA512 détecté',sha256:'🔑 SHA256 détecté',sha1:'🔑 SHA1 détecté',md5:'🔑 MD5 détecté',unknown:'❓ Type non reconnu — sélectionne manuellement'};
+  const fmtMap={sha512:'raw-sha512',sha256:'raw-sha256',sha1:'raw-sha1',md5:'raw-md5',bcrypt:'bcrypt'};
+  lbl.textContent=labels[t]||'❓ Type non reconnu';
+  lbl.style.color=t==='url'?'var(--cyan)':t==='unknown'?'var(--amb)':'var(--mx)';
+  fmtWrap.style.display=t==='url'?'none':'block';
+  if(fmtMap[t]){
+    selectedFmt='raw-'+t==='raw-md5'?'raw-md5':fmtMap[t];
+    selectedFmt=fmtMap[t];
+    document.querySelectorAll('#fmtBtns button').forEach(x=>x.style.cssText=fmtStyle);
+    const btn=document.querySelector('#fmtBtns button[data-f="'+fmtMap[t]+'"]');
+    if(btn)btn.style.cssText=fmtStyleOn;
+  }
+});
+inp.addEventListener('focus',()=>inp.style.borderColor='var(--mx)');
+inp.addEventListener('blur',()=>inp.style.borderColor='var(--mx3)');
+
+document.getElementById('crackB').addEventListener('click',async()=>{
+  const val=document.getElementById('hashInput').value.trim();if(!val)return;
+  const btn=document.getElementById('crackB'),el=document.getElementById('crackR');
+  const type=detectInput(val);
+  btn.disabled=true;
+  if(type==='url'){
+    btn.textContent='ANALYSE EN COURS...';
+    el.innerHTML='<div style="text-align:center;padding:16px;animation:pu 1.5s infinite;color:var(--cyan)">Analyse du site web en cours...<br><span style="font-size:.45rem;color:var(--mx3)">Headers, technologies, redirections...</span></div>';
+    try{
+      const r=await fetch('/api/webinfo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:val})});
+      const d=await r.json();
+      if(!d.success){el.innerHTML='<div class="rs"><p style="color:var(--red);font-size:.55rem">'+E(d.error)+'</p></div>';return}
+      const g=d.data;
+      let h='<div class="rs"><h4>🌐 ANALYSE DU SITE WEB</h4>';
+      h+=rw('URL',g.url);h+=rw('Status HTTP',g.status,g.status>=400?'bad':g.status>=300?'':'ok');
+      h+=rw('Serveur',g.server);h+=rw('Redirection',g.redirectUrl||'Aucune');
+      h+='</div>';
+      if(g.headers&&Object.keys(g.headers).length){
+        h+='<div class="rs"><h4>EN-TÊTES HTTP</h4>';
+        Object.entries(g.headers).forEach(([k,v])=>{h+=rw(k,v)});
+        h+='</div>';
+      }
+      if(g.techs&&g.techs.length){
+        h+='<div class="rs"><h4>TECHNOLOGIES DÉTECTÉES</h4><div class="bl">';
+        g.techs.forEach(t=>{h+='<span style="border-color:var(--cyan);color:var(--cyan)">'+E(t)+'</span>'});
+        h+='</div></div>';
+      }
+      el.innerHTML=h;
+    }catch(e){el.innerHTML='<div class="rs"><p style="color:var(--red);font-size:.55rem">'+e.message+'</p></div>'}
+  } else {
+    btn.textContent='CASSAGE EN COURS... (~30s)';
+    el.innerHTML='<div style="text-align:center;padding:16px;animation:pu 1.5s infinite;color:var(--mx2)">John the Ripper teste 14 millions de mots de passe...<br><span style="font-size:.45rem;color:var(--mx3)">Jusqu\'à 30 secondes</span></div>';
+    try{
+      const r=await fetch('/api/crack',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({hash:val,format:selectedFmt})});
+      const d=await r.json();
+      if(!d.success){el.innerHTML='<div class="rs"><p style="color:var(--red);font-size:.55rem">'+E(d.error)+'</p></div>';return}
+      if(d.found){
+        el.innerHTML='<div class="rs" style="border-color:var(--mx);text-align:center"><h4 style="color:var(--mx);font-size:.8rem;margin-bottom:12px">✓ MOT DE PASSE TROUVÉ</h4>'
+          +'<div style="font-family:\'Orbitron\',sans-serif;font-size:1.4rem;color:var(--mx);text-shadow:0 0 20px var(--mx);letter-spacing:.1em;padding:10px 0">'+E(d.password)+'</div>'
+          +'<div style="font-size:.45rem;color:var(--mx2);margin-top:8px">Hash : '+E(d.hash)+'</div>'
+          +'<div style="font-size:.45rem;color:var(--mx2)">Format : '+E(d.format)+'</div></div>';
+      }else{
+        el.innerHTML='<div class="rs" style="border-color:var(--amb);text-align:center"><h4 style="color:var(--amb)">✗ MOT DE PASSE NON TROUVÉ</h4>'
+          +'<p style="font-size:.52rem;color:var(--mx2);margin-top:8px;line-height:1.6">Ce mot de passe ne figure pas dans rockyou.txt.<br>Il est probablement complexe, aléatoire ou très long.</p>'
+          +'<div style="font-size:.45rem;color:var(--mx3);margin-top:6px">Hash testé : '+E(d.hash)+'</div></div>';
+      }
+    }catch(e){el.innerHTML='<div class="rs"><p style="color:var(--red);font-size:.55rem">'+e.message+'</p></div>'}
+  }
+  btn.disabled=false;btn.textContent='ANALYSER';
+});
+
+// EXPLOITS / CVE
+async function exploitScan(){
+  const el=document.getElementById('spExploits');
+  if(!lastNmapPorts.length){
+    el.innerHTML='<div class="rs"><p style="font-size:.55rem;color:var(--mx2)">⚠️ Lance d\'abord un scan de ports (onglet PORTS OUVERTS) pour détecter les services — les exploits sont recherchés en fonction des services trouvés.</p></div>';
+    return;
+  }
+  el.innerHTML='<div style="text-align:center;padding:20px;animation:pu 1.5s infinite;color:var(--gold)">Recherche des CVE et exploits...<br><span style="font-size:.45rem;color:var(--mx3)">Interrogation de la base NIST pour chaque service détecté</span></div>';
+  try{
+    const r=await fetch('/api/exploits',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({services:lastNmapPorts})});
+    const d=await r.json();
+    if(!d.success){el.innerHTML='<div class="rs"><p style="color:var(--red);font-size:.55rem">'+E(d.error)+'</p></div>';return}
+    const results=d.data;
+    if(!results.length){
+      el.innerHTML='<div class="rs"><h4 style="color:var(--gold)">🎯 EXPLOITS / CVE</h4><p style="font-size:.55rem;color:var(--mx2)">Aucun CVE trouvé pour les services détectés — ils sont peut-être à jour ou peu connus.</p>'
+        +'<div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:4px">'
+        +lastNmapPorts.map(p=>'<a href="https://www.rapid7.com/db/search/?q='+encodeURIComponent(p.service)+'" target="_blank" class="tool-link" data-tip="Chercher des exploits Metasploit pour '+E(p.service)+'">Metasploit: '+E(p.service)+'</a>').join('')
+        +'</div></div>';
+      return;
+    }
+    let h='<div class="rs"><h4 style="color:var(--gold)">🎯 EXPLOITS ET CVE PAR SERVICE</h4>'
+      +'<p style="font-size:.48rem;color:var(--mx2);margin-bottom:8px">CVE = faille de sécurité connue et référencée. Le score va de 0 à 10 — plus c\'est élevé, plus c\'est dangereux.</p></div>';
+    results.forEach(svc=>{
+      const severityColor={'CRITICAL':'#ff1744','HIGH':'#ff6d00','MEDIUM':'#ffd740','LOW':'var(--mx)'}[svc.cves[0]?.severity]||'var(--mx2)';
+      h+='<div class="rs" style="border-color:'+severityColor+'">';
+      h+='<h4 style="color:'+severityColor+'">PORT '+E(svc.port)+' — '+E(svc.service).toUpperCase()+(svc.product?' ('+E(svc.product)+')':'')+'</h4>';
+      h+='<div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">';
+      h+='<a href="https://www.rapid7.com/db/search/?q='+encodeURIComponent(svc.service+' '+(svc.product||''))+'" target="_blank" class="tool-link" style="border-color:var(--gold);color:var(--gold)" data-tip="Recherche des modules Metasploit pour exploiter ce service — liste les exploits prêts à l\'emploi.">🎯 Metasploit</a>';
+      h+='<a href="https://www.exploit-db.com/search?q='+encodeURIComponent(svc.service+' '+(svc.product||''))+'" target="_blank" class="tool-link" style="border-color:var(--amb);color:var(--amb)" data-tip="Exploit-DB — Base de données publique d\'exploits. Contient des preuves de concept pour des milliers de failles.">💣 Exploit-DB</a>';
+      h+='<a href="https://nvd.nist.gov/vuln/search/results?query='+encodeURIComponent(svc.service+' '+(svc.product||''))+'" target="_blank" class="tool-link" data-tip="NIST NVD — Base officielle américaine des CVE. Référence mondiale pour les vulnérabilités connues.">📋 NIST CVE</a>';
+      h+='</div>';
+      svc.cves.forEach(cve=>{
+        const sc={'CRITICAL':'#ff1744','HIGH':'#ff6d00','MEDIUM':'#ffd740','LOW':'var(--mx)'}[cve.severity]||'var(--mx2)';
+        h+='<div style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,.05)">';
+        h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">';
+        h+='<a href="https://nvd.nist.gov/vuln/detail/'+E(cve.id)+'" target="_blank" style="color:var(--cyan);font-size:.5rem;font-family:\'Orbitron\',sans-serif;text-decoration:none">'+E(cve.id)+'</a>';
+        h+='<span style="font-size:.48rem;color:'+sc+';font-weight:bold">'+E(cve.severity)+(cve.score?' '+cve.score+'/10':'')+'</span>';
+        h+='</div>';
+        h+='<div style="font-size:.48rem;color:var(--mx2);line-height:1.5">'+E(cve.description)+'</div>';
+        h+='</div>';
+      });
+      h+='</div>';
+    });
+    el.innerHTML=h;
+  }catch(e){el.innerHTML='<div class="rs"><p style="color:var(--red);font-size:.55rem">'+e.message+'</p></div>'}
+}
+
+// EXIF
+const SENSITIVE_KEYS=['GPSLatitude','GPSLongitude','GPSPosition','Make','Model','Software','Artist','Author','Creator','Copyright','SerialNumber','LensSerialNumber','OwnerName','UserComment','DateTimeOriginal','CreateDate','ModifyDate'];
+let exifFiles=[];
+const exifDrop=document.getElementById('exifDrop');
+const exifInput=document.getElementById('exifInput');
+['dragenter','dragover'].forEach(ev=>exifDrop.addEventListener(ev,e=>{e.preventDefault();exifDrop.style.borderColor='var(--mx)'}));
+['dragleave','drop'].forEach(ev=>exifDrop.addEventListener(ev,e=>{e.preventDefault();exifDrop.style.borderColor='var(--mx3)'}));
+exifDrop.addEventListener('drop',e=>{addExifFiles(e.dataTransfer.files)});
+exifInput.addEventListener('change',e=>{addExifFiles(e.target.files)});
+function addExifFiles(files){exifFiles=[...exifFiles,...Array.from(files)].slice(0,20);renderExifFileList()}
+function renderExifFileList(){
+  const el=document.getElementById('exifFileList');
+  if(!exifFiles.length){el.style.display='none';return}
+  el.style.display='block';
+  el.innerHTML='<div style="font-size:.45rem;color:var(--mx2);margin-bottom:8px">'+exifFiles.length+' fichier(s) sélectionné(s)</div><div style="display:flex;flex-wrap:wrap;gap:8px">'
+    +exifFiles.map((f,i)=>{
+      const isImg=f.type.startsWith('image/');
+      return '<div style="position:relative;border:1px solid var(--mx3);padding:6px;width:120px;text-align:center" id="thumb_'+i+'">'
+        +(isImg?'<img id="img_'+i+'" style="width:100px;height:80px;object-fit:cover;border:1px solid var(--mx3);display:block;margin:0 auto 4px" alt="'+E(f.name)+'">'
+                :'<div style="width:100px;height:80px;background:var(--mx3);display:flex;align-items:center;justify-content:center;font-size:1.5rem;margin:0 auto 4px">📄</div>')
+        +'<div style="font-size:.38rem;color:var(--mx2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+E(f.name)+'</div>'
+        +'<div style="font-size:.36rem;color:var(--mx3)">'+(f.size/1024).toFixed(0)+' KB</div>'
+        +'</div>';
+    }).join('')+'</div>';
+  // Charger les miniatures
+  exifFiles.forEach((f,i)=>{
+    if(!f.type.startsWith('image/'))return;
+    const img=document.getElementById('img_'+i);
+    if(!img)return;
+    const url=URL.createObjectURL(f);
+    img.src=url;
+    img.onload=()=>URL.revokeObjectURL(url);
+  });
+}
+document.getElementById('exifClearBtn').addEventListener('click',()=>{exifFiles=[];exifInput.value='';document.getElementById('exifFileList').style.display='none';document.getElementById('exifResult').innerHTML=''});
+document.getElementById('exifReadBtn').addEventListener('click',async()=>{
+  if(!exifFiles.length)return;
+  const btn=document.getElementById('exifReadBtn'),el=document.getElementById('exifResult');
+  btn.disabled=true;btn.textContent='ANALYSE EN COURS...';
+  el.innerHTML='<div style="text-align:center;padding:20px;animation:pu 1.5s infinite;color:var(--mx2)">ExifTool analyse les métadonnées...</div>';
+  try{
+    const fd=new FormData();exifFiles.forEach(f=>fd.append('photos',f));
+    const r=await fetch('/api/exif/read',{method:'POST',body:fd});const d=await r.json();
+    if(!d.success){el.innerHTML='<div class="rs"><p style="color:var(--red);font-size:.55rem">'+E(d.error)+'</p></div>';return}
+    const{files,recurring}=d.data;
+    window._exifData=files.map(f=>f.data);
+    let h='';
+    if(recurring.length){
+      h+='<div class="rs" style="border-color:var(--gold);margin-bottom:12px"><h4 style="color:var(--gold)">⚡ DONNÉES RÉCURRENTES</h4><p style="font-size:.45rem;color:var(--mx2);margin-bottom:8px">Présentes sur plusieurs photos — peuvent identifier l\'auteur ou l\'appareil.</p>';
+      recurring.slice(0,15).forEach(r=>{
+        const sens=SENSITIVE_KEYS.some(k=>r.key.toLowerCase().includes(k.toLowerCase()));
+        h+='<div style="padding:4px 0;border-bottom:1px solid rgba(255,215,64,.1)"><span style="color:'+(sens?'var(--red)':'var(--gold)')+';font-size:.5rem">'+(sens?'⚠ ':'')+E(r.key)+'</span>';
+        Object.entries(r.values).forEach(([val,count])=>{h+='<span style="color:var(--mx2);font-size:.45rem;margin-left:8px">'+E(val)+' <span style="color:var(--mx)">(×'+count+')</span></span>'});
+        h+='</div>';
+      });
+      h+='</div>';
+    }
+    files.forEach((file,fi)=>{
+      const data=file.data;const sensData=Object.entries(data).filter(([k])=>SENSITIVE_KEYS.some(s=>k.toLowerCase().includes(s.toLowerCase())));
+      const hasGps=data.GPSLatitude&&data.GPSLongitude;
+      h+='<div class="rs" style="margin-bottom:8px"><h4 style="display:flex;justify-content:space-between;align-items:center">'+E(file.filename);
+      if(hasGps)h+='<a href="https://www.google.com/maps?q='+data.GPSLatitude+','+data.GPSLongitude+'" target="_blank" style="font-size:.45rem;color:var(--cyan);border:1px solid var(--cyan);padding:2px 6px;text-decoration:none">📍 MAPS</a>';
+      h+='</h4>';
+      if(sensData.length){h+='<div style="background:rgba(255,23,68,.05);border:1px solid rgba(255,23,68,.2);padding:8px;margin-bottom:8px"><div style="font-size:.45rem;color:var(--red);margin-bottom:4px">⚠ DONNÉES SENSIBLES</div>';sensData.forEach(([k,v])=>{h+=rw(k,String(v),'bad')});h+='</div>'}
+      h+='<details><summary style="font-size:.48rem;color:var(--mx2);cursor:pointer">TOUTES LES MÉTADONNÉES ('+Object.keys(data).length+')</summary><div style="margin-top:6px">';
+      Object.entries(data).filter(([k])=>k!=='SourceFile').forEach(([k,v])=>{const s=SENSITIVE_KEYS.some(x=>k.toLowerCase().includes(x.toLowerCase()));h+='<div style="display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid rgba(0,255,65,.04);font-size:.48rem"><span style="color:'+(s?'var(--red)':'var(--mx2)')+'">'+E(k)+'</span><span style="color:var(--mx);text-align:right;max-width:60%;word-break:break-all">'+E(String(v))+'</span></div>'});
+      h+='</div></details>';
+      h+='<div style="margin-top:8px"><button data-edit="'+fi+'" style="background:transparent;border:1px solid var(--mx2);color:var(--mx2);padding:4px 10px;font-family:\'Share Tech Mono\',monospace;font-size:.45rem;cursor:pointer;text-transform:uppercase">✏ ÉDITER / SUPPRIMER DES MÉTADONNÉES</button></div></div>';
+    });
+    el.innerHTML=h;
+    el.querySelectorAll('[data-edit]').forEach(btn=>{
+      btn.addEventListener('click',()=>openExifEdit(parseInt(btn.dataset.edit)));
+    });
+  }catch(e){el.innerHTML='<div class="rs"><p style="color:var(--red);font-size:.55rem">'+e.message+'</p></div>'}
+  btn.disabled=false;btn.textContent='ANALYSER LES MÉTADONNÉES';
+});
+function openExifEdit(fi){
+  const file=exifFiles[fi];if(!file)return;
+  const modal=document.createElement('div');
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+  // Récupérer les données exif actuelles du fichier
+  const exifData=window._exifData&&window._exifData[fi]?window._exifData[fi]:{};
+  const allKeys=Object.keys(exifData).filter(k=>k!=='SourceFile');
+  modal.innerHTML='<div style="background:#050805;border:1px solid var(--mx3);padding:20px;max-width:650px;width:100%;max-height:85vh;overflow-y:auto">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">'
+    +'<h4 style="font-family:\'Orbitron\',sans-serif;font-size:.6rem;color:var(--gold)">✏ ÉDITER — '+E(file.name)+'</h4>'
+    +'<button id="closeModal" style="background:transparent;border:none;color:var(--red);cursor:pointer;font-size:1.2rem">✕</button>'
+    +'</div>'
+    +'<p style="font-size:.45rem;color:var(--mx2);margin-bottom:10px">Laisse vide = supprimer le tag. Modifie la valeur = remplacer. Les autres tags sont conservés.</p>'
+    +'<div style="font-size:.45rem;color:var(--gold);margin-bottom:8px;letter-spacing:.08em">TAGS ACTUELS DU FICHIER</div>'
+    +'<div id="editFields">'
+    +allKeys.map(k=>{
+      const sens=SENSITIVE_KEYS.some(s=>k.toLowerCase().includes(s.toLowerCase()));
+      return '<div style="margin-bottom:6px;display:flex;gap:6px;align-items:center">'
+        +'<div style="font-size:.42rem;color:'+(sens?'var(--red)':'var(--mx2)')+';width:160px;flex-shrink:0">'+(sens?'⚠ ':'')+k+'</div>'
+        +'<input data-key="'+E(k)+'" value="'+E(String(exifData[k]))+'" placeholder="vide = supprimer" style="flex:1;background:#000;border:1px solid '+(sens?'rgba(255,23,68,.4)':'var(--mx3)')+';color:var(--mx);font-family:\'Share Tech Mono\',monospace;font-size:.5rem;padding:4px 6px;outline:0">'
+        +'</div>';
+    }).join('')
+    +'</div>'
+    +'<div style="margin-top:10px;border-top:1px solid var(--mx3);padding-top:10px">'
+    +'<div style="font-size:.45rem;color:var(--mx2);margin-bottom:6px">Ajouter un tag personnalisé</div>'
+    +'<div style="display:flex;gap:6px"><input id="customKey" placeholder="Nom du tag" style="flex:1;background:#000;border:1px solid var(--mx3);color:var(--mx);font-family:\'Share Tech Mono\',monospace;font-size:.5rem;padding:4px 6px;outline:0"><input id="customVal" placeholder="Valeur" style="flex:2;background:#000;border:1px solid var(--mx3);color:var(--mx);font-family:\'Share Tech Mono\',monospace;font-size:.5rem;padding:4px 6px;outline:0"></div>'
+    +'</div>'
+    +'<div style="display:flex;gap:8px;margin-top:14px">'
+    +'<button id="stripAllBtn" style="flex:1;padding:10px;background:transparent;color:var(--red);border:1px solid var(--red);font-family:\'Orbitron\',sans-serif;font-size:.55rem;cursor:pointer;text-transform:uppercase">🗑 TOUT SUPPRIMER</button>'
+    +'<button id="saveExifBtn" style="flex:2;padding:10px;background:var(--mx);color:#000;border:none;font-family:\'Orbitron\',sans-serif;font-size:.6rem;cursor:pointer;text-transform:uppercase">✓ TÉLÉCHARGER</button>'
+    +'</div>'
+    +'<div id="editStatus" style="margin-top:8px;font-size:.48rem;text-align:center"></div>'
+    +'</div>';
+  document.body.appendChild(modal);
+  document.getElementById('closeModal').addEventListener('click',()=>modal.remove());
+  modal.addEventListener('click',e=>{if(e.target===modal)modal.remove()});
+
+  async function doSave(stripAll){
+    const tags={};
+    if(!stripAll){
+      modal.querySelectorAll('[data-key]').forEach(inp=>{
+        const orig=exifData[inp.dataset.key];
+        const newVal=inp.value.trim();
+        // Si vide = supprimer, si différent = modifier
+        if(newVal===''&&orig!==undefined)tags[inp.dataset.key]='';
+        else if(newVal!==String(orig||''))tags[inp.dataset.key]=newVal;
+      });
+      const ck=document.getElementById('customKey').value.trim();
+      const cv=document.getElementById('customVal').value.trim();
+      if(ck&&cv)tags[ck]=cv;
+    }
+    document.getElementById('saveExifBtn').disabled=true;document.getElementById('saveExifBtn').textContent='...';
+    try{
+      const fd=new FormData();fd.append('photo',file);fd.append('tags',JSON.stringify(tags));fd.append('stripAll',stripAll?'1':'0');
+      const r=await fetch('/api/exif/edit',{method:'POST',body:fd});
+      if(r.ok&&r.headers.get('content-type')?.includes('image')||r.headers.get('content-type')?.includes('octet')){
+        const blob=await r.blob();const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='clean_'+file.name;a.click();
+        document.getElementById('editStatus').style.color='var(--mx)';document.getElementById('editStatus').textContent='✓ Fichier téléchargé — même qualité, métadonnées modifiées';
+      }else{const err=await r.json();document.getElementById('editStatus').style.color='var(--red)';document.getElementById('editStatus').textContent=err.error||'Erreur'}
+    }catch(e){document.getElementById('editStatus').style.color='var(--red)';document.getElementById('editStatus').textContent=e.message}
+    document.getElementById('saveExifBtn').disabled=false;document.getElementById('saveExifBtn').textContent='✓ TÉLÉCHARGER';
+  }
+  document.getElementById('saveExifBtn').addEventListener('click',()=>doSave(false));
+  document.getElementById('stripAllBtn').addEventListener('click',()=>doSave(true));
+}
+
+// ═══ DORK ═══
+const DORKS = {
+  cameras: [
+    { title: 'Webcams publiques', query: 'intitle:"webcamXP 5" | intitle:"webcam 7"', desc: 'Trouve les serveurs WebcamXP et Webcam 7 exposés publiquement sur internet', tip: 'intitle: cherche dans le titre de la page — webcamXP est un logiciel populaire de streaming webcam souvent mal sécurisé' },
+    { title: 'Caméras Axis', query: 'intitle:"Live View / - AXIS" | inurl:"/view/index.shtml"', desc: 'Caméras réseau Axis sans authentification', tip: 'Axis est un fabricant de caméras IP. Ces URLs sont les interfaces de visualisation par défaut souvent laissées accessibles' },
+    { title: 'Caméras par pays', query: 'intitle:"Live View" inurl:"{cible}" -password', desc: 'Remplace {cible} par le code pays (fr, us, de...) ou ville', tip: 'inurl: cherche dans l\'URL — combiner avec un code pays/ville permet de filtrer géographiquement les caméras' },
+    { title: 'Caméras Sony', query: 'inurl:"/en/camera.html" "Sony Network Camera"', desc: 'Caméras Sony Network Camera accessibles', tip: 'Les caméras Sony ont une interface web standard — cette requête trouve les instances non sécurisées' },
+    { title: 'Flux RTSP ouverts', query: 'inurl:rtsp "live" | inurl:"video.cgi"', desc: 'Flux vidéo RTSP et CGI accessibles publiquement', tip: 'RTSP = Real Time Streaming Protocol — protocole de streaming vidéo souvent sur port 554' },
+    { title: 'Caméras Hikvision', query: 'intitle:"Hikvision" inurl:"/doc/page/login.asp"', desc: 'Panneaux de connexion Hikvision (caméras de surveillance)', tip: 'Hikvision est le leader mondial des caméras de surveillance — beaucoup ont des credentials par défaut' },
+    { title: 'Caméras Dahua', query: 'intitle:"Dahua" inurl:"/RPC2_Login"', desc: 'Caméras de surveillance Dahua exposées', tip: 'Dahua est un fabricant chinois de caméras — credentials par défaut souvent admin/admin' },
+    { title: 'Caméras par ville Shodan', query: 'city:"{cible}" webcam port:80', desc: 'Cherche des caméras dans une ville spécifique via Shodan', tip: 'Sur Shodan : city: filtre par ville, country: par pays (country:FR), port:80 = interface web — très précis pour la géolocalisation', engine: 'shodan' },
+    { title: 'Caméras par pays Shodan', query: 'country:"{cible}" has_screenshot:true', desc: 'Appareils avec capture d\'écran dans un pays (FR, US, DE...)', tip: 'has_screenshot:true sur Shodan affiche uniquement les appareils dont Shodan a capturé l\'interface graphique — très pratique pour les caméras', engine: 'shodan' },
+    { title: 'Caméras RTSP Shodan', query: 'port:554 "RTSP" country:"{cible}"', desc: 'Flux RTSP ouverts dans un pays', tip: 'Port 554 = RTSP standard. Shodan indexe les bannières de ces flux — combiné avec country: permet de cibler géographiquement', engine: 'shodan' },
+    { title: 'Caméras traffic', query: 'intitle:"traffic" inurl:"camera" | inurl:"cam"', desc: 'Caméras de surveillance du trafic routier', tip: 'Les caméras de trafic municipales sont souvent publiques par conception mais pas toujours sécurisées' },
+    { title: 'Panneaux NVR/DVR', query: 'intitle:"DVR_H264 | DVRDVS-Webs" | inurl:"/DVR.htm"', desc: 'Enregistreurs vidéo numériques (DVR/NVR) accessibles', tip: 'Un DVR/NVR gère plusieurs caméras à la fois — y accéder donne souvent accès à des dizaines de flux simultanément' },
+  ],
+  admin: [
+    { title: 'phpMyAdmin exposé', query: 'inurl:"/phpmyadmin" intitle:"phpMyAdmin"', desc: 'Interfaces phpMyAdmin accessibles publiquement', tip: 'phpMyAdmin est une interface web pour MySQL/MariaDB — exposé publiquement, il donne accès direct aux bases de données' },
+    { title: 'WordPress admin', query: 'inurl:"/wp-admin" intitle:"Log In" site:{cible}', desc: 'Panneaux WordPress d\'un domaine spécifique', tip: 'site: limite la recherche à un domaine précis — combine avec inurl:wp-admin pour trouver les sites WordPress d\'une organisation' },
+    { title: 'cPanel exposé', query: 'intitle:"cPanel" inurl:":2082" | inurl:":2083"', desc: 'Panneaux cPanel d\'hébergement web', tip: 'cPanel tourne sur les ports 2082 (HTTP) et 2083 (HTTPS) — donne accès à la gestion complète d\'un hébergement' },
+    { title: 'Cisco admin', query: 'intitle:"Cisco" inurl:"/exec/show" | inurl:"/level/15/exec"', desc: 'Interfaces d\'administration Cisco exposées', tip: 'Level 15 est le niveau d\'accès maximal sur un routeur Cisco — son exposition est une faille critique' },
+    { title: 'Panneau Joomla', query: 'inurl:"/administrator" intitle:"Administration - Joomla"', desc: 'Interfaces d\'administration Joomla', tip: 'Joomla est un CMS populaire — l\'interface admin est standardisée et souvent laissée accessible' },
+    { title: 'Routeurs par défaut', query: 'intitle:"Router" inurl:"admin" "Default Password"', desc: 'Routeurs avec pages de mot de passe par défaut', tip: '"Default Password" dans la page = routeur jamais configuré — souvent admin/admin ou imprimé sur l\'étiquette' },
+    { title: 'Jenkins exposé', query: 'intitle:"Dashboard [Jenkins]" inurl:"/job"', desc: 'Serveurs Jenkins CI/CD accessibles', tip: 'Jenkins est un outil DevOps — exposé, il permet d\'exécuter du code arbitraire sur le serveur cible' },
+    { title: 'Grafana dashboard', query: 'intitle:"Grafana" inurl:"/login" | inurl:"/d/"', desc: 'Tableaux de bord Grafana accessibles', tip: 'Grafana est un outil de monitoring — ses dashboards exposent souvent des métriques internes sensibles' },
+  ],
+  files: [
+    { title: 'Fichiers Excel sensibles', query: 'site:{cible} filetype:xlsx "password" | "credentials" | "login"', desc: 'Fichiers Excel contenant des mots de passe sur un domaine', tip: 'filetype: cherche par extension — xlsx combiné à des mots-clés sensibles trouve des fichiers de gestion d\'accès exposés' },
+    { title: 'Configs exposées', query: 'filetype:env | filetype:config "DB_PASSWORD" | "API_KEY" | "SECRET"', desc: 'Fichiers .env et config avec clés API et mots de passe', tip: 'Les fichiers .env contiennent les variables d\'environnement — souvent uploadés par erreur avec les credentials de production' },
+    { title: 'Logs serveur', query: 'filetype:log "username" | "password" | "error" site:{cible}', desc: 'Fichiers de log exposés contenant des informations sensibles', tip: 'Les logs peuvent contenir des tentatives de connexion avec mots de passe, des traces d\'erreurs avec données internes' },
+    { title: 'Fichiers SQL', query: 'filetype:sql "INSERT INTO" "password" | "email"', desc: 'Dumps SQL avec données utilisateurs indexés', tip: 'Les dumps SQL (.sql) contiennent toute la structure et les données d\'une base — extrêmement sensibles si exposés' },
+    { title: 'Documents RH', query: 'site:{cible} filetype:pdf | filetype:docx "salary" | "payroll" | "employee"', desc: 'Documents RH internes exposés', tip: 'Combine site: avec filetype: et mots-clés RH pour trouver des documents confidentiels d\'une organisation' },
+    { title: 'Clés SSH exposées', query: 'filetype:pem "PRIVATE KEY" | filetype:ppk "private" site:{cible}', desc: 'Clés SSH privées indexées par Google', tip: 'Les fichiers .pem et .ppk contiennent des clés SSH privées — leur indexation est une faille critique permettant l\'accès aux serveurs' },
+    { title: 'Fichiers de backup', query: 'intitle:"index of" "backup" filetype:sql | filetype:gz | filetype:zip site:{cible}', desc: 'Sauvegardes de bases de données exposées', tip: 'intitle:"index of" trouve les répertoires ouverts — combiné avec filetype:sql trouve des backups de bases de données' },
+    { title: 'GitHub secrets', query: 'filename:.env DB_PASSWORD | API_KEY | SECRET_KEY', desc: 'Fichiers .env pushés par erreur sur GitHub', tip: 'Sur GitHub : filename: cherche par nom de fichier — des milliers de .env avec credentials sont exposés par erreur', engine: 'github' },
+    { title: 'Clés API GitHub', query: 'filename:config.js API_KEY | SECRET | PASSWORD', desc: 'Fichiers de configuration JavaScript avec clés API', tip: 'Les développeurs pushent parfois des configs JS avec leurs clés API en dur — GitHub les indexe tous', engine: 'github' },
+  ],
+  databases: [
+    { title: 'MongoDB exposé', query: 'port:27017 "MongoDB" country:"{cible}"', desc: 'Bases MongoDB sans authentification (Shodan)', tip: 'Port 27017 = MongoDB par défaut. Sans auth activée, n\'importe qui peut lire/écrire — Shodan indexe des milliers de cas', engine: 'shodan' },
+    { title: 'ElasticSearch ouvert', query: 'port:9200 "elasticsearch" country:"{cible}"', desc: 'Instances ElasticSearch accessibles publiquement', tip: 'Port 9200 = ElasticSearch. Sans auth, l\'API REST est accessible — peut contenir des millions d\'entrées de données', engine: 'shodan' },
+    { title: 'Redis exposé', query: 'port:6379 "redis" country:"{cible}"', desc: 'Serveurs Redis sans authentification', tip: 'Redis sur port 6379 sans mot de passe = accès complet à la base en mémoire — souvent utilisé pour les sessions utilisateurs', engine: 'shodan' },
+    { title: 'MySQL ouvert', query: 'port:3306 "MySQL" country:"{cible}"', desc: 'Serveurs MySQL directement accessibles', tip: 'MySQL sur port 3306 exposé = tentatives de brute force possibles directement sur le port', engine: 'shodan' },
+    { title: 'phpMyAdmin no auth', query: 'intitle:"phpMyAdmin" "Welcome to phpMyAdmin" -"Enter password"', desc: 'phpMyAdmin accessible sans mot de passe', tip: 'L\'absence de "Enter password" dans la page indique que phpMyAdmin accepte les connexions sans authentification' },
+    { title: 'CouchDB exposé', query: 'port:5984 "couchdb" country:"{cible}"', desc: 'CouchDB sans authentification (Shodan)', tip: 'CouchDB sur port 5984 — son interface web Futon/Fauxton est accessible sans auth par défaut dans les anciennes versions', engine: 'shodan' },
+  ],
+  passwords: [
+    { title: 'Fichiers htpasswd', query: 'filetype:htpasswd htpasswd', desc: 'Fichiers d\'authentification Apache exposés', tip: 'htpasswd contient des couples login:hash de mot de passe pour l\'authentification basique Apache — cassables avec John ou Hashcat' },
+    { title: 'Configs avec passwords', query: 'inurl:wp-config.php filetype:txt "DB_PASSWORD"', desc: 'Fichiers WordPress config avec mots de passe BDD', tip: 'wp-config.php contient les credentials de la base de données WordPress — exposé = accès complet au site' },
+    { title: 'Credentials GitHub', query: '"password" OR "passwd" OR "pwd" filename:credentials', desc: 'Fichiers credentials sur GitHub', tip: 'Sur GitHub, filename:credentials avec mots-clés cherche dans les fichiers de configuration pushés par erreur', engine: 'github' },
+    { title: 'Variables .env GitHub', query: '"DB_PASS" OR "MYSQL_PASSWORD" OR "REDIS_PASSWORD" filename:.env', desc: 'Mots de passe de bases de données dans .env GitHub', tip: 'Des milliers de développeurs pushent leurs .env avec des credentials réels — GitHub les indexe dans les 24h', engine: 'github' },
+    { title: 'Clés AWS exposées', query: '"AKIA" filename:credentials | filename:.aws', desc: 'Clés d\'accès AWS sur GitHub', tip: 'Les clés AWS commencent par AKIA — leur exposition peut générer des factures de milliers d\'euros en quelques heures', engine: 'github' },
+  ],
+  vulnerabilities: [
+    { title: 'Serveurs IIS vulnérables', query: 'intitle:"IIS Windows Server" "Version 6" | "Version 7"', desc: 'Serveurs Microsoft IIS en versions obsolètes', tip: 'IIS 6 et 7 ont des vulnérabilités critiques non patchées — leur présence en production est un signe de mauvaise maintenance' },
+    { title: 'Apache version exposée', query: 'intitle:"Apache Status" "Apache Server Status for"', desc: 'Pages de statut Apache avec infos de version', tip: 'Apache Status révèle la version exacte, les virtual hosts, et les connexions actives — informations utiles pour cibler des CVE' },
+    { title: 'Erreurs PHP exposées', query: 'intitle:"PHP error" | "PHP Warning" | "PHP Notice" site:{cible}', desc: 'Pages d\'erreur PHP avec chemins et infos internes', tip: 'Les erreurs PHP révèlent les chemins absolus du serveur, les noms de fichiers, et parfois les versions de bibliothèques' },
+    { title: 'Struts vulnérable', query: 'intitle:"Struts Problem Report" intext:"development mode is enabled"', desc: 'Serveurs Apache Struts en mode développement', tip: 'Struts en mode dev expose une console d\'erreur — Apache Struts a eu des CVE critiques (CVE-2017-5638 utilisé pour hacker Equifax)' },
+    { title: 'Shellshock vulnérable', query: 'inurl:"/cgi-bin/" filetype:sh | filetype:cgi', desc: 'Scripts CGI potentiellement vulnérables à Shellshock', tip: 'Shellshock (CVE-2014-6271) affecte bash via CGI — les scripts .sh et .cgi dans /cgi-bin/ peuvent être des vecteurs d\'attaque' },
+    { title: 'Heartbleed (Shodan)', query: 'vuln:CVE-2014-0160 country:"{cible}"', desc: 'Serveurs encore vulnérables à Heartbleed via Shodan', tip: 'Shodan détecte les CVE connus — vuln:CVE-XXXX-YYYY filtre les serveurs vulnérables à une faille spécifique', engine: 'shodan' },
+  ],
+  network: [
+    { title: 'Routeurs Cisco exposés', query: 'intitle:"Cisco" "show running-config" | inurl:"/exec/show/version"', desc: 'Interfaces de gestion Cisco accessibles', tip: '"show running-config" est une commande Cisco qui affiche la configuration complète — son exposition est critique' },
+    { title: 'Firewalls pfSense', query: 'intitle:"pfSense" inurl:"/index.php" | inurl:"/diag_"', desc: 'Interfaces web pfSense exposées', tip: 'pfSense est un pare-feu open source — son interface web exposée permet de voir et modifier toutes les règles réseau' },
+    { title: 'VPN non sécurisés', query: 'intitle:"SSL VPN" | "Cisco AnyConnect" inurl:"/+CSCOE+/"', desc: 'Portails VPN Cisco exposés publiquement', tip: 'Les portails VPN Cisco AnyConnect ont eu des vulnérabilités critiques — les versions obsolètes sont des cibles privilégiées' },
+    { title: 'NAS Synology', query: 'intitle:"Synology DiskStation" port:5000 country:"{cible}"', desc: 'NAS Synology accessibles via internet', tip: 'Port 5000 = interface DSM de Synology — les NAS connectés à internet sans VPN sont vulnérables aux attaques directes', engine: 'shodan' },
+    { title: 'Printers exposées', query: 'intitle:"HP LaserJet" | "Ricoh" inurl:"/web" port:80 country:"{cible}"', desc: 'Imprimantes réseau accessibles publiquement', tip: 'Les imprimantes réseau exposées permettent d\'imprimer à distance, accéder aux documents scannés, et souvent pivoter sur le réseau', engine: 'shodan' },
+  ],
+  iot: [
+    { title: 'Thermostats Nest', query: 'intitle:"Nest" inurl:"/login" | port:9543 "Nest"', desc: 'Thermostats connectés Nest exposés', tip: 'Les thermostats connectés révèlent des patterns d\'occupation (quand les gens sont à la maison) en plus des risques de contrôle à distance' },
+    { title: 'SCADA industriels', query: 'intitle:"SCADA" | "HMI" inurl:"/main.htm" | port:102', desc: 'Systèmes de contrôle industriels (ICS/SCADA)', tip: 'Port 102 = protocole Siemens S7 pour automates industriels. SCADA exposé sur internet = risque de sabotage d\'infrastructure critique' },
+    { title: 'Panneaux solaires', query: 'intitle:"SolarEdge" | "SMA Sunny" inurl:"/status"', desc: 'Systèmes de monitoring solaire exposés', tip: 'Les onduleurs solaires connectés révèlent la consommation électrique — indicateur d\'occupation et de valeur des installations' },
+    { title: 'Smart home Shodan', query: 'port:8123 "Home Assistant" country:"{cible}"', desc: 'Instances Home Assistant sans authentification', tip: 'Port 8123 = Home Assistant (domotique) — exposé sans auth, permet de contrôler toute la maison connectée', engine: 'shodan' },
+    { title: 'Imprimantes 3D', query: 'intitle:"OctoPrint" | "Repetier-Server" inurl:"/login"', desc: 'Imprimantes 3D accessibles à distance', tip: 'OctoPrint et Repetier sont des interfaces web pour imprimantes 3D — souvent laissées ouvertes sur le réseau local puis exposées' },
+  ],
+  osint: [
+    { title: 'Emails d\'une orga', query: 'site:{cible} "@{cible}"', desc: 'Trouve les adresses email publiées sur un domaine', tip: 'Cherche les patterns d\'email sur le domaine officiel — révèle le format des adresses (prenom.nom@, p.nom@, etc.)' },
+    { title: 'Documents internes', query: 'site:{cible} filetype:pdf | filetype:pptx "confidential" | "internal"', desc: 'Documents marqués confidentiels indexés par Google', tip: 'Les mentions "confidential" ou "internal use only" dans des PDF publics révèlent des documents qui ne devraient pas l\'être' },
+    { title: 'Réseaux sociaux liés', query: '"{cible}" site:linkedin.com | site:twitter.com | site:facebook.com', desc: 'Profils sur les réseaux sociaux pour une personne/organisation', tip: 'Combine le nom avec site: pour chaque réseau social — très efficace pour l\'OSINT sur des personnes ou entreprises' },
+    { title: 'Sous-domaines', query: 'site:*.{cible}', desc: 'Trouve tous les sous-domaines d\'un domaine indexés par Google', tip: 'site:*.domaine.com trouve tous les sous-domaines — révèle des portails internes, environnements de dev, services cachés' },
+    { title: 'Cache Google', query: 'cache:{cible}', desc: 'Version en cache d\'une page (même si supprimée)', tip: 'cache: affiche la dernière version indexée par Google — permet de voir des pages supprimées ou modifiées' },
+    { title: 'Mentions web', query: '"{cible}" -site:{cible}', desc: 'Toutes les mentions d\'une entité hors de son propre site', tip: 'Le signe - exclut un domaine — permet de trouver ce que les autres disent d\'une organisation ou personne' },
+    { title: 'LinkedIn employés', query: 'site:linkedin.com/in "{cible}"', desc: 'Profils LinkedIn d\'employés d\'une organisation', tip: 'site:linkedin.com/in limite aux profils — révèle les employés, leur rôle, et potentiellement leur email via leur profil' },
+    { title: 'Numéros de téléphone', query: '"{cible}" "tel:" | "phone:" | "+33"', desc: 'Numéros de téléphone associés à une entité', tip: 'Les balises tel: et les formats de numéros dans les pages web permettent de trouver des contacts téléphoniques' },
+  ],
+  exploitdb: [
+    { title: 'Exploits par logiciel', query: '{cible}', desc: 'Recherche tous les exploits connus pour un logiciel', tip: 'Exploit-DB répertorie des milliers de preuves de concept — recherche par nom de logiciel, version, ou type de vulnérabilité', engine: 'exploitdb' },
+    { title: 'RCE (Remote Code Exec)', query: '{cible} remote code execution', desc: 'Exploits permettant l\'exécution de code à distance', tip: 'RCE = faille la plus critique — permet d\'exécuter des commandes sur le serveur cible sans accès préalable', engine: 'exploitdb' },
+    { title: 'SQL Injection exploits', query: '{cible} sql injection', desc: 'Exploits d\'injection SQL pour un logiciel', tip: 'Les exploits SQLi sur Exploit-DB incluent souvent des preuves de concept complètes avec les payloads', engine: 'exploitdb' },
+    { title: 'CVE par numéro', query: 'CVE-{cible}', desc: 'Recherche un CVE spécifique sur Exploit-DB', tip: 'CVE-XXXX-YYYY = identifiant officiel d\'une vulnérabilité — Exploit-DB lie les CVE aux exploits correspondants', engine: 'exploitdb' },
+    { title: 'Buffer overflow', query: '{cible} buffer overflow', desc: 'Exploits de dépassement de tampon', tip: 'Buffer overflow = écriture au-delà d\'un tampon mémoire — peut permettre l\'exécution de code arbitraire', engine: 'exploitdb' },
+    { title: 'XSS exploits', query: '{cible} cross site scripting', desc: 'Exploits XSS pour un CMS ou application', tip: 'XSS = injection de script dans une page web — permet le vol de cookies, tokens, ou redirections malveillantes', engine: 'exploitdb' },
+    { title: 'Privilege escalation', query: '{cible} privilege escalation', desc: 'Exploits d\'élévation de privilèges', tip: 'Permet à un utilisateur non-root d\'obtenir les droits administrateur — étape clé après une intrusion initiale', engine: 'exploitdb' },
+    { title: 'Metasploit modules', query: '{cible}', desc: 'Modules Metasploit disponibles pour une cible', tip: 'Rapid7 DB référence tous les modules Metasploit — recherche par service, version, ou type d\'attaque', engine: 'exploitdb' },
+  ],
+};
+
+const ENGINE_URLS = {
+  google: q => `https://www.google.com/search?q=${encodeURIComponent(q)}`,
+  bing: q => `https://www.bing.com/search?q=${encodeURIComponent(q)}`,
+  duckduckgo: q => `https://duckduckgo.com/?q=${encodeURIComponent(q)}`,
+  shodan: q => `https://www.shodan.io/search?query=${encodeURIComponent(q)}`,
+  github: q => `https://github.com/search?q=${encodeURIComponent(q)}&type=code`,
+  exploitdb: q => `https://www.exploit-db.com/search?q=${encodeURIComponent(q)}`,
+  censys: q => `https://search.censys.io/search?resource=hosts&q=${encodeURIComponent(q)}`,
+};
+
+let currentDork = null;
+let currentEngine = 'google';
+let currentCat = 'cameras';
+
+// Ajouter dorks Recon-ng
+DORKS.reconng = [
+  { title: 'Sous-domaines (crt.sh)', query: 'site:*.{cible}', desc: 'Découvre tous les sous-domaines d\'un domaine indexés par Google — inspiré du module recon-ng brute_hosts', tip: 'site:*.domaine.com trouve tous les sous-domaines indexés. Recon-ng fait pareil avec des wordlists brute-force. Résultats : portails internes, envs de dev, APIs cachées' },
+  { title: 'Sous-domaines Shodan', query: 'hostname:"{cible}"', desc: 'Tous les sous-domaines d\'un domaine via Shodan (module recon-ng shodan_hostname)', tip: 'Shodan indexe les bannières HTTP de tous les sous-domaines — révèle des services non documentés même sans réponse DNS publique', engine: 'shodan' },
+  { title: 'Reverse IP Google', query: 'ip:"{cible}" | site:"{cible}"', desc: 'Trouve tous les domaines hébergés sur la même IP (recon-ng reverse_resolve)', tip: 'Plusieurs sites peuvent partager la même IP chez un hébergeur — révèle des sites liés à la même organisation ou personne' },
+  { title: 'Employés LinkedIn', query: 'site:linkedin.com/in "{cible}"', desc: 'Liste les employés d\'une organisation sur LinkedIn (module recon-ng linkedin_auth)', tip: 'Recon-ng a un module dédié LinkedIn. Manuellement : site:linkedin.com/in + nom org. Révèle noms, postes, et structure interne' },
+  { title: 'Emails d\'une orga', query: 'site:{cible} "@{cible}"', desc: 'Trouve les adresses email publiées sur le site officiel (module recon-ng pgp_search)', tip: 'Recon-ng cherche dans les clés PGP publiques pour trouver les emails. Google cherche dans les pages web — complémentaire' },
+  { title: 'Documents publics', query: 'site:{cible} filetype:pdf | filetype:docx | filetype:xlsx', desc: 'Tous les documents indexés d\'une organisation (module recon-ng google_site_web)', tip: 'Les métadonnées des documents Word/Excel/PDF révèlent souvent les noms d\'auteurs, paths réseau, logiciels utilisés — OSINT précieux' },
+  { title: 'Profils sociaux', query: '"{cible}" site:twitter.com | site:instagram.com | site:facebook.com', desc: 'Présence sur les réseaux sociaux (module recon-ng bing_linkedin_contacts)', tip: 'Recon-ng agrège automatiquement les profils sociaux. Manuellement : chercher le nom/email sur chaque réseau révèle des connexions inattendues' },
+  { title: 'IPs d\'une org (WHOIS)', query: 'org:"{cible}"', desc: 'Plages d\'adresses IP appartenant à une organisation via Shodan', tip: 'Sur Shodan, org: filtre par organisation WHOIS — révèle toute l\'infrastructure réseau publique : serveurs, équipements, services', engine: 'shodan' },
+  { title: 'Mentions Pastebin', query: 'site:pastebin.com "{cible}"', desc: 'Données leakées sur Pastebin liées à une cible (module recon-ng pastebin_google)', tip: 'Recon-ng a un module dédié Pastebin. Les pastes contiennent souvent des credentials, codes sources, données internes leakées par erreur' },
+  { title: 'DNS History', query: 'site:securitytrails.com "{cible}"', desc: 'Historique DNS d\'un domaine — révèle les anciennes IPs et hébergeurs', tip: 'L\'historique DNS révèle les anciennes infrastructures — utile pour trouver l\'IP réelle derrière un Cloudflare ou anciens serveurs' },
+];
+
+function buildQuery(dork) {
+  const target = document.getElementById('dorkTarget').value.trim();
+  return target ? dork.query.replace(/\{cible\}/g, target) : dork.query;
+}
+
+function renderDorks(cat) {
+  const grid = document.getElementById('dorkGrid');
+  grid.innerHTML = '';
+  (DORKS[cat] || []).forEach((dork) => {
+    const card = document.createElement('div');
+    card.className = 'dork-card' + (currentDork === dork ? ' selected' : '');
+    card.setAttribute('data-tip', dork.tip);
+    card.innerHTML = '<div class="dk-title">'+E(dork.title)+(currentDork===dork?' ✓':'')+'</div>'
+      +'<div class="dk-query">'+E(dork.query)+'</div>'
+      +'<div class="dk-desc">'+E(dork.desc)+'</div>'
+      +(dork.engine ? '<div class="dk-badge">'+E(dork.engine)+'</div>' : '');
+    card.addEventListener('click', () => {
+      if (currentDork === dork) {
+        // DÉSELECTIONNER si déjà sélectionné
+        currentDork = null;
+        card.classList.remove('selected');
+        document.getElementById('dorkQuery').textContent = 'Sélectionne un dork ci-dessous...';
+        return;
+      }
+      document.querySelectorAll('.dork-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      currentDork = dork;
+      if (dork.engine && dork.engine !== currentEngine) {
+        currentEngine = dork.engine;
+        document.querySelectorAll('.dork-engine').forEach(b => b.classList.toggle('on', b.dataset.engine === currentEngine));
+      }
+      document.getElementById('dorkQuery').textContent = buildQuery(dork);
+    });
+    grid.appendChild(card);
+  });
+}
+
+// Copier la requête au clic
+document.getElementById('dorkQuery').addEventListener('click', () => {
+  const q = document.getElementById('dorkQuery').textContent;
+  if (q === 'Sélectionne un dork ci-dessous...') return;
+  navigator.clipboard.writeText(q).then(() => {
+    const c = document.getElementById('dorkCopied');
+    c.style.display = 'block';
+    setTimeout(() => c.style.display = 'none', 1500);
+  });
+});
+
+// Init
+renderDorks('cameras');
+
+// Catégories dork — déselection possible (revient à cameras par défaut)
+document.querySelectorAll('.dcat').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if(btn.classList.contains('on') && currentCat === btn.dataset.cat) {
+      // Déjà sélectionné = déselectionner, revenir à cameras
+      document.querySelectorAll('.dcat').forEach(b => b.classList.remove('on'));
+      document.querySelector('.dcat[data-cat="cameras"]').classList.add('on');
+      currentCat = 'cameras';
+      currentDork = null;
+      document.getElementById('dorkQuery').textContent = 'Sélectionne un dork ci-dessous...';
+      renderDorks('cameras');
+      return;
+    }
+    document.querySelectorAll('.dcat').forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
+    currentCat = btn.dataset.cat;
+    currentDork = null;
+    document.getElementById('dorkQuery').textContent = 'Sélectionne un dork ci-dessous...';
+    renderDorks(currentCat);
+  });
+});
+
+// Engines dork — déselection possible (revient à google)
+document.querySelectorAll('.dork-engine').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if(btn.classList.contains('on') && currentEngine === btn.dataset.engine) {
+      // Déjà sélectionné = garder (il faut toujours un moteur actif)
+      return;
+    }
+    document.querySelectorAll('.dork-engine').forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
+    currentEngine = btn.dataset.engine;
+    if (currentDork) document.getElementById('dorkQuery').textContent = buildQuery(currentDork);
+  });
+});
+
+document.getElementById('dorkTarget').addEventListener('input', () => {
+  if (currentDork) document.getElementById('dorkQuery').textContent = buildQuery(currentDork);
+});
+
+document.getElementById('dorkClear').addEventListener('click', () => {
+  document.getElementById('dorkTarget').value = '';
+  if (currentDork) document.getElementById('dorkQuery').textContent = buildQuery(currentDork);
+});
+
+document.getElementById('dorkLaunch').addEventListener('click', () => {
+  if (!currentDork) {
+    document.getElementById('dorkQuery').style.color='var(--red)';
+    document.getElementById('dorkQuery').textContent = '⚠ Clique d\'abord sur un dork dans la liste ci-dessous';
+    setTimeout(() => { document.getElementById('dorkQuery').style.color='var(--mx)'; document.getElementById('dorkQuery').textContent='Sélectionne un dork ci-dessous...'; }, 2000);
+    return;
+  }
+  const q = buildQuery(currentDork);
+  const eng = currentDork.engine || currentEngine;
+  window.open(ENGINE_URLS[eng](q), '_blank');
+});
+</script>
+</body></html>
