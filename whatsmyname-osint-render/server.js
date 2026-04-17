@@ -218,7 +218,7 @@ async function checkSite(site, username) {
   } catch (e) { result.status = 'error'; result.error = e.message } return result;
 }
 
-app.get('/api/scan/:username', heavyLimiter, (req, res) => {
+app.get('/api/scan/:username', globalLimiter, (req, res) => {
   const username = sanitize(req.params.username, 64);
   if (!isValidUsername(username)) return res.status(400).json({ error: 'Username invalide (lettres, chiffres, . _ - uniquement)' });
   const catFilter = sanitize(req.query.cat || 'all', 30);
