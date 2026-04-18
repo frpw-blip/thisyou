@@ -202,8 +202,8 @@ async function checkSite(site, username) {
   const result = { name: site.name, url, cat: site.cat, status: 'not-found', error: null };
   try {
     let cur = url;
-    for (let i = 0; i < 3; i++) {
-      const res = await httpGet(cur, 8000);
+    for (let i = 0; i < 1; i++) {
+      const res = await httpGet(cur, 4000);
       if ([301, 302, 303, 307, 308].includes(res.statusCode) && res.headers.location) {
         if (site.m_code && res.statusCode === site.m_code) return result;
         let loc = res.headers.location; if (loc.startsWith('/')) { const u = new URL(cur); loc = u.origin + loc }
@@ -234,7 +234,7 @@ app.get('/api/scan/:username', (req, res) => {
   let queue = [...filtered];
   async function go() {
     while (queue.length > 0 && !closed) {
-      const batch = queue.splice(0, 15);
+      const batch = queue.splice(0, 10);
       const results = await Promise.allSettled(batch.map(s => checkSite(s, username)));
       for (const r of results) {
         if (closed) return; completed++;
